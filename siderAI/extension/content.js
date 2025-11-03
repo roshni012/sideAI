@@ -59,136 +59,148 @@
     return containers;
   }
   
+  function findFixedElements() {
+    const fixedElements = [];
+    const allElements = document.querySelectorAll('*');
+    
+    allElements.forEach(el => {
+      // Skip our own elements
+      if (el.id === 'sider-ai-chat-panel' || el.id === 'sider-right-spacer') return;
+      
+      const style = window.getComputedStyle(el);
+      const position = style.position;
+      
+      // Find fixed or sticky positioned elements that span full width
+      if (position === 'fixed' || position === 'sticky') {
+        const width = style.width;
+        const maxWidth = style.maxWidth;
+        const left = style.left;
+        const right = style.right;
+        
+        // Check if element spans full viewport width
+        const rect = el.getBoundingClientRect();
+        const viewportWidth = window.innerWidth;
+        
+        // If element is full width or positioned at edges, it needs adjustment
+        if (rect.width >= viewportWidth - 10 || 
+            (width === '100%' || width === '100vw') ||
+            (left === '0px' && (right === '0px' || right === 'auto'))) {
+          
+          // Store original values if not already stored
+          if (!el.hasAttribute('data-sider-original-width')) {
+            const originalWidth = width !== 'auto' ? width : '';
+            const originalMaxWidth = maxWidth !== 'none' ? maxWidth : '';
+            const originalRight = right !== 'auto' ? right : '';
+            
+            if (originalWidth) el.setAttribute('data-sider-original-width', originalWidth);
+            if (originalMaxWidth) el.setAttribute('data-sider-original-maxwidth', originalMaxWidth);
+            if (originalRight) el.setAttribute('data-sider-original-right', originalRight);
+          }
+          
+          fixedElements.push(el);
+        }
+      }
+    });
+    
+    return fixedElements;
+  }
+  
   function compressWebsite(compress) {
     const html = document.documentElement;
     const body = document.body;
-    
+    const panelWidth =
+      window.innerWidth <= 768
+        ? window.innerWidth
+        : window.innerWidth <= 1024
+        ? 320
+        : 380;
+  
+    // Expose panel width to CSS
+    html.style.setProperty('--sider-panel-width', `${panelWidth}px`);
+  
     if (compress) {
-      // Add class for additional CSS control
       html.classList.add('sider-panel-active');
       body.classList.add('sider-panel-active');
-      
-      // Adjust viewport width calculation by setting body width
-      const panelWidth = getPanelWidth();
-      const bodyWidth = window.innerWidth - panelWidth;
-      body.style.width = `${bodyWidth}px`;
-      body.style.maxWidth = `${bodyWidth}px`;
-      body.style.transition = 'width 0.3s ease-in-out, max-width 0.3s ease-in-out';
-      
-      // Also set margin-right for overflow content
-      html.style.marginRight = `${panelWidth}px`;
-      html.style.transition = 'margin-right 0.3s ease-in-out';
-      
-      // Update panel width if needed
-      if (chatPanel) {
-        chatPanel.style.width = `${panelWidth}px`;
-      }
-      
-      // Find and adjust all container elements
-      const containers = findAndAdjustContainers();
-      containers.forEach(container => {
-        const originalMaxWidth = container.getAttribute('data-sider-original-maxwidth');
-        const originalWidth = container.getAttribute('data-sider-original-width');
+  
+      // Apply compression only on desktop/tablet
+      if (window.innerWidth > 768) {
+        html.style.marginRight = `${panelWidth}px`;
+        html.style.transition = 'margin-right 0.3s ease';
+        body.style.width = `calc(100vw - ${panelWidth}px)`;
+        body.style.transition = 'width 0.3s ease';
         
-        // Mark as adjusted
-        container.setAttribute('data-sider-adjusted', 'true');
-        
-        if (originalMaxWidth) {
-          // Parse and reduce max-width
-          if (originalMaxWidth.includes('px')) {
-            const val = parseFloat(originalMaxWidth);
-            if (!isNaN(val) && val > 400) {
-              const newMaxWidth = Math.max(300, val - panelWidth);
-              container.style.maxWidth = `${newMaxWidth}px`;
-              container.style.transition = 'max-width 0.3s ease-in-out';
-            }
-          } else if (originalMaxWidth.includes('%')) {
-            // For percentage-based, use calc
-            container.style.maxWidth = `calc(${originalMaxWidth} - ${panelWidth}px)`;
-            container.style.transition = 'max-width 0.3s ease-in-out';
-          } else if (originalMaxWidth.includes('rem') || originalMaxWidth.includes('em')) {
-            // For rem/em, calculate based on viewport
-            const val = parseFloat(originalMaxWidth);
-            if (!isNaN(val)) {
-              const fontSize = parseFloat(window.getComputedStyle(document.documentElement).fontSize) || 16;
-              const pxValue = val * fontSize;
-              if (pxValue > 400) {
-                const newValue = Math.max(18.75, val - (panelWidth / fontSize));
-                container.style.maxWidth = `${newValue}${originalMaxWidth.includes('rem') ? 'rem' : 'em'}`;
-                container.style.transition = 'max-width 0.3s ease-in-out';
+        // Adjust fixed/sticky elements (headers, navs, etc.)
+        const fixedElements = findFixedElements();
+        fixedElements.forEach(el => {
+          const style = window.getComputedStyle(el);
+          const position = style.position;
+          
+          // Adjust width for fixed/sticky elements
+          if (position === 'fixed' || position === 'sticky') {
+            // Use calc to reduce width
+            if (style.width === '100%' || style.width === '100vw') {
+              el.style.width = `calc(100% - ${panelWidth}px)`;
+            } else if (style.width && style.width !== 'auto') {
+              // If it has a specific width, try to reduce it
+              const currentWidth = parseFloat(style.width);
+              if (!isNaN(currentWidth) && currentWidth > 400) {
+                el.style.maxWidth = `calc(100% - ${panelWidth}px)`;
               }
+            } else {
+              // Use max-width as fallback
+              el.style.maxWidth = `calc(100vw - ${panelWidth}px)`;
             }
+            
+            el.style.transition = 'width 0.3s ease, max-width 0.3s ease';
           }
-        }
-        
-        if (originalWidth && !originalMaxWidth) {
-          // Similar logic for fixed width
-          if (originalWidth.includes('px')) {
-            const val = parseFloat(originalWidth);
-            if (!isNaN(val) && val > 400) {
-              const newWidth = Math.max(300, val - panelWidth);
-              container.style.width = `${newWidth}px`;
-              container.style.transition = 'width 0.3s ease-in-out';
-            }
-          } else if (originalWidth.includes('%')) {
-            container.style.width = `calc(${originalWidth} - ${panelWidth}px)`;
-            container.style.transition = 'width 0.3s ease-in-out';
-          }
-        }
-        
-        // Ensure container fills available space if it's too small
-        const containerWidth = container.offsetWidth;
-        const parentWidth = container.parentElement ? container.parentElement.offsetWidth : bodyWidth;
-        
-        if (containerWidth < parentWidth - 100 && originalMaxWidth && !originalMaxWidth.includes('%')) {
-          // Only override if original wasn't percentage-based
-          container.style.maxWidth = '100%';
-        }
-      });
-      
+        });
+      } else {
+        // Mobile – full screen panel
+        html.style.marginRight = '0';
+        body.style.width = '100%';
+      }
+  
+      // Prevent horizontal scroll
+      body.style.overflowX = 'hidden';
     } else {
-      // Remove class and reset styles completely
       html.classList.remove('sider-panel-active');
       body.classList.remove('sider-panel-active');
-      
-      // Force remove all inline styles related to compression
-      body.style.removeProperty('width');
-      body.style.removeProperty('max-width');
-      body.style.removeProperty('margin-right');
       html.style.removeProperty('margin-right');
-      html.style.removeProperty('overflow-x');
+      body.style.removeProperty('width');
       body.style.removeProperty('overflow-x');
+      html.style.removeProperty('--sider-panel-width');
       
-      // Reset all container elements
-      const containers = document.querySelectorAll('[data-sider-original-maxwidth], [data-sider-original-width]');
-      containers.forEach(container => {
-        const originalMaxWidth = container.getAttribute('data-sider-original-maxwidth');
-        const originalWidth = container.getAttribute('data-sider-original-width');
-        
-        if (originalMaxWidth) {
-          container.style.maxWidth = originalMaxWidth;
-          container.removeAttribute('data-sider-original-maxwidth');
-        } else {
-          // If no original was saved, just remove the style
-          container.style.removeProperty('max-width');
-        }
+      // Restore fixed/sticky elements to original values
+      const fixedElements = document.querySelectorAll('[data-sider-original-width], [data-sider-original-maxwidth], [data-sider-original-right]');
+      fixedElements.forEach(el => {
+        const originalWidth = el.getAttribute('data-sider-original-width');
+        const originalMaxWidth = el.getAttribute('data-sider-original-maxwidth');
+        const originalRight = el.getAttribute('data-sider-original-right');
         
         if (originalWidth) {
-          container.style.width = originalWidth;
-          container.removeAttribute('data-sider-original-width');
+          el.style.width = originalWidth;
+          el.removeAttribute('data-sider-original-width');
         } else {
-          // If no original was saved, just remove the style
-          container.style.removeProperty('width');
+          el.style.removeProperty('width');
         }
         
-        container.removeAttribute('data-sider-adjusted');
-        container.style.removeProperty('transition');
+        if (originalMaxWidth) {
+          el.style.maxWidth = originalMaxWidth;
+          el.removeAttribute('data-sider-original-maxwidth');
+        } else {
+          el.style.removeProperty('max-width');
+        }
+        
+        if (originalRight) {
+          el.style.right = originalRight;
+          el.removeAttribute('data-sider-original-right');
+        }
+        
+        el.style.removeProperty('transition');
       });
-      
-      // Force a layout recalculation to ensure styles are applied
-      void body.offsetHeight;
     }
   }
+  
   
   function createChatPanel() {
     if (chatPanel) {
@@ -338,13 +350,94 @@
                 </div>
               </div>
             </div>
-            <textarea 
-              id="sider-chat-input" 
-              class="sider-chat-input" 
-              placeholder="Ask anything, @models, / prompts"
-              rows="1"
-            ></textarea>
+            <div class="sider-selected-text-section" id="sider-selected-text-section" style="display: none;">
+              <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;">
+                <span style="font-size: 12px; font-weight: 500; color: #6b7280;">Text from your selection</span>
+                <button id="sider-remove-selection-btn" style="background: none; border: none; cursor: pointer; padding: 4px; display: flex; align-items: center; color: #9ca3af;">
+                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <line x1="18" y1="6" x2="6" y2="18"/>
+                    <line x1="6" y1="6" x2="18" y2="18"/>
+                  </svg>
+                </button>
+              </div>
+              <div id="sider-selected-text-display" style="background: #f9fafb; border: 1px solid #e5e7eb; border-radius: 8px; padding: 12px; font-size: 14px; color: #111827; line-height: 1.5; max-height: 120px; overflow-y: auto; white-space: pre-wrap; word-wrap: break-word; margin-bottom: 12px;"></div>
+              <div class="sider-selection-actions" id="sider-selection-actions" style="display: grid; grid-template-columns: repeat(2, 1fr); gap: 8px; margin-bottom: 12px;">
+                <button class="sider-action-btn" data-action="explain" style="background: #ffffff; border: 1px solid #e5e7eb; border-radius: 8px; padding: 8px 12px; font-size: 14px; font-weight: 500; color: #111827; cursor: pointer; display: flex; align-items: center; justify-content: center; transition: all 0.2s;">
+                  <span>Explain</span>
+                </button>
+                <button class="sider-action-btn" data-action="translate" style="background: #ffffff; border: 1px solid #e5e7eb; border-radius: 8px; padding: 8px 12px; font-size: 14px; font-weight: 500; color: #111827; cursor: pointer; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 2px; transition: all 0.2s;">
+                  <span>Translate</span>
+                  <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <polyline points="6 9 12 15 18 9"/>
+                  </svg>
+                </button>
+                <button class="sider-action-btn" data-action="summarize" style="background: #ffffff; border: 1px solid #e5e7eb; border-radius: 8px; padding: 8px 12px; font-size: 14px; font-weight: 500; color: #111827; cursor: pointer; display: flex; align-items: center; justify-content: center; transition: all 0.2s;">
+                  <span>Summarize</span>
+                </button>
+                <button class="sider-action-btn" id="sider-more-actions-btn" style="background: #ffffff; border: 1px solid #e5e7eb; border-radius: 8px; padding: 8px 12px; font-size: 14px; font-weight: 500; color: #111827; cursor: pointer; display: flex; align-items: center; justify-content: center; transition: all 0.2s;">
+                  <span>...</span>
+                </button>
+              </div>
+              <div style="height: 1px; background: #e5e7eb; margin: 0 -16px 12px;"></div>
+            </div>
+            <div class="sider-image-preview-section" id="sider-image-preview-section" style="display: none;">
+              <div style="display: flex; gap: 12px; margin-bottom: 12px;">
+                <img id="sider-image-preview-thumb" src="" alt="Preview" style="width: 80px; height: 80px; object-fit: cover; border-radius: 8px; border: 1px solid #e5e7eb; flex-shrink: 0;">
+                <div style="flex: 1; display: flex; flex-direction: column; gap: 8px;">
+                  <div style="display: flex; gap: 8px; flex-wrap: wrap;">
+                    <button class="sider-image-action-btn" data-action="extract-text" style="background: #f3f4f6; border: 1px solid #e5e7eb; border-radius: 6px; padding: 6px 12px; font-size: 13px; font-weight: 500; color: #111827; cursor: pointer; transition: all 0.2s; white-space: nowrap;">
+                      Extract text
+                    </button>
+                    <button class="sider-image-action-btn" data-action="math-solver" style="background: #f3f4f6; border: 1px solid #e5e7eb; border-radius: 6px; padding: 6px 12px; font-size: 13px; font-weight: 500; color: #111827; cursor: pointer; transition: all 0.2s; white-space: nowrap;">
+                      Math Solver
+                    </button>
+                    <button class="sider-image-action-btn" data-action="translate-image" style="background: #f3f4f6; border: 1px solid #e5e7eb; border-radius: 6px; padding: 6px 12px; font-size: 13px; font-weight: 500; color: #111827; cursor: pointer; transition: all 0.2s; white-space: nowrap; display: flex; align-items: center; gap: 4px;">
+                      <span>Translate</span>
+                      <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <polyline points="6 9 12 15 18 9"/>
+                      </svg>
+                    </button>
+                  </div>
+                </div>
+              </div>
+              <div style="height: 1px; background: #e5e7eb; margin: 0 -16px 12px;"></div>
+            </div>
+            <div class="sider-input-area">
+              <div class="sider-attachments" id="sider-attachments"></div>
+              <textarea 
+                id="sider-chat-input" 
+                class="sider-chat-input" 
+                placeholder="Ask anything, @models, / prompts"
+                rows="1"
+              ></textarea>
+            </div>
             <div class="sider-input-buttons">
+              <div style="display: flex; gap: 8px; flex: 1;">
+                <button class="sider-bottom-action-btn" data-action="think" style="background: #f3f4f6; border: 1px solid #e5e7eb; border-radius: 6px; padding: 6px 12px; font-size: 13px; font-weight: 500; color: #111827; cursor: pointer; display: flex; align-items: center; gap: 6px; transition: all 0.2s;">
+                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <circle cx="12" cy="12" r="10"/>
+                    <line x1="12" y1="6" x2="12" y2="8"/>
+                    <line x1="12" y1="16" x2="12" y2="18"/>
+                    <path d="M9 9h6M9 15h6"/>
+                  </svg>
+                  <span>Think</span>
+                </button>
+                <button class="sider-bottom-action-btn" data-action="deep-research" style="background: #f3f4f6; border: 1px solid #e5e7eb; border-radius: 6px; padding: 6px 12px; font-size: 13px; font-weight: 500; color: #111827; cursor: pointer; display: flex; align-items: center; gap: 6px; transition: all 0.2s;">
+                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <circle cx="11" cy="11" r="8"/>
+                    <path d="m21 21-4.35-4.35"/>
+                  </svg>
+                  <span>Deep Research</span>
+                </button>
+              </div>
+              <button class="sider-mic-btn" id="sider-mic-btn" title="Voice Input" style="background: none; border: none; cursor: pointer; padding: 8px; display: flex; align-items: center; justify-content: center; color: #6b7280; transition: all 0.2s;">
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                  <path d="M12 1a3 3 0 0 0-3 3v8a3 3 0 0 0 6 0V4a3 3 0 0 0-3-3z"/>
+                  <path d="M19 10v2a7 7 0 0 1-14 0v-2"/>
+                  <line x1="12" y1="19" x2="12" y2="23"/>
+                  <line x1="8" y1="23" x2="16" y2="23"/>
+                </svg>
+              </button>
               <button class="sider-send-btn" id="sider-send-btn" title="Send">
                 <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                   <line x1="22" y1="2" x2="11" y2="13"/>
@@ -420,6 +513,7 @@
   let screenshotStartY = 0;
   let screenshotSelection = null;
   let fileInput = null;
+  let pendingAttachments = [];
   
   function initializePanel() {
     chatPanel = createChatPanel();
@@ -434,7 +528,9 @@
     const attachBtn = document.getElementById('sider-attach-btn');
     const readPageBtn = document.getElementById('sider-read-page-btn');
     const newChatBtn = document.getElementById('sider-new-chat-btn');
+    const micBtn = document.getElementById('sider-mic-btn');
     fileInput = document.getElementById('sider-file-input');
+    const attachmentsContainer = document.getElementById('sider-attachments');
     
     toggleBtn?.addEventListener('click', togglePanel);
     closeBtn?.addEventListener('click', closePanel);
@@ -442,6 +538,33 @@
     // New Chat button
     newChatBtn?.addEventListener('click', () => {
       createNewChat();
+    });
+    
+    // Bottom action buttons (Think, Deep Research)
+    const bottomActionBtns = document.querySelectorAll('.sider-bottom-action-btn');
+    bottomActionBtns.forEach(btn => {
+      btn.addEventListener('click', (e) => {
+        e.stopPropagation();
+        const action = btn.getAttribute('data-action');
+        const input = document.getElementById('sider-chat-input');
+        if (action === 'think' && input) {
+          input.value = input.value ? input.value + ' [Think step by step]' : '[Think step by step]';
+          autoResize(input);
+        } else if (action === 'deep-research') {
+          // Trigger deep research functionality
+          if (input) {
+            input.value = input.value ? input.value + ' [Deep Research]' : '[Deep Research]';
+            autoResize(input);
+          }
+        }
+      });
+    });
+    
+    // Microphone button
+    micBtn?.addEventListener('click', (e) => {
+      e.stopPropagation();
+      // TODO: Implement voice input
+      console.log('Voice input clicked');
     });
     
     sendBtn?.addEventListener('click', () => sendMessage());
@@ -457,26 +580,34 @@
       autoResize(e.target);
     });
     
-    // AI Model Selector Dropdown
+    // AI Model Selector - open AI Modules popup
     aiSelectorBtn?.addEventListener('click', (e) => {
       e.stopPropagation();
-      const isVisible = aiDropdown.style.display !== 'none';
-      aiDropdown.style.display = isVisible ? 'none' : 'block';
+      if (window.SiderAIModules) {
+        window.SiderAIModules.open();
+      }
     });
-    
-    document.querySelectorAll('.sider-ai-option').forEach(option => {
-      option.addEventListener('click', (e) => {
-        const model = e.currentTarget.dataset.model;
-        currentModel = model;
-        aiDropdown.style.display = 'none';
-        updateAISelectorIcon(model);
-      });
-    });
-    
-    // Close dropdown when clicking outside
-    document.addEventListener('click', (e) => {
-      if (!aiSelectorBtn?.contains(e.target) && !aiDropdown?.contains(e.target)) {
-        aiDropdown.style.display = 'none';
+
+    // Initialize AI Modules component
+    if (window.SiderAIModules) {
+      window.SiderAIModules.init(
+        // onModelChange callback
+        (model) => {
+          currentModel = model;
+          updateAISelectorIcon(model);
+        },
+        // onTestResult callback
+        (model, text) => {
+          addMessage('assistant', `[${model}] ${text}`);
+        }
+      );
+    }
+
+    // Load previously selected model on startup
+    chrome.storage.sync.get(['sider_selected_model'], (result) => {
+      if (result.sider_selected_model) {
+        currentModel = result.sider_selected_model;
+        updateAISelectorIcon(currentModel);
       }
     });
     
@@ -525,24 +656,19 @@
     });
     
     // Handle window resize for responsiveness
-    let resizeTimeout;
     window.addEventListener('resize', () => {
-      clearTimeout(resizeTimeout);
-      resizeTimeout = setTimeout(() => {
-        if (isPanelOpen) {
-          // Reapply compression with new dimensions
-          compressWebsite(true);
-        }
-      }, 100);
+      if (isPanelOpen) {
+        requestAnimationFrame(() => compressWebsite(true));
+      }
     });
     
-    // Handle dynamic content changes (for SPAs)
+    // Handle dynamic content changes (for SPAs) - debounced
     const observer = new MutationObserver(() => {
       if (isPanelOpen) {
-        // Reapply compression if new containers are added
-        setTimeout(() => {
+        clearTimeout(window.__siderResizeTimeout);
+        window.__siderResizeTimeout = setTimeout(() => {
           compressWebsite(true);
-        }, 50);
+        }, 150);
       }
     });
     
@@ -576,7 +702,8 @@
       chatgpt: '🤖',
       gpt4: '🧠',
       gemini: '⭐',
-      claude: '🌟'
+      claude: '🌟',
+      groq: '⚡'
     };
     const btn = document.getElementById('sider-ai-selector-btn');
     if (btn) {
@@ -680,16 +807,20 @@
     const width = Math.abs(e.clientX - screenshotStartX);
     const height = Math.abs(e.clientY - screenshotStartY);
     
-    if (width > 10 && height > 10) {
-      captureScreenshotArea(
-        Math.min(e.clientX, screenshotStartX),
-        Math.min(e.clientY, screenshotStartY),
-        width,
-        height
-      );
-    }
+    const left = Math.min(e.clientX, screenshotStartX);
+    const top = Math.min(e.clientY, screenshotStartY);
     
+    // Hide overlay BEFORE capturing to avoid overlay tint/border in the image
     stopScreenshotMode();
+    
+    if (width > 10 && height > 10) {
+      // Wait a frame so the overlay is removed from the compositor, then capture
+      requestAnimationFrame(() => {
+        setTimeout(() => {
+          captureScreenshotArea(left, top, width, height);
+        }, 10);
+      });
+    }
   }
   
   function stopScreenshotMode() {
@@ -713,15 +844,34 @@
         bounds: { x, y, width, height }
       }, (response) => {
         if (response && response.dataUrl) {
-          // Add screenshot to input
-          const input = document.getElementById('sider-chat-input');
-          if (input) {
-            const screenshotText = `[Screenshot: ${width}x${height}]\n`;
-            input.value = screenshotText + input.value;
-            autoResize(input);
-          }
-          // Show in chat
-          addMessage('user', '📸 Screenshot captured');
+          // Crop the captured full screenshot to the selected rectangle
+          const dpr = window.devicePixelRatio || 1;
+          const crop = { sx: Math.round(x * dpr), sy: Math.round(y * dpr), sw: Math.round(width * dpr), sh: Math.round(height * dpr) };
+          const image = new Image();
+          image.onload = () => {
+            const canvas = document.createElement('canvas');
+            canvas.width = crop.sw;
+            canvas.height = crop.sh;
+            const ctx = canvas.getContext('2d');
+            try {
+              ctx.drawImage(image, crop.sx, crop.sy, crop.sw, crop.sh, 0, 0, crop.sw, crop.sh);
+              const croppedUrl = canvas.toDataURL('image/png');
+              const attachment = {
+                type: 'image',
+                name: `screenshot-${Date.now()}.png`,
+                dataUrl: croppedUrl,
+                width: Math.round(width),
+                height: Math.round(height)
+              };
+              pendingAttachments.push(attachment);
+              renderAttachments();
+            } catch (e) {
+              // Fallback: attach full image if cropping fails
+              pendingAttachments.push({ type: 'image', name: `screenshot-${Date.now()}.png`, dataUrl: response.dataUrl, width: image.width, height: image.height });
+              renderAttachments();
+            }
+          };
+          image.src = response.dataUrl;
         }
       });
     } catch (error) {
@@ -730,26 +880,56 @@
       alert('Screenshot captured. Note: Full screenshot feature requires additional permissions.');
     }
   }
+
+  function renderAttachments() {
+    const container = document.getElementById('sider-attachments');
+    if (!container) return;
+    container.innerHTML = '';
+    pendingAttachments.forEach((att, idx) => {
+      if (att.type === 'image') {
+        const chip = document.createElement('div');
+        chip.className = 'sider-attachment-chip';
+        chip.innerHTML = `
+          <img class="sider-attachment-thumb" src="${att.dataUrl}" alt="attachment" />
+          <div style="display:flex;flex-direction:column;gap:2px;">
+            <span style="font-size:12px;color:#374151;max-width:140px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${att.name}</span>
+            <span style="font-size:11px;color:#6b7280;">${att.width}×${att.height}</span>
+          </div>
+          <button class="sider-attachment-remove" title="Remove">✕</button>
+        `;
+        chip.querySelector('.sider-attachment-remove').addEventListener('click', () => {
+          pendingAttachments.splice(idx, 1);
+          renderAttachments();
+        });
+        container.appendChild(chip);
+      }
+    });
+    updateInputPaddingForAttachments();
+  }
+
+  function updateInputPaddingForAttachments() {
+    const input = document.getElementById('sider-chat-input');
+    const container = document.getElementById('sider-attachments');
+    if (!input || !container) return;
+    // Compute needed top padding so the chips sit "inside" the input area
+    const basePadding = 12; // matches CSS
+    const needed = container.childElementCount > 0 ? container.clientHeight + basePadding : basePadding;
+    input.style.paddingTop = `${needed}px`;
+  }
   
   function handleFileAttachments(files) {
     files.forEach(file => {
       const reader = new FileReader();
       reader.onload = (e) => {
-        const fileData = {
+        const dataUrl = e.target.result;
+        const attachment = {
+          type: file.type.startsWith('image/') ? 'image' : 'file',
           name: file.name,
-          type: file.type,
           size: file.size,
-          data: e.target.result
+          dataUrl
         };
-        
-        const input = document.getElementById('sider-chat-input');
-        if (input) {
-          const fileText = `📎 ${file.name} (${(file.size / 1024).toFixed(1)}KB)\n`;
-          input.value = fileText + input.value;
-          autoResize(input);
-        }
-        
-        addMessage('user', `📎 Attached: ${file.name}`);
+        pendingAttachments.push(attachment);
+        renderAttachments();
       };
       reader.readAsDataURL(file);
     });
@@ -803,7 +983,20 @@
       welcome.style.display = 'none';
     }
     
-    addMessage('user', message);
+    // Append a textual hint if there are attachments
+    if (pendingAttachments.length > 0) {
+      const attachedHint = pendingAttachments
+        .map(att => att.type === 'image' ? `📎 [image] ${att.name}` : `📎 ${att.name}`)
+        .join('\n');
+      addMessage('user', `${attachedHint}\n\n${message}`);
+      // Clear previews after sending
+      pendingAttachments = [];
+      renderAttachments();
+      // Reset padding after clearing
+      updateInputPaddingForAttachments();
+    } else {
+      addMessage('user', message);
+    }
     const thinkingMsg = addMessage('assistant', 'Thinking...', true);
     
     try {
@@ -837,6 +1030,16 @@
     if (chatInput) {
       chatInput.value = '';
       autoResize(chatInput);
+    }
+    
+    // Hide preview sections
+    const selectedTextSection = document.getElementById('sider-selected-text-section');
+    const imagePreviewSection = document.getElementById('sider-image-preview-section');
+    if (selectedTextSection) {
+      selectedTextSection.style.display = 'none';
+    }
+    if (imagePreviewSection) {
+      imagePreviewSection.style.display = 'none';
     }
     
     // Reset chat container and show welcome screen
@@ -1218,19 +1421,424 @@
     });
   }
   
-  function showMoreOptions() {
-    // Show a dropdown with more options
-    alert('More options: Translate, Summarize, Explain, etc. (Coming soon!)');
+  // Listen for analyze requests from toolbar component
+  window.addEventListener('sider:analyze-text', (e) => {
+    const text = e.detail?.text || '';
+    if (text) analyzeTextWithAI(text);
+  });
+
+  // Optional: add-note request from toolbar
+  window.addEventListener('sider:add-note', (e) => {
+    const text = e.detail?.text || '';
+    if (text) addToNotes(text);
+  });
+
+  // Handle prompt requests from toolbar (explain, translate, etc.)
+  window.addEventListener('sider:prompt-text', (e) => {
+    const { text, prompt } = e.detail || {};
+    if (!text) return;
+    
+    // Open chat panel if closed
+    if (!isPanelOpen) {
+      togglePanel();
+    }
+    
+    // Set the input with the prompt and selected text
+    const input = document.getElementById('sider-chat-input');
+    if (input) {
+      input.value = `${prompt}: "${text}"`;
+      autoResize(input);
+      setTimeout(() => sendMessage(), 200);
+    }
+  });
+
+  // Handle text selection to show in input box
+  function updateSelectedTextInInput(text) {
+    if (!text || text.trim().length === 0) {
+      const selectedTextSection = document.getElementById('sider-selected-text-section');
+      if (selectedTextSection) {
+        selectedTextSection.style.display = 'none';
+      }
+      return;
+    }
+    
+    const selectedTextSection = document.getElementById('sider-selected-text-section');
+    const selectedTextDisplay = document.getElementById('sider-selected-text-display');
+    const removeSelectionBtn = document.getElementById('sider-remove-selection-btn');
+    const input = document.getElementById('sider-chat-input');
+    const actionButtons = document.querySelectorAll('.sider-action-btn');
+    const moreActionsBtn = document.getElementById('sider-more-actions-btn');
+    
+    if (selectedTextSection && selectedTextDisplay && input) {
+      selectedTextDisplay.textContent = text;
+      selectedTextSection.style.display = 'block';
+      
+      // Don't populate input with selected text - keep it empty
+      // input.value = text;
+      // autoResize(input);
+      
+      // Remove selection handler
+      if (removeSelectionBtn) {
+        removeSelectionBtn.onclick = () => {
+          selectedTextSection.style.display = 'none';
+          input.value = '';
+          autoResize(input);
+        };
+      }
+      
+      // Attach action button handlers
+      actionButtons.forEach(btn => {
+        if (btn.id !== 'sider-more-actions-btn') {
+          btn.onclick = (e) => {
+            e.stopPropagation();
+            const action = btn.getAttribute('data-action');
+            if (action && text) {
+              handleSelectionAction(action, text);
+            }
+          };
+        }
+      });
+      
+      // More actions button
+      if (moreActionsBtn) {
+        moreActionsBtn.onclick = (e) => {
+          e.stopPropagation();
+          showMoreSelectionActions(text);
+        };
+      }
+    }
   }
+
+  function handleSelectionAction(action, text) {
+    if (!text) return;
+    
+    const input = document.getElementById('sider-chat-input');
+    
+    switch (action) {
+      case 'explain':
+        if (input) {
+          input.value = `Explain this text: "${text}"`;
+          autoResize(input);
+          setTimeout(() => sendMessage(), 200);
+        }
+        break;
+      case 'translate':
+        if (input) {
+          input.value = `Translate to English: "${text}"`;
+          autoResize(input);
+          setTimeout(() => sendMessage(), 200);
+        }
+        break;
+      case 'summarize':
+        if (input) {
+          input.value = `Summarize this text: "${text}"`;
+          autoResize(input);
+          setTimeout(() => sendMessage(), 200);
+        }
+        break;
+      case 'copy':
+        navigator.clipboard.writeText(text).then(() => {
+          showCopyFeedback();
+        });
+        break;
+      case 'highlight':
+        // Dispatch event for toolbar to handle highlighting
+        window.dispatchEvent(new CustomEvent('sider:highlight-text', { detail: { text } }));
+        break;
+      case 'readaloud':
+        try {
+          const utter = new SpeechSynthesisUtterance(text);
+          window.speechSynthesis.cancel();
+          window.speechSynthesis.speak(utter);
+        } catch (_) {}
+        break;
+      case 'answer':
+        if (input) {
+          input.value = `Answer this question: "${text}"`;
+          autoResize(input);
+          setTimeout(() => sendMessage(), 200);
+        }
+        break;
+      case 'explaincodes':
+        if (input) {
+          input.value = `Explain the code: "${text}"`;
+          autoResize(input);
+          setTimeout(() => sendMessage(), 200);
+        }
+        break;
+      default:
+        if (input) {
+          input.value = `${action}: "${text}"`;
+          autoResize(input);
+          setTimeout(() => sendMessage(), 200);
+        }
+    }
+  }
+
+  function showMoreSelectionActions(text) {
+    // This would show a dropdown/menu with more actions like the toolbar menu
+    // For now, we can dispatch the same events as the toolbar does
+    const menu = document.createElement('div');
+    menu.className = 'sider-more-actions-menu';
+    menu.style.cssText = `
+      position: fixed;
+      background: #ffffff;
+      border: 1px solid #e5e7eb;
+      border-radius: 8px;
+      box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+      padding: 8px;
+      z-index: 2147483647;
+      min-width: 180px;
+    `;
+    
+    const actions = [
+      { label: 'Copy', action: 'copy' },
+      { label: 'Highlight', action: 'highlight' },
+      { label: 'Read aloud', action: 'readaloud' },
+      { label: 'Answer this question', action: 'answer' },
+      { label: 'Explain codes', action: 'explaincodes' }
+    ];
+    
+    actions.forEach(item => {
+      const btn = document.createElement('button');
+      btn.style.cssText = `
+        width: 100%;
+        text-align: left;
+        padding: 10px 12px;
+        background: transparent;
+        border: none;
+        cursor: pointer;
+        font-size: 14px;
+        color: #111827;
+        border-radius: 6px;
+      `;
+      btn.textContent = item.label;
+      btn.onmouseover = () => btn.style.background = '#f3f4f6';
+      btn.onmouseout = () => btn.style.background = 'transparent';
+      btn.onclick = () => {
+        handleSelectionAction(item.action, text);
+        document.body.removeChild(menu);
+      };
+      menu.appendChild(btn);
+    });
+    
+    const moreBtn = document.getElementById('sider-more-actions-btn');
+    if (moreBtn) {
+      const rect = moreBtn.getBoundingClientRect();
+      menu.style.top = `${rect.bottom + 4}px`;
+      menu.style.left = `${rect.left}px`;
+      document.body.appendChild(menu);
+      
+      const removeMenu = (e) => {
+        if (!menu.contains(e.target) && e.target !== moreBtn) {
+          if (menu.parentNode) {
+            document.body.removeChild(menu);
+          }
+          document.removeEventListener('click', removeMenu);
+        }
+      };
+      setTimeout(() => document.addEventListener('click', removeMenu), 0);
+    }
+  }
+
+  // Listen for text selection events
+  window.addEventListener('sider:text-selected', (e) => {
+    const text = e.detail?.text || '';
+    if (text) {
+      updateSelectedTextInInput(text);
+    }
+  });
+
+  // Listen for text cleared events (when clicking outside)
+  window.addEventListener('sider:text-cleared', () => {
+    const selectedTextSection = document.getElementById('sider-selected-text-section');
+    const imagePreviewSection = document.getElementById('sider-image-preview-section');
+    const input = document.getElementById('sider-chat-input');
+    
+    if (selectedTextSection) {
+      selectedTextSection.style.display = 'none';
+    }
+    if (imagePreviewSection) {
+      imagePreviewSection.style.display = 'none';
+    }
+    if (input) {
+      input.value = '';
+      autoResize(input);
+    }
+  });
+
+  // Listen for image preview events
+  window.addEventListener('sider:chat-image', (e) => {
+    const { src, alt, element } = e.detail || {};
+    if (!src) return;
+    
+    // Open chat panel if closed
+    if (!isPanelOpen) {
+      togglePanel();
+    }
+    
+    // Show image preview section
+    const imagePreviewSection = document.getElementById('sider-image-preview-section');
+    const imageThumb = document.getElementById('sider-image-preview-thumb');
+    const selectedTextSection = document.getElementById('sider-selected-text-section');
+    const input = document.getElementById('sider-chat-input');
+    
+    // Hide selected text section if visible
+    if (selectedTextSection) {
+      selectedTextSection.style.display = 'none';
+    }
+    
+    // Show image preview section
+    if (imagePreviewSection && imageThumb) {
+      imageThumb.src = src;
+      imageThumb.alt = alt || 'Image';
+      imagePreviewSection.style.display = 'block';
+      
+      // Clear input but keep placeholder visible
+      if (input) {
+        input.value = '';
+        input.placeholder = 'Ask anything, @models, / prompts';
+        autoResize(input);
+      }
+      
+      // Attach event listeners to image action buttons
+      const imageActionBtns = imagePreviewSection.querySelectorAll('.sider-image-action-btn');
+      imageActionBtns.forEach(btn => {
+        btn.onclick = (e) => {
+          e.stopPropagation();
+          const action = btn.getAttribute('data-action');
+          handleImageAction(action, src, alt);
+        };
+      });
+    }
+    
+    console.log('Chat with image:', src);
+  });
   
+  function handleImageAction(action, src, alt) {
+    const input = document.getElementById('sider-chat-input');
+    if (!input) return;
+    
+    switch (action) {
+      case 'extract-text':
+        input.value = 'Extract all text from this image';
+        break;
+      case 'math-solver':
+        input.value = 'Solve the math problems in this image';
+        break;
+      case 'translate-image':
+        input.value = 'Translate all text in this image to English';
+        break;
+    }
+    autoResize(input);
+    input.focus();
+  }
+
+  window.addEventListener('sider:extract-text', (e) => {
+    const { src, alt, element } = e.detail || {};
+    if (!src) return;
+    
+    // Open chat panel if closed
+    if (!isPanelOpen) {
+      togglePanel();
+    }
+    
+    // Show image preview section
+    const imagePreviewSection = document.getElementById('sider-image-preview-section');
+    const imageThumb = document.getElementById('sider-image-preview-thumb');
+    const selectedTextSection = document.getElementById('sider-selected-text-section');
+    const input = document.getElementById('sider-chat-input');
+    
+    // Hide selected text section if visible
+    if (selectedTextSection) {
+      selectedTextSection.style.display = 'none';
+    }
+    
+    // Show image preview section
+    if (imagePreviewSection && imageThumb) {
+      imageThumb.src = src;
+      imageThumb.alt = alt || 'Image';
+      imagePreviewSection.style.display = 'block';
+    }
+    
+    // Set input with extract text prompt
+    if (input) {
+      input.value = 'Extract all text from this image';
+      input.placeholder = 'Ask anything, @models, / prompts';
+      autoResize(input);
+    }
+    
+    console.log('Extract text from image:', src);
+    // TODO: Implement OCR/image text extraction
+  });
+
+  window.addEventListener('sider:save-wisebase', (e) => {
+    const { src, alt } = e.detail || {};
+    if (!src) return;
+    
+    console.log('Save to Wisebase:', src, alt);
+    // TODO: Implement Wisebase save functionality
+    alert('Save to Wisebase feature coming soon!');
+  });
+
+  window.addEventListener('sider:image-tool', (e) => {
+    const { tool, src, alt, element } = e.detail || {};
+    if (!tool || !src) return;
+    
+    // Open chat panel if closed
+    if (!isPanelOpen) {
+      togglePanel();
+    }
+    
+    // Show image preview section
+    const imagePreviewSection = document.getElementById('sider-image-preview-section');
+    const imageThumb = document.getElementById('sider-image-preview-thumb');
+    const selectedTextSection = document.getElementById('sider-selected-text-section');
+    
+    // Hide selected text section if visible
+    if (selectedTextSection) {
+      selectedTextSection.style.display = 'none';
+    }
+    
+    // Show image preview section
+    if (imagePreviewSection && imageThumb) {
+      imageThumb.src = src;
+      imageThumb.alt = alt || 'Image';
+      imagePreviewSection.style.display = 'block';
+    }
+    
+    const toolLabels = {
+      'bg-remover': 'Remove background from this image',
+      'text-remover': 'Remove text from this image',
+      'inpaint': 'Inpaint this image',
+      'photo-eraser': 'Erase unwanted parts from this image',
+      'bg-changer': 'Change background of this image',
+      'upscaler': 'Upscale this image',
+      'variations': 'Create variations of this image'
+    };
+    
+    const input = document.getElementById('sider-chat-input');
+    if (input) {
+      input.value = toolLabels[tool] || `Apply ${tool} to this image`;
+      input.placeholder = 'Ask anything, @models, / prompts';
+      autoResize(input);
+    }
+    
+    console.log('Image tool:', tool, src);
+    // TODO: Implement image tool functionality
+  });
+
+  // Initialize core panel only; toolbar handled by toolbar.js, image preview by image-preview.js
   if (document.readyState === 'loading') {
     document.addEventListener('DOMContentLoaded', () => {
       initializePanel();
-      initializeSelectionToolbar();
+      try { window.SiderToolbar?.init(); } catch (_) {}
+      try { window.SiderImagePreview?.init(); } catch (_) {}
     });
   } else {
     initializePanel();
-    initializeSelectionToolbar();
+    try { window.SiderToolbar?.init(); } catch (_) {}
+    try { window.SiderImagePreview?.init(); } catch (_) {}
   }
 })();
 

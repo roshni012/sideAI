@@ -1,0 +1,249 @@
+/* AI Modules Modal Styles */
+.sider-modal-backdrop {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.4);
+  z-index: 2147483646;
+  display: none;
+  animation: sider-fade-in 0.2s ease-out;
+}
+
+@keyframes sider-fade-in {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+.sider-modal {
+  position: fixed;
+  right: calc(var(--sider-panel-width, 380px) + 20px);
+  top: 50%;
+  transform: translateY(-50%);
+  width: 420px;
+  max-width: calc(100vw - 60px);
+  max-height: 85vh;
+  background: #ffffff;
+  border: 1px solid #e5e7eb;
+  border-radius: 16px;
+  box-shadow: 0 20px 48px rgba(0, 0, 0, 0.2);
+  z-index: 2147483647;
+  display: none;
+  animation: sider-modal-slide-in 0.3s ease-out;
+  overflow: hidden;
+}
+
+@keyframes sider-modal-slide-in {
+  from {
+    opacity: 0;
+    transform: translateY(-48%) scale(0.95);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(-50%) scale(1);
+  }
+}
+
+.sider-modal-header {
+  padding: 20px 24px;
+  border-bottom: 1px solid #e5e7eb;
+  background: #ffffff;
+}
+
+.sider-modal-header h3 {
+  margin: 0;
+  font-size: 18px;
+  font-weight: 600;
+  color: #111827;
+}
+
+.sider-modal-body {
+  padding: 24px;
+  max-height: calc(85vh - 160px);
+  overflow-y: auto;
+}
+
+.sider-model-list {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  margin-bottom: 24px;
+}
+
+.sider-model-section {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.sider-model-section-title {
+  font-size: 12px;
+  font-weight: 600;
+  color: #6b7280;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  margin-bottom: 4px;
+}
+
+.sider-model-item {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 12px 16px;
+  border: 1px solid #e5e7eb;
+  border-radius: 10px;
+  background: #ffffff;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.sider-model-item:hover {
+  background: #f9fafb;
+  border-color: #d1d5db;
+}
+
+.sider-model-item input[type="radio"] {
+  width: 18px;
+  height: 18px;
+  cursor: pointer;
+  accent-color: #3b82f6;
+}
+
+.sider-model-item input[type="radio"]:checked + .sider-model-info,
+.sider-model-item:has(input[type="radio"]:checked) {
+  background: #eff6ff;
+  border-color: #3b82f6;
+}
+
+.sider-model-info {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.sider-model-icon {
+  font-size: 24px;
+  line-height: 1;
+}
+
+.sider-model-name {
+  font-size: 14px;
+  font-weight: 500;
+  color: #111827;
+}
+
+.sider-keys-section {
+  border-top: 1px solid #e5e7eb;
+  padding-top: 24px;
+  margin-top: 8px;
+}
+
+.sider-field {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  margin-bottom: 16px;
+}
+
+.sider-field:last-child {
+  margin-bottom: 0;
+}
+
+.sider-field label {
+  font-size: 13px;
+  font-weight: 500;
+  color: #374151;
+}
+
+.sider-field input {
+  padding: 10px 12px;
+  border: 1px solid #d1d5db;
+  border-radius: 8px;
+  font-size: 13px;
+  font-family: inherit;
+  background: #ffffff;
+  color: #111827;
+  transition: border-color 0.2s, box-shadow 0.2s;
+}
+
+.sider-field input:focus {
+  outline: none;
+  border-color: #3b82f6;
+  box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
+}
+
+.sider-field input::placeholder {
+  color: #9ca3af;
+}
+
+.sider-modal-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 10px;
+  padding: 20px 24px;
+  border-top: 1px solid #e5e7eb;
+  background: #f9fafb;
+}
+
+.sider-btn {
+  padding: 10px 20px;
+  border-radius: 8px;
+  border: 1px solid #e5e7eb;
+  background: #ffffff;
+  color: #374151;
+  font-size: 14px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.sider-btn:hover {
+  background: #f3f4f6;
+  border-color: #d1d5db;
+}
+
+.sider-btn-primary {
+  background: #3b82f6;
+  color: #ffffff;
+  border-color: #2563eb;
+}
+
+.sider-btn-primary:hover {
+  background: #2563eb;
+  border-color: #1d4ed8;
+}
+
+.sider-btn:active {
+  transform: scale(0.98);
+}
+
+/* Responsive adjustments */
+@media (max-width: 768px) {
+  .sider-modal {
+    right: 20px;
+    left: 20px;
+    width: auto;
+    max-width: none;
+  }
+}
+
+/* Scrollbar styling */
+.sider-modal-body::-webkit-scrollbar {
+  width: 6px;
+}
+
+.sider-modal-body::-webkit-scrollbar-track {
+  background: #f9fafb;
+}
+
+.sider-modal-body::-webkit-scrollbar-thumb {
+  background: #d1d5db;
+  border-radius: 3px;
+}
+
+.sider-modal-body::-webkit-scrollbar-thumb:hover {
+  background: #9ca3af;
+}
+

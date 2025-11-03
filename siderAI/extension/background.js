@@ -49,14 +49,13 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
 
 async function captureScreenshot(bounds, tabId, sendResponse) {
   try {
-    // Note: Full screenshot capture requires additional permissions
-    // For now, we'll use a canvas-based approach from content script
-    // In a real implementation, you'd use chrome.tabs.captureVisibleTab
+    // Capture the visible tab as a PNG data URL
+    const dataUrl = await chrome.tabs.captureVisibleTab(undefined, { format: 'png' });
+
+    // If bounds were provided, crop on the client side (content script) if needed.
+    // Here we return the full screenshot for simplicity; the content script will show a preview.
     if (sendResponse) {
-      sendResponse({ 
-        success: true, 
-        message: 'Screenshot area selected. Note: Full capture requires additional setup.' 
-      });
+      sendResponse({ success: true, dataUrl });
     }
     return true;
   } catch (error) {

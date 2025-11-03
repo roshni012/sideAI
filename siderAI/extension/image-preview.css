@@ -1,0 +1,261 @@
+.sider-image-overlay {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px;
+  background: rgba(30, 41, 59, 0.95);
+  border-radius: 8px;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+  backdrop-filter: blur(8px);
+  opacity: 0.9;
+  transition: all 0.2s ease;
+  z-index: 100000;
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+}
+
+.sider-image-overlay:hover {
+  opacity: 1 !important;
+  padding: 8px 12px;
+}
+
+.sider-image-overlay:hover .sider-ai-tools-text {
+  display: inline;
+}
+
+.sider-image-overlay:hover .sider-image-close-btn {
+  display: flex;
+}
+
+.sider-ai-tools-btn {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 6px;
+  background: transparent;
+  border: none;
+  color: #ffffff;
+  font-size: 14px;
+  font-weight: 500;
+  cursor: pointer;
+  border-radius: 6px;
+  transition: background 0.2s ease;
+  outline: none;
+}
+
+.sider-ai-tools-btn:hover {
+  background: rgba(255, 255, 255, 0.1);
+}
+
+.sider-ai-tools-btn svg {
+  width: 24px;
+  height: 24px;
+  color: #ffffff;
+  flex-shrink: 0;
+}
+
+.sider-ai-tools-text {
+  display: none;
+  white-space: nowrap;
+}
+
+.sider-image-close-btn {
+  display: none;
+  align-items: center;
+  justify-content: center;
+  width: 24px;
+  height: 24px;
+  padding: 0;
+  background: rgba(255, 255, 255, 0.1);
+  border: none;
+  border-radius: 50%;
+  color: #ffffff;
+  font-size: 14px;
+  cursor: pointer;
+  transition: background 0.2s ease;
+  outline: none;
+  flex-shrink: 0;
+}
+
+.sider-image-close-btn:hover {
+  background: rgba(255, 255, 255, 0.2);
+}
+
+.sider-image-menu {
+  width: 180px;
+  min-width: 180px;
+  max-width: calc(100vw - 20px);
+  background: rgba(30, 41, 59, 0.98);
+  border-radius: 8px;
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.25);
+  backdrop-filter: blur(12px);
+  padding: 6px;
+  z-index: 100001 !important;
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+  overflow: hidden;
+  visibility: visible !important;
+  opacity: 1 !important;
+  display: block !important;
+  pointer-events: auto !important;
+}
+
+.sider-menu-item {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 10px 12px;
+  color: #ffffff;
+  font-size: 14px;
+  cursor: pointer;
+  border-radius: 6px;
+  transition: background 0.2s ease;
+  position: relative;
+  outline: none;
+  -webkit-tap-highlight-color: transparent;
+}
+
+.sider-menu-item:hover,
+.sider-menu-item:focus {
+  background: rgba(255, 255, 255, 0.1);
+  outline: none;
+}
+
+.sider-menu-item.has-submenu:hover,
+.sider-menu-item.has-submenu:focus {
+  background: rgba(255, 255, 255, 0.1);
+}
+
+.sider-menu-icon {
+  font-size: 18px;
+  width: 20px;
+  min-width: 20px;
+  text-align: center;
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.sider-menu-label {
+  flex: 1;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.sider-menu-arrow {
+  color: rgba(255, 255, 255, 0.6);
+  font-size: 18px;
+  font-weight: 300;
+  flex-shrink: 0;
+}
+
+.sider-image-submenu {
+  width: 180px;
+  min-width: 180px;
+  max-width: calc(100vw - 20px);
+  background: rgba(30, 41, 59, 0.98);
+  border-radius: 8px;
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.25);
+  backdrop-filter: blur(12px);
+  padding: 6px;
+  z-index: 100002;
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+  overflow: hidden;
+}
+
+/* Responsive styles */
+@media (max-width: 768px) {
+  .sider-image-overlay {
+    padding: 6px;
+    gap: 6px;
+  }
+
+  .sider-image-overlay:hover {
+    padding: 6px 10px;
+  }
+
+  .sider-ai-tools-btn {
+    padding: 4px;
+    font-size: 12px;
+    gap: 6px;
+  }
+
+  .sider-ai-tools-btn svg {
+    width: 20px;
+    height: 20px;
+  }
+
+  .sider-ai-tools-text {
+    display: none;
+  }
+
+  .sider-image-overlay:hover .sider-ai-tools-text {
+    display: none; /* Keep text hidden on mobile even on hover */
+  }
+
+  .sider-image-menu,
+  .sider-image-submenu {
+    min-width: 160px;
+    max-width: calc(100vw - 40px);
+    padding: 4px;
+  }
+
+  .sider-menu-item {
+    padding: 8px 10px;
+    font-size: 13px;
+    gap: 8px;
+  }
+
+  .sider-menu-icon {
+    font-size: 16px;
+    width: 18px;
+    min-width: 18px;
+  }
+
+  .sider-menu-label {
+    font-size: 13px;
+  }
+}
+
+/* Tablet responsive */
+@media (min-width: 769px) and (max-width: 1024px) {
+  .sider-image-menu,
+  .sider-image-submenu {
+    width: 200px;
+    min-width: 200px;
+    max-width: calc(100vw - 40px);
+  }
+
+  .sider-menu-item {
+    padding: 9px 11px;
+    font-size: 13.5px;
+  }
+}
+
+/* Prevent selection */
+.sider-image-overlay,
+.sider-image-menu,
+.sider-image-submenu {
+  user-select: none;
+  -webkit-user-select: none;
+  -moz-user-select: none;
+  -ms-user-select: none;
+}
+
+/* Animation */
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+    transform: translateY(-5px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.sider-image-menu,
+.sider-image-submenu {
+  animation: fadeIn 0.2s ease;
+}
+

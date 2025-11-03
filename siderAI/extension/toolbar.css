@@ -1,0 +1,186 @@
+#sider-selection-toolbar {
+  position: fixed;
+  display: none;
+  align-items: center;
+  gap: 4px;
+  background: #ffffff;
+  border: 1px solid #e5e7eb;
+  border-radius: 12px;
+  padding: 6px 8px;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+  z-index: 2147483646;
+  flex-wrap: wrap;
+  max-width: calc(100vw - 20px);
+}
+
+.sider-selection-btn {
+  background: transparent;
+  border: none;
+  cursor: pointer;
+  padding: 6px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #6b7280;
+  border-radius: 8px;
+  transition: all 0.2s;
+  width: 32px;
+  height: 32px;
+}
+
+.sider-selection-btn:hover {
+  background: #f3f4f6;
+  color: #111827;
+}
+
+.sider-highlight {
+  background-color: #fef08a !important;
+  padding: 2px 0 !important;
+}
+
+.sider-pinned {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  margin-right: 4px;
+  flex-wrap: wrap;
+}
+
+.sider-pin-btn {
+  width: 28px;
+  height: 28px;
+  border-radius: 8px;
+  border: 1px solid #e5e7eb;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  background: #ffffff;
+  color: #6b7280;
+  cursor: pointer;
+  font-size: 16px;
+  transition: all 0.2s;
+  flex-shrink: 0;
+}
+
+.sider-pin-btn:hover {
+  background: #f3f4f6;
+  color: #111827;
+  border-color: #d1d5db;
+  transform: scale(1.05);
+}
+
+@media (max-width: 768px) {
+  #sider-selection-toolbar {
+    padding: 4px 6px;
+    gap: 3px;
+    max-width: calc(100vw - 10px);
+  }
+  
+  .sider-pin-btn {
+    width: 24px;
+    height: 24px;
+    font-size: 14px;
+  }
+  
+  .sider-selection-btn {
+    width: 28px;
+    height: 28px;
+    padding: 4px;
+  }
+}
+
+/* More Options Popup Menu */
+.sider-more-menu {
+  position: absolute;
+  min-width: 220px;
+  background: #ffffff;
+  border: 1px solid #e5e7eb;
+  border-radius: 12px;
+  box-shadow: 0 8px 24px rgba(0,0,0,0.12);
+  padding: 6px 0;
+  z-index: 2147483647;
+  overflow: hidden;
+}
+
+.sider-more-menu-item {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  width: 100%;
+  padding: 10px 14px;
+  font-size: 14px;
+  color: #111827;
+  background: transparent;
+  border: 0;
+  cursor: pointer;
+}
+
+.sider-more-menu-item:hover {
+  background: #f3f4f6;
+}
+
+.sider-more-menu-icon {
+  width: 18px;
+  height: 18px;
+  color: #6b7280;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.sider-more-menu-right {
+  margin-left: auto;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  color: #9ca3af;
+}
+
+.sider-more-menu-sep {
+  height: 1px;
+  margin: 6px 0;
+  background: #f3f4f6;
+}
+
+.sider-pin-toggle {
+  width: 20px;
+  height: 20px;
+  border-radius: 6px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  font-size: 16px;
+  transition: all 0.2s;
+  border: 1px solid transparent;
+  line-height: 1;
+}
+
+.sider-pin-toggle:hover {
+  background: #f3f4f6;
+}
+
+/* Unpinned state - grey outlined/muted */
+.sider-pin-toggle:not(.active) {
+  opacity: 0.5;
+  filter: grayscale(1) brightness(1.1);
+  color: #9ca3af !important;
+  font-weight: normal;
+}
+
+.sider-pin-toggle:not(.active):hover {
+  opacity: 0.8;
+  filter: grayscale(0.8);
+  background: #f9fafb;
+}
+
+/* Pinned state - purple solid */
+.sider-pin-toggle.active {
+  opacity: 1;
+  filter: none;
+  color: #7c3aed !important;
+  font-weight: bold;
+  background: rgba(124, 58, 237, 0.15);
+  transform: scale(1.05);
+}
+

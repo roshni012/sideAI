@@ -1,17 +1,45 @@
 /* Compress website body when panel is open - ensures panel appears outside */
 html.sider-panel-active {
-  margin-right: 380px !important;
+  margin-right: var(--sider-panel-width, 380px) !important;
   transition: margin-right 0.3s ease-in-out !important;
   overflow-x: hidden !important;
   box-sizing: border-box !important;
 }
 
 body.sider-panel-active {
-  width: calc(100vw - 380px) !important;
-  max-width: calc(100vw - 380px) !important;
+  width: calc(100vw - var(--sider-panel-width, 380px)) !important;
+  max-width: calc(100vw - var(--sider-panel-width, 380px)) !important;
   margin-right: 0 !important;
   transition: width 0.3s ease-in-out, max-width 0.3s ease-in-out !important;
   overflow-x: hidden !important;
+  box-sizing: border-box !important;
+}
+
+/* Prevent nested container clipping */
+html.sider-panel-active [class*="container"],
+html.sider-panel-active [class*="wrapper"],
+html.sider-panel-active main,
+html.sider-panel-active section {
+  max-width: 100% !important;
+  width: 100% !important;
+  overflow-x: hidden !important;
+  box-sizing: border-box !important;
+}
+
+/* Fix fixed/sticky headers and navbars */
+html.sider-panel-active nav[class*="fixed"],
+html.sider-panel-active header[class*="fixed"],
+html.sider-panel-active [class*="fixed"],
+html.sider-panel-active [style*="position: fixed"],
+html.sider-panel-active [style*="position:fixed"] {
+  max-width: calc(100vw - var(--sider-panel-width, 380px)) !important;
+  width: calc(100% - var(--sider-panel-width, 380px)) !important;
+  box-sizing: border-box !important;
+}
+
+html.sider-panel-active [style*="position: sticky"],
+html.sider-panel-active [style*="position:sticky"] {
+  max-width: calc(100vw - var(--sider-panel-width, 380px)) !important;
   box-sizing: border-box !important;
 }
 
@@ -29,6 +57,12 @@ body:not(.sider-panel-active) {
   max-width: 100% !important;
 }
 
+/* Smooth transitions for html and body */
+html, body {
+  transition: margin-right 0.3s ease-in-out, width 0.3s ease-in-out !important;
+  overflow-x: hidden;
+}
+
 /* Adjust common container patterns - make them responsive to compressed viewport */
 html.sider-panel-active [class*="container"]:not([data-sider-adjusted]),
 html.sider-panel-active [id*="container"]:not([data-sider-adjusted]),
@@ -43,17 +77,25 @@ html.sider-panel-active [class*="content"]:not([data-sider-adjusted]) {
   position: fixed;
   top: 0;
   right: 0;
-  width: 380px;
+  width: var(--sider-panel-width, 380px);
   height: 100vh;
   z-index: 2147483647;
-  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
-  transform: translateX(100%);
-  transition: transform 0.3s ease-in-out;
   background: #ffffff;
   box-shadow: -2px 0 10px rgba(0, 0, 0, 0.1);
-  /* Ensure panel appears outside, not overlapping */
-  margin: 0;
-  padding: 0;
+  transition: transform 0.3s ease-in-out, width 0.3s ease-in-out;
+  will-change: transform;
+  transform: translateX(100%);
+}
+
+/* Responsive widths */
+@media (min-width: 1200px) {
+  #sider-ai-chat-panel { width: 380px; }
+}
+@media (max-width: 1199px) and (min-width: 769px) {
+  #sider-ai-chat-panel { width: 320px; }
+}
+@media (max-width: 768px) {
+  #sider-ai-chat-panel { width: 100vw; }
 }
 
 #sider-ai-chat-panel.sider-panel-open {
@@ -279,6 +321,154 @@ html.sider-panel-active [class*="content"]:not([data-sider-adjusted]) {
   position: relative;
 }
 
+.sider-selected-text-section {
+  padding: 12px 16px;
+  background: #ffffff;
+}
+
+.sider-selected-text-section #sider-remove-selection-btn:hover {
+  background: #f3f4f6;
+  border-radius: 4px;
+  color: #111827;
+}
+
+.sider-selected-text-section #sider-selected-text-display {
+  font-size: 14px;
+  line-height: 1.5;
+  color: #111827;
+  background: #f9fafb;
+  border: 1px solid #e5e7eb;
+  border-radius: 8px;
+  padding: 12px;
+  max-height: 120px;
+  overflow-y: auto;
+  white-space: pre-wrap;
+  word-wrap: break-word;
+  scrollbar-width: thin;
+  scrollbar-color: #d1d5db #f9fafb;
+}
+
+.sider-selected-text-section #sider-selected-text-display::-webkit-scrollbar {
+  width: 8px;
+}
+
+.sider-selected-text-section #sider-selected-text-display::-webkit-scrollbar-track {
+  background: #f9fafb;
+  border-radius: 4px;
+}
+
+.sider-selected-text-section #sider-selected-text-display::-webkit-scrollbar-thumb {
+  background: #d1d5db;
+  border-radius: 4px;
+}
+
+.sider-selected-text-section #sider-selected-text-display::-webkit-scrollbar-thumb:hover {
+  background: #9ca3af;
+}
+
+.sider-selection-actions {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 8px;
+}
+
+.sider-action-btn {
+  background: #ffffff;
+  border: 1px solid #e5e7eb;
+  border-radius: 8px;
+  padding: 8px 12px;
+  font-size: 14px;
+  font-weight: 500;
+  color: #111827;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.2s;
+  min-height: 36px;
+}
+
+.sider-action-btn[data-action="translate"] {
+  flex-direction: column;
+  gap: 2px;
+}
+
+.sider-action-btn[data-action="translate"] svg {
+  margin-top: 2px;
+}
+
+.sider-action-btn:hover {
+  background: #f3f4f6;
+  border-color: #d1d5db;
+}
+
+.sider-action-btn:active {
+  transform: scale(0.98);
+}
+
+.sider-input-area {
+  position: relative;
+  border: 1px solid #d1d5db;
+  border-radius: 8px;
+  background: #ffffff;
+  padding: 12px;
+}
+
+.sider-input-area:focus-within {
+  border-color: #3b82f6;
+  box-shadow: 0 0 0 3px rgba(59,130,246,0.1);
+}
+
+/* Attachments preview below toolbar, above textarea */
+.sider-attachments {
+  position: absolute;
+  top: 8px;
+  left: 12px;
+  right: 12px;
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 8px;
+  pointer-events: auto;
+}
+
+.sider-attachment-chip {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 6px 28px 6px 6px;
+  border: 1px solid #e5e7eb;
+  border-radius: 12px;
+  background: #ffffff;
+  box-shadow: 0 1px 2px rgba(0,0,0,0.04);
+}
+
+.sider-attachment-thumb {
+  width: 32px;
+  height: 32px;
+  border-radius: 8px;
+  object-fit: cover;
+  border: 1px solid #e5e7eb;
+}
+
+.sider-attachment-remove {
+  position: absolute;
+  top: -6px;
+  right: -6px;
+  width: 20px;
+  height: 20px;
+  border-radius: 50%;
+  background: #e5e7eb;
+  border: none;
+  color: #374151;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 12px;
+}
+
 .sider-toolbar {
   display: flex;
   gap: 8px;
@@ -406,9 +596,9 @@ html.sider-panel-active [class*="content"]:not([data-sider-adjusted]) {
 
 .sider-chat-input {
   width: 100%;
-  padding: 12px;
-  border: 1px solid #d1d5db;
-  border-radius: 8px;
+  padding: 0;
+  border: none;
+  border-radius: 0;
   font-size: 14px;
   font-family: inherit;
   resize: none;
@@ -418,16 +608,14 @@ html.sider-panel-active [class*="content"]:not([data-sider-adjusted]) {
   background: #ffffff;
 }
 
-.sider-chat-input:focus {
-  outline: none;
-  border-color: #3b82f6;
-  box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
-}
+.sider-chat-input:focus { outline: none; }
 
 .sider-input-buttons {
   display: flex;
-  justify-content: flex-end;
+  align-items: center;
+  justify-content: space-between;
   gap: 8px;
+  width: 100%;
 }
 
 .sider-send-btn {
@@ -451,6 +639,28 @@ html.sider-panel-active [class*="content"]:not([data-sider-adjusted]) {
 
 .sider-send-btn:active {
   transform: scale(0.98);
+}
+
+/* Image preview section */
+.sider-image-preview-section {
+  padding: 12px 16px;
+  background: #ffffff;
+}
+
+.sider-image-action-btn:hover {
+  background: #e5e7eb !important;
+  border-color: #d1d5db !important;
+}
+
+.sider-bottom-action-btn:hover {
+  background: #e5e7eb !important;
+  border-color: #d1d5db !important;
+}
+
+.sider-mic-btn:hover {
+  background: #f3f4f6 !important;
+  color: #111827 !important;
+  border-radius: 6px;
 }
 
 /* Scrollbar styling */
@@ -561,11 +771,6 @@ html.sider-panel-active [class*="content"]:not([data-sider-adjusted]) {
   color: #111827;
 }
 
-/* Highlighted text */
-.sider-highlight {
-  background-color: #fef08a !important;
-  padding: 2px 0 !important;
-}
 
 /* Note marker */
 .sider-note-marker {
@@ -601,16 +806,14 @@ html.sider-panel-active [class*="content"]:not([data-sider-adjusted]) {
   margin-bottom: -5px;
 }
 
-/* Responsive */
+/* Responsive - Updated media queries */
 @media (max-width: 768px) {
   #sider-ai-chat-panel {
-    width: 100%;
-    max-width: 100%;
+    width: 100vw;
   }
   
   body.sider-panel-active {
-    width: 0 !important;
-    max-width: 0 !important;
+    width: 100% !important;
   }
   
   html.sider-panel-active {
@@ -618,7 +821,7 @@ html.sider-panel-active [class*="content"]:not([data-sider-adjusted]) {
   }
 }
 
-@media (max-width: 1024px) {
+@media (max-width: 1199px) and (min-width: 769px) {
   #sider-ai-chat-panel {
     width: 320px;
   }
@@ -629,7 +832,7 @@ html.sider-panel-active [class*="content"]:not([data-sider-adjusted]) {
   }
   
   html.sider-panel-active {
-    margin-right: 320px !important;
+    margin-right: var(--sider-panel-width, 320px) !important;
   }
 }
 
