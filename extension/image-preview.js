@@ -8,16 +8,17 @@
   let isMenuHovered = false;
 
   const MENU_ITEMS = [
-    { id: 'chat-image', label: 'Chat with Image', icon: '💬', action: 'chat' },
-    { id: 'extract-text', label: 'Extract Text', icon: '↔️', action: 'extract' },
+    { id: 'chat-image', label: 'Chat with Image', icon: chrome.runtime.getURL('svg/chat-left.svg'), isSvg: true, action: 'chat' },
+    { id: 'extract-text', label: 'Extract Text', icon: chrome.runtime.getURL('svg/upc-scan.svg'), isSvg: true, action: 'extract' },
     { 
       id: 'image-tools', 
       label: 'Image Tools', 
-      icon: '🖌️', 
+      icon: chrome.runtime.getURL('svg/brush.svg'), 
+      isSvg: true,
       action: 'tools',
       hasSubmenu: true
     },
-    { id: 'save-wisebase', label: 'Save to Wisebase', icon: '📚', action: 'save' }
+    { id: 'save-wisebase', label: 'Save to Wisebase', icon: chrome.runtime.getURL('svg/save.svg'), isSvg: true, action: 'save' }
   ];
 
   const IMAGE_TOOLS_SUBMENU = [
@@ -30,34 +31,6 @@
     { id: 'variations', label: 'Create Variations', icon: '✨' }
   ];
 
-  function createBrainIcon() {
-    const svg = `
-      <svg width="24" height="24" viewBox="0 0 24 24" fill="none">
-        <!-- Brain outline - top view with two hemispheres -->
-        <path d="M12 3C8.5 3 6 5.5 6 9C6 10 6.2 11 6.5 12C5.5 12.5 4.5 13.5 4.5 15C4.5 16.5 5.5 17.5 7 18C7 18.8 7.2 19.5 7.5 20C6.5 20.5 6 21.5 6 22.5C6 23.3 6.7 24 7.5 24C8.3 24 9 23.3 9 22.5C9 22 9.2 21.5 9.5 21C10.5 21.5 11.5 21.5 12.5 21C12.8 21.5 13 22 13 22.5C13 23.3 13.7 24 14.5 24C15.3 24 16 23.3 16 22.5C16 21.5 15.5 20.5 14.5 20C14.8 19.5 15 18.8 15 18C16.5 17.5 17.5 16.5 17.5 15C17.5 13.5 16.5 12.5 15.5 12C15.8 11 16 10 16 9C16 5.5 13.5 3 12 3Z" 
-              stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" 
-              fill="none"/>
-        <!-- Central dividing line -->
-        <path d="M12 5V19" 
-              stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/>
-        <!-- Left hemisphere brain folds -->
-        <path d="M8 8C8 9 8.5 9.5 9 10" 
-              stroke="currentColor" stroke-width="1" stroke-linecap="round" fill="none"/>
-        <path d="M7 12C7 13 7.5 13.5 8 14" 
-              stroke="currentColor" stroke-width="1" stroke-linecap="round" fill="none"/>
-        <path d="M8 16C8 17 8.5 17.5 9 18" 
-              stroke="currentColor" stroke-width="1" stroke-linecap="round" fill="none"/>
-        <!-- Right hemisphere brain folds -->
-        <path d="M16 8C16 9 15.5 9.5 15 10" 
-              stroke="currentColor" stroke-width="1" stroke-linecap="round" fill="none"/>
-        <path d="M17 12C17 13 16.5 13.5 16 14" 
-              stroke="currentColor" stroke-width="1" stroke-linecap="round" fill="none"/>
-        <path d="M16 16C16 17 15.5 17.5 15 18" 
-              stroke="currentColor" stroke-width="1" stroke-linecap="round" fill="none"/>
-      </svg>
-    `;
-    return svg;
-  }
 
   function createOverlay(img) {
     if (imageOverlays.has(img)) return imageOverlays.get(img);
@@ -66,7 +39,7 @@
     overlay.className = 'sider-image-overlay';
     overlay.innerHTML = `
       <button class="sider-ai-tools-btn" title="AI Tools">
-        ${createBrainIcon()}
+        <img src="${chrome.runtime.getURL('icons/sider_logo.png')}" alt="AI Tools" class="sider-ai-tools-icon">
         <span class="sider-ai-tools-text">AI Tools</span>
       </button>
       <button class="sider-image-close-btn" title="Close">✕</button>
@@ -248,7 +221,7 @@
       <div class="sider-menu-item ${item.hasSubmenu ? 'has-submenu' : ''}" 
            data-action="${item.action}" 
            data-id="${item.id}">
-        <span class="sider-menu-icon">${item.icon}</span>
+        <span class="sider-menu-icon ${item.isSvg ? 'sider-menu-icon-svg' : ''}">${item.isSvg ? `<img src="${item.icon}" alt="" class="sider-menu-svg-icon">` : item.icon}</span>
         <span class="sider-menu-label">${item.label}</span>
         ${item.hasSubmenu ? '<span class="sider-menu-arrow">›</span>' : ''}
       </div>

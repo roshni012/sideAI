@@ -380,19 +380,19 @@
                 </div>
               </div>
             </div>
-            <div class="sider-image-preview-section" id="sider-image-preview-section" style="display: none;">
-              <div style="display: flex; gap: 12px; margin-bottom: 12px;">
-                <div style="position: relative; flex-shrink: 0;">
-                  <img id="sider-image-preview-thumb" src="" alt="Preview" style="width: 80px; height: 80px; object-fit: cover; border-radius: 8px; border: 1px solid #e5e7eb;">
-                  <button id="sider-image-preview-close" class="sider-image-preview-close-btn" title="Remove image" style="position: absolute; top: -8px; right: -8px; width: 24px; height: 24px; border-radius: 50%; background: #ffffff; border: 1px solid #d1d5db; box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1); cursor: pointer; display: flex; align-items: center; justify-content: center; padding: 0; font-size: 14px; color: #6b7280; transition: all 0.2s; z-index: 10;">
-                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                      <line x1="18" y1="6" x2="6" y2="18"></line>
-                      <line x1="6" y1="6" x2="18" y2="18"></line>
-                    </svg>
-                  </button>
-                </div>
-                <div style="flex: 1; display: flex; flex-direction: column; gap: 8px;">
-                  <div style="display: flex; gap: 8px; flex-wrap: wrap;">
+            <div class="sider-input-area">
+              <div class="sider-image-preview-section" id="sider-image-preview-section" style="display: none;">
+                <div style="display: flex; flex-direction: column; align-items: flex-start; gap: 8px; margin-bottom: 8px; width: 100%;">
+                  <div style="position: relative; flex-shrink: 0;">
+                    <img id="sider-image-preview-thumb" src="" alt="Preview" style="width: 80px; height: 80px; object-fit: cover; border-radius: 8px; border: 1px solid #e5e7eb; display: block;">
+                    <button id="sider-image-preview-close" class="sider-image-preview-close-btn" title="Remove image" style="position: absolute; top: -8px; right: -8px; width: 24px; height: 24px; border-radius: 50%; background: #ffffff; border: 1px solid #d1d5db; box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1); cursor: pointer; display: flex; align-items: center; justify-content: center; padding: 0; font-size: 14px; color: #6b7280; transition: all 0.2s; z-index: 10;">
+                      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <line x1="18" y1="6" x2="6" y2="18"></line>
+                        <line x1="6" y1="6" x2="18" y2="18"></line>
+                      </svg>
+                    </button>
+                  </div>
+                  <div style="display: flex; flex-direction: row; gap: 8px; align-items: flex-start; flex-wrap: wrap;">
                     <button class="sider-image-action-btn" data-action="extract-text" style="background: #f3f4f6; border: 1px solid #e5e7eb; border-radius: 6px; padding: 6px 12px; font-size: 13px; font-weight: 500; color: #111827; cursor: pointer; transition: all 0.2s; white-space: nowrap;">
                       Extract text
                     </button>
@@ -408,9 +408,6 @@
                   </div>
                 </div>
               </div>
-              <div style="height: 1px; background: #e5e7eb; margin: 0 -16px 12px;"></div>
-            </div>
-            <div class="sider-input-area">
               <div class="sider-selected-text-section" id="sider-selected-text-section" style="display: none;">
                 <div class="sider-selected-text-header">
                   <span class="sider-selected-text-title">Text from your selection</span>
@@ -467,12 +464,18 @@
                     <span>Deep Research</span>
                   </button>
                 </div>
-                <button class="sider-mic-btn" id="sider-mic-btn" title="Voice Input">
+                <button class="sider-mic-btn" id="sider-mic-btn" title="Voice Input" style="display: none;">
                   <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                     <path d="M12 1a3 3 0 0 0-3 3v8a3 3 0 0 0 6 0V4a3 3 0 0 0-3-3z"/>
                     <path d="M19 10v2a7 7 0 0 1-14 0v-2"/>
                     <line x1="12" y1="19" x2="12" y2="23"/>
                     <line x1="8" y1="23" x2="16" y2="23"/>
+                  </svg>
+                </button>
+                <button class="sider-send-btn" id="sider-send-btn" title="Send" style="display: none;">
+                  <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <line x1="22" y1="2" x2="11" y2="13"/>
+                    <polygon points="22 2 15 22 11 13 2 9 22 2"/>
                   </svg>
                 </button>
               </div>
@@ -680,11 +683,13 @@
         if (action === 'think' && input) {
           input.value = input.value ? input.value + ' [Think step by step]' : '[Think step by step]';
           autoResize(input);
+          if (window.toggleMicSendButton) window.toggleMicSendButton();
         } else if (action === 'deep-research') {
           // Trigger deep research functionality
           if (input) {
             input.value = input.value ? input.value + ' [Deep Research]' : '[Deep Research]';
             autoResize(input);
+            if (window.toggleMicSendButton) window.toggleMicSendButton();
           }
         }
       });
@@ -696,17 +701,88 @@
       // Voice input feature not implemented
     });
     
+    // Send button
+    const sendBtn = document.getElementById('sider-send-btn');
+    sendBtn?.addEventListener('click', (e) => {
+      e.stopPropagation();
+      e.preventDefault();
+      sendMessage();
+    });
+    
+    // Function to toggle between mic and send button based on input value
+    // Make it accessible globally
+    window.toggleMicSendButton = function() {
+      const input = document.getElementById('sider-chat-input');
+      const micButton = document.getElementById('sider-mic-btn');
+      const sendButton = document.getElementById('sider-send-btn');
+      
+      if (!input || !micButton || !sendButton) {
+        // If elements don't exist yet, try again later
+        setTimeout(() => {
+          if (window.toggleMicSendButton) window.toggleMicSendButton();
+        }, 100);
+        return;
+      }
+      
+      // Check if input has any text (including whitespace)
+      const hasText = input.value && input.value.trim().length > 0;
+      
+      if (hasText) {
+        // Show send button, hide mic button
+        micButton.style.setProperty('display', 'none', 'important');
+        sendButton.style.setProperty('display', 'flex', 'important');
+      } else {
+        // Show mic button, hide send button
+        micButton.style.setProperty('display', 'flex', 'important');
+        sendButton.style.setProperty('display', 'none', 'important');
+      }
+    };
+    
+    // Also create a local reference
+    const toggleMicSendButton = window.toggleMicSendButton;
+    
+    // Toggle button on input change
+    chatInput?.addEventListener('input', (e) => {
+      autoResize(e.target);
+      toggleMicSendButton();
+    });
+    
+    // Also toggle on keydown (for backspace, delete, etc.)
     chatInput?.addEventListener('keydown', (e) => {
       if (e.key === 'Enter' && !e.shiftKey) {
         e.preventDefault();
         sendMessage();
+      } else {
+        autoResize(e.target);
+        // Use setTimeout to check value after key is processed
+        setTimeout(() => {
+          toggleMicSendButton();
+        }, 0);
       }
-      autoResize(e.target);
     });
     
-    chatInput?.addEventListener('input', (e) => {
-      autoResize(e.target);
+    // Also resize on paste events
+    chatInput?.addEventListener('paste', (e) => {
+      setTimeout(() => {
+        autoResize(e.target);
+        toggleMicSendButton();
+      }, 0);
     });
+    
+    // Initial resize to set correct height and set initial button state
+    if (chatInput) {
+      // Set initial button state immediately
+      toggleMicSendButton();
+      
+      setTimeout(() => {
+        autoResize(chatInput);
+        // Ensure button state is correct after resize
+        toggleMicSendButton();
+      }, 100);
+    } else {
+      // If chatInput doesn't exist yet, set initial state
+      toggleMicSendButton();
+    }
     
     // AI Model Selector - open AI Modules popup
     aiSelectorBtn?.addEventListener('click', (e) => {
@@ -846,8 +922,31 @@
   }
   
   function autoResize(textarea) {
+    if (!textarea) return;
+    
+    // Remove any existing height to get accurate scrollHeight
+    const currentHeight = textarea.style.height;
     textarea.style.height = 'auto';
-    textarea.style.height = Math.min(textarea.scrollHeight, 150) + 'px';
+    
+    // Force a reflow to ensure accurate scrollHeight calculation
+    void textarea.offsetHeight;
+    
+    // Get scrollHeight which includes all content including padding
+    const scrollHeight = textarea.scrollHeight;
+    
+    // Set the new height - textarea will grow naturally with content
+    textarea.style.height = scrollHeight + 'px';
+    
+    // Ensure no scrollbar appears inside textarea
+    textarea.style.overflowY = 'hidden';
+    textarea.style.overflowX = 'hidden';
+    
+    // Ensure the input area can grow with the textarea
+    const inputArea = textarea.closest('.sider-input-area');
+    if (inputArea) {
+      // Don't constrain the input area height
+      inputArea.style.height = 'auto';
+    }
   }
   
   function handleAction(action) {
@@ -1132,6 +1231,7 @@
       const pageText = `📖 Read this page: ${pageContent.title}\nURL: ${pageContent.url}\n\n${pageContent.text.substring(0, 500)}...`;
       input.value = pageText + (input.value ? '\n\n' + input.value : '');
       autoResize(input);
+      if (window.toggleMicSendButton) window.toggleMicSendButton();
     }
     
     addMessage('user', `📖 Reading page: ${pageContent.title}`);
@@ -1160,6 +1260,7 @@
     
     input.value = '';
     autoResize(input);
+    if (window.toggleMicSendButton) window.toggleMicSendButton();
     
     if (chatContainer) {
       chatContainer.style.display = 'flex';
@@ -1215,6 +1316,7 @@
     if (chatInput) {
       chatInput.value = '';
       autoResize(chatInput);
+      if (window.toggleMicSendButton) window.toggleMicSendButton();
     }
     
     // Hide preview sections
@@ -1532,6 +1634,7 @@
       const prompt = `Analyze this text: "${text}"\n\nWhat does this mean? Provide insights and context.`;
       input.value = prompt;
       autoResize(input);
+      if (window.toggleMicSendButton) window.toggleMicSendButton();
       
       // Auto-send after a short delay
       setTimeout(() => {
@@ -1640,6 +1743,7 @@
     if (input) {
       input.value = `${prompt}: "${text}"`;
       autoResize(input);
+      if (window.toggleMicSendButton) window.toggleMicSendButton();
       setTimeout(() => sendMessage(), 200);
     }
   });
@@ -1675,6 +1779,7 @@
           selectedTextSection.style.display = 'none';
           input.value = '';
           autoResize(input);
+          if (window.toggleMicSendButton) window.toggleMicSendButton();
         };
       }
       
@@ -1711,6 +1816,7 @@
         if (input) {
           input.value = `Explain this text: "${text}"`;
           autoResize(input);
+          if (window.toggleMicSendButton) window.toggleMicSendButton();
           setTimeout(() => sendMessage(), 200);
         }
         break;
@@ -1718,6 +1824,7 @@
         if (input) {
           input.value = `Translate to English: "${text}"`;
           autoResize(input);
+          if (window.toggleMicSendButton) window.toggleMicSendButton();
           setTimeout(() => sendMessage(), 200);
         }
         break;
@@ -1725,6 +1832,7 @@
         if (input) {
           input.value = `Summarize this text: "${text}"`;
           autoResize(input);
+          if (window.toggleMicSendButton) window.toggleMicSendButton();
           setTimeout(() => sendMessage(), 200);
         }
         break;
@@ -1856,9 +1964,11 @@
       }
     }
     
-    if (imagePreviewSection) {
-      imagePreviewSection.style.display = 'none';
-    }
+    // Don't close image preview section on outside clicks - only via close button
+    // Image preview section should only close when clicking the close button
+    // if (imagePreviewSection) {
+    //   imagePreviewSection.style.display = 'none';
+    // }
     // Don't clear input value - let user keep typing
     // if (input) {
     //   input.value = '';
@@ -1918,6 +2028,7 @@
         input.value = '';
         input.placeholder = 'Ask anything, @models, / prompts';
         autoResize(input);
+        if (window.toggleMicSendButton) window.toggleMicSendButton();
       }
       
       // Attach event listeners to image action buttons
@@ -1943,15 +2054,20 @@
     switch (action) {
       case 'extract-text':
         input.value = 'Extract all text from this image';
+        autoResize(input);
+        if (window.toggleMicSendButton) window.toggleMicSendButton();
         break;
       case 'math-solver':
         input.value = 'Solve the math problems in this image';
+        autoResize(input);
+        if (window.toggleMicSendButton) window.toggleMicSendButton();
         break;
       case 'translate-image':
         input.value = 'Translate all text in this image to English';
+        autoResize(input);
+        if (window.toggleMicSendButton) window.toggleMicSendButton();
         break;
     }
-    autoResize(input);
     input.focus();
   }
 

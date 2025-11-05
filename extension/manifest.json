@@ -26,7 +26,7 @@
   "action": {},
   "web_accessible_resources": [
     {
-      "resources": ["icons/*.png"],
+      "resources": ["icons/*.png", "svg/*.svg"],
       "matches": ["<all_urls>"]
     }
   ]
