@@ -108,9 +108,18 @@ html.sider-panel-active [class*="content"]:not([data-sider-adjusted]) {
 
 .sider-panel-container {
   display: flex;
-  flex-direction: column;
+  flex-direction: row;
   height: 100%;
   background: #ffffff;
+  position: relative;
+}
+
+.sider-panel-main {
+  display: flex;
+  flex-direction: column;
+  flex: 1;
+  height: 100%;
+  overflow: hidden;
 }
 
 .sider-panel-header {
@@ -127,6 +136,19 @@ html.sider-panel-active [class*="content"]:not([data-sider-adjusted]) {
   font-size: 14px;
   font-weight: 600;
   color: #111827;
+  gap: 12px;
+}
+
+.sider-brain-icon {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+
+.sider-brain-icon svg {
+  width: 24px;
+  height: 24px;
 }
 
 .sider-panel-controls {
@@ -134,7 +156,8 @@ html.sider-panel-active [class*="content"]:not([data-sider-adjusted]) {
   gap: 8px;
 }
 
-.sider-btn-toggle,
+.sider-btn-minimize,
+.sider-btn-maximize,
 .sider-btn-close {
   background: transparent;
   border: none;
@@ -148,7 +171,8 @@ html.sider-panel-active [class*="content"]:not([data-sider-adjusted]) {
   transition: all 0.2s;
 }
 
-.sider-btn-toggle:hover,
+.sider-btn-minimize:hover,
+.sider-btn-maximize:hover,
 .sider-btn-close:hover {
   background: #f3f4f6;
   color: #111827;
@@ -157,8 +181,15 @@ html.sider-panel-active [class*="content"]:not([data-sider-adjusted]) {
 .sider-panel-body {
   flex: 1;
   overflow-y: auto;
-  padding: 20px;
+  padding: 24px 20px 0px 20px;
+  background: linear-gradient(180deg, #ffffff 0%, #f9fafb 100%);
+  font-family: 'Inter', sans-serif;
+  color: #111827;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
 }
+
 
 .sider-welcome h3 {
   font-size: 20px;
@@ -204,9 +235,105 @@ html.sider-panel-active [class*="content"]:not([data-sider-adjusted]) {
   box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
   transform: translateY(-2px);
 }
-
 .sider-action-btn:active {
   transform: translateY(0);
+}
+.sider-action-btn:active {
+  transform: translateY(0);
+}
+
+.sider-beginners-guide-btn {
+  width: 100%;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 12px 16px;
+  background: #10b981;
+  color: white;
+  border: none;
+  border-radius: 12px;
+  cursor: pointer;
+  font-size: 14px;
+  font-weight: 500;
+  transition: all 0.2s;
+  margin-top: 12px;
+}
+
+.sider-beginners-guide-btn:hover {
+  background: #059669;
+}
+
+.sider-webybutter-btn {
+  width: 100%;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 12px 16px;
+  background: #9333ea;
+  color: white;
+  border: none;
+  border-radius: 12px;
+  cursor: pointer;
+  font-size: 14px;
+  font-weight: 500;
+  transition: all 0.2s;
+  margin-top: 12px;
+  justify-content: space-between;
+}
+
+.sider-webybutter-btn:hover {
+  background: #7e22ce;
+}
+
+.sider-copy-icon {
+  opacity: 0.8;
+}
+
+.sider-beginners-guide-btn {
+  width: 100%;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 12px 16px;
+  background: #10b981;
+  color: white;
+  border: none;
+  border-radius: 12px;
+  cursor: pointer;
+  font-size: 14px;
+  font-weight: 500;
+  transition: all 0.2s;
+  margin-top: 12px;
+}
+
+.sider-beginners-guide-btn:hover {
+  background: #059669;
+}
+
+.sider-webybutter-btn {
+  width: 100%;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 12px 16px;
+  background: #9333ea;
+  color: white;
+  border: none;
+  border-radius: 12px;
+  cursor: pointer;
+  font-size: 14px;
+  font-weight: 500;
+  transition: all 0.2s;
+  margin-top: 12px;
+  justify-content: space-between;
+}
+
+.sider-webybutter-btn:hover {
+  background: #7e22ce;
+}
+
+.sider-copy-icon {
+  opacity: 0.8;
 }
 
 .sider-action-btn svg {
@@ -329,6 +456,73 @@ html.sider-panel-active [class*="content"]:not([data-sider-adjusted]) {
   border-top: 1px solid #e5e7eb;
   background: #ffffff;
   flex-shrink: 0;
+}
+
+.sider-panel-footer-bottom {
+  padding: 12px 16px;
+  border-top: 1px solid #e5e7eb;
+  background: #ffffff;
+  flex-shrink: 0;
+}
+
+.sider-footer-content {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  font-size: 14px;
+  width: 100%;
+}
+
+.sider-footer-number {
+  color: #6b7280;
+  font-weight: 500;
+}
+
+.sider-upgrade-btn {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 6px 12px;
+  background: transparent;
+  border: none;
+  color: #10b981;
+  cursor: pointer;
+  font-size: 13px;
+  font-weight: 500;
+  border-radius: 6px;
+  transition: all 0.2s;
+}
+
+.sider-upgrade-btn:hover {
+  background: #ecfdf5;
+}
+
+.sider-footer-icon-btn {
+  background: transparent;
+  border: none;
+  cursor: pointer;
+  padding: 6px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #6b7280;
+  border-radius: 6px;
+  transition: all 0.2s;
+}
+
+.sider-footer-content .sider-upgrade-btn {
+  margin-left: auto;
+}
+
+.sider-footer-icon-btn:hover {
+  background: #f3f4f6;
+  color: #111827;
+}
+
+.sider-profile-btn-footer .sider-profile-icon {
+  width: 28px;
+  height: 28px;
+  font-size: 12px;
 }
 
 .sider-input-wrapper {
@@ -769,6 +963,7 @@ html.sider-panel-active [class*="content"]:not([data-sider-adjusted]) {
   display: flex;
   align-items: center;
   justify-content: center;
+  background: #9333ea;
   border-radius: 50%;
   background: transparent;
   color: white;
@@ -961,6 +1156,18 @@ html.sider-panel-active [class*="content"]:not([data-sider-adjusted]) {
   border-radius: 6px !important;
   pointer-events: auto !important;
   margin-left: auto !important;
+}
+
+.sider-bottom-action-btn[data-action="deep-research"] {
+  background: #f3f4f6 !important;
+  border: 1px solid #e5e7eb !important;
+  border-radius: 8px !important;
+}
+
+.sider-bottom-action-btn[data-action="deep-research"] {
+  background: #f3f4f6 !important;
+  border: 1px solid #e5e7eb !important;
+  border-radius: 8px !important;
 }
 
 .sider-mic-btn:hover {
