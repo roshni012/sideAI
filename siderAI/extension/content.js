@@ -1,13 +1,6 @@
 (function() {
   'use strict';
   
-  // Don't initialize on our own website
-  const currentUrl = window.location.href;
-  const isOwnWebsite = currentUrl.includes('localhost:4200') || currentUrl.includes('127.0.0.1:4200');
-  if (isOwnWebsite) {
-    return; // Exit early, don't initialize extension on our own website
-  }
-  
   let chatPanel = null;
   let isPanelOpen = false;
   
@@ -218,8 +211,7 @@
     panel.id = 'sider-ai-chat-panel';
     panel.innerHTML = `
       <div class="sider-panel-container">
-        <div class="sider-panel-main">
-          <div class="sider-panel-header">
+        <div class="sider-panel-header">
           <div class="sider-panel-title">
             <span>Sider: Chat with all AI</span>
             <div class="sider-panel-controls">
@@ -492,22 +484,6 @@
     `;
     
     document.body.appendChild(panel);
-    
-    // Add sidebar to the panel container
-    if (window.SiderSidebar) {
-      const container = panel.querySelector('.sider-panel-container');
-      if (container) {
-        const sidebar = window.SiderSidebar.getSidebar();
-        container.insertBefore(sidebar, container.firstChild);
-        // Initialize sidebar after appending
-        setTimeout(() => {
-          if (window.SiderSidebar && window.SiderSidebar.init) {
-            window.SiderSidebar.init();
-          }
-        }, 100);
-      }
-    }
-    
     return panel;
   }
   
@@ -2104,8 +2080,5 @@
     try { window.SiderToolbar?.init(); } catch (_) {}
     try { window.SiderImagePreview?.init(); } catch (_) {}
   }
-  
-  // Expose closePanel globally so sidebar can call it
-  window.closeChatPanel = closePanel;
 })();
 

@@ -1,13 +1,6 @@
 (function(){
   'use strict';
 
-  // Don't initialize on our own website
-  const currentUrl = window.location.href;
-  const isOwnWebsite = currentUrl.includes('localhost:4200') || currentUrl.includes('127.0.0.1:4200');
-  if (isOwnWebsite) {
-    return; // Exit early, don't initialize toolbar on our own website
-  }
-
   let toolbarEl = null;
   let selectedText = '';
   let pinned = new Set();
