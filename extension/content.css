@@ -108,9 +108,196 @@ html.sider-panel-active [class*="content"]:not([data-sider-adjusted]) {
 
 .sider-panel-container {
   display: flex;
-  flex-direction: column;
+  flex-direction: row;
   height: 100%;
   background: #ffffff;
+}
+
+.sider-panel-main {
+  display: flex;
+  flex-direction: column;
+  flex: 1;
+  height: 100%;
+  min-width: 0;
+  overflow: hidden;
+}
+
+.sider-panel-sidebar {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: flex-start;
+  gap: 8px;
+  padding: 12px 8px;
+  width: 48px;
+  background: #ffffff;
+  flex-shrink: 0;
+  box-shadow: -2px 0 4px rgba(0, 0, 0, 0.05);
+}
+
+.sider-sidebar-icon {
+  position: relative;
+  width: 36px;
+  height: 36px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 8px;
+  cursor: pointer;
+  transition: all 0.2s;
+  color: #6b7280;
+  background: transparent;
+}
+
+.sider-sidebar-icon:hover {
+  background: #f3f4f6;
+  color: #111827;
+}
+
+.sider-sidebar-icon-active {
+  color: #8b5cf6;
+  background: #f3f4f6;
+}
+
+.sider-sidebar-icon-purple {
+  color: #8b5cf6;
+}
+
+.sider-sidebar-icon svg {
+  width: 20px;
+  height: 20px;
+  stroke-width: 2;
+}
+
+.sider-sidebar-badge {
+  position: absolute;
+  top: -4px;
+  right: -4px;
+  background: #ef4444;
+  color: #ffffff;
+  font-size: 10px;
+  font-weight: 600;
+  padding: 2px 5px;
+  border-radius: 10px;
+  min-width: 16px;
+  text-align: center;
+  line-height: 1.2;
+  border: 1px solid #ffffff;
+}
+
+/* Profile Dropdown */
+.sider-profile-dropdown {
+  position: fixed;
+  bottom: 80px;
+  right: 20px;
+  width: 320px;
+  background: #ffffff;
+  border: 1px solid #e5e7eb;
+  border-radius: 12px;
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.15);
+  z-index: 2147483648;
+  overflow: hidden;
+}
+
+.sider-profile-dropdown-header {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 16px;
+  background: #ffffff;
+}
+
+.sider-profile-dropdown-icon {
+  width: 40px;
+  height: 40px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 50%;
+  border: 2px solid #8b5cf6;
+  background: #ffffff;
+  color: #8b5cf6;
+  flex-shrink: 0;
+}
+
+.sider-profile-dropdown-icon svg {
+  width: 24px;
+  height: 24px;
+}
+
+.sider-profile-dropdown-text {
+  flex: 1;
+  font-size: 14px;
+  color: #111827;
+  line-height: 1.4;
+}
+
+.sider-profile-login-btn {
+  background: #8b5cf6;
+  color: #ffffff;
+  border: none;
+  border-radius: 8px;
+  padding: 8px 16px;
+  font-size: 14px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s;
+  white-space: nowrap;
+  flex-shrink: 0;
+}
+
+.sider-profile-login-btn:hover {
+  background: #7c3aed;
+}
+
+.sider-profile-login-btn:active {
+  transform: scale(0.98);
+}
+
+.sider-profile-dropdown-divider {
+  height: 1px;
+  background: #e5e7eb;
+  margin: 0;
+}
+
+.sider-profile-dropdown-menu {
+  padding: 8px 0;
+  background: #ffffff;
+}
+
+.sider-profile-menu-item {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 12px 16px;
+  cursor: pointer;
+  transition: all 0.2s;
+  color: #111827;
+  font-size: 14px;
+}
+
+.sider-profile-menu-item:hover {
+  background: #f9fafb;
+}
+
+.sider-profile-menu-item:active {
+  background: #f3f4f6;
+}
+
+.sider-profile-menu-item svg {
+  width: 20px;
+  height: 20px;
+  color: #6b7280;
+  flex-shrink: 0;
+}
+
+.sider-profile-menu-item:hover svg {
+  color: #111827;
+}
+
+.sider-profile-menu-item span {
+  flex: 1;
+  line-height: 1.4;
 }
 
 .sider-panel-header {
@@ -156,10 +343,14 @@ html.sider-panel-active [class*="content"]:not([data-sider-adjusted]) {
 
 .sider-panel-body {
   flex: 1;
-  overflow-y: auto;
+  overflow-y: scroll;
   overflow-x: hidden;
+
   padding: 20px;
-  min-height: 0;
+  position: relative;
+  /* Ensure scrollbar is visible on the right edge */
+  scrollbar-width: thin;
+  scrollbar-color: #d1d5db #f9fafb;
 }
 
 .sider-welcome h3 {
@@ -1038,18 +1229,21 @@ html.sider-panel-active [class*="content"]:not([data-sider-adjusted]) {
 /* Scrollbar styling */
 .sider-panel-body::-webkit-scrollbar,
 .sider-chat-messages::-webkit-scrollbar {
-  width: 6px;
+  width: 8px;
 }
 
 .sider-panel-body::-webkit-scrollbar-track,
 .sider-chat-messages::-webkit-scrollbar-track {
   background: #f9fafb;
+  border-left: 2px solid #ef4444;
+  margin-right: 2px;
 }
 
 .sider-panel-body::-webkit-scrollbar-thumb,
 .sider-chat-messages::-webkit-scrollbar-thumb {
   background: #d1d5db;
-  border-radius: 3px;
+  border-radius: 4px;
+  border-left: 1px solid #e5e7eb;
 }
 
 .sider-panel-body::-webkit-scrollbar-thumb:hover,
@@ -1190,6 +1384,21 @@ html.sider-panel-active [class*="content"]:not([data-sider-adjusted]) {
   
   html.sider-panel-active {
     margin-right: 0 !important;
+  }
+  
+  .sider-panel-sidebar {
+    width: 44px;
+    padding: 8px 6px;
+  }
+  
+  .sider-sidebar-icon {
+    width: 32px;
+    height: 32px;
+  }
+  
+  .sider-sidebar-icon svg {
+    width: 18px;
+    height: 18px;
   }
 }
 

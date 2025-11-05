@@ -211,7 +211,8 @@
     panel.id = 'sider-ai-chat-panel';
     panel.innerHTML = `
       <div class="sider-panel-container">
-        <div class="sider-panel-header">
+        <div class="sider-panel-main">
+          <div class="sider-panel-header">
           <div class="sider-panel-title">
             <span>Sider: Chat with all AI</span>
             <div class="sider-panel-controls">
@@ -483,6 +484,136 @@
           </div>
           <input type="file" id="sider-file-input" style="display: none;" multiple>
         </div>
+        </div>
+        <div class="sider-panel-sidebar">
+          <div class="sider-sidebar-icon" title="Code/Format">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <polyline points="16 18 22 12 16 6"/>
+              <polyline points="8 6 2 12 8 18"/>
+            </svg>
+          </div>
+          <div class="sider-sidebar-icon sider-sidebar-icon-purple" title="Chat">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/>
+            </svg>
+          </div>
+          <div class="sider-sidebar-icon" title="Documents">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/>
+              <polyline points="14 2 14 8 20 8"/>
+              <line x1="16" y1="13" x2="8" y2="13"/>
+              <line x1="16" y1="17" x2="8" y2="17"/>
+              <polyline points="10 9 9 9 8 9"/>
+            </svg>
+            <span class="sider-sidebar-badge">0</span>
+          </div>
+          <div class="sider-sidebar-icon" title="Refresh/Redo">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <polyline points="23 4 23 10 17 10"/>
+              <polyline points="1 20 1 14 7 14"/>
+              <path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"/>
+            </svg>
+          </div>
+          <div class="sider-sidebar-icon" title="More Options">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <circle cx="12" cy="12" r="1"/>
+              <circle cx="19" cy="12" r="1"/>
+              <circle cx="5" cy="12" r="1"/>
+            </svg>
+          </div>
+          <div class="sider-sidebar-icon" title="Link/Connect">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"/>
+              <path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"/>
+            </svg>
+          </div>
+          <div class="sider-sidebar-icon" title="Send/Share">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <line x1="22" y1="2" x2="11" y2="13"/>
+              <polygon points="22 2 15 22 11 13 2 9 22 2"/>
+            </svg>
+          </div>
+          <div class="sider-sidebar-icon" title="Layers/List">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <line x1="8" y1="6" x2="21" y2="6"/>
+              <line x1="8" y1="12" x2="21" y2="12"/>
+              <line x1="8" y1="18" x2="21" y2="18"/>
+              <line x1="3" y1="6" x2="3.01" y2="6"/>
+              <line x1="3" y1="12" x2="3.01" y2="12"/>
+              <line x1="3" y1="18" x2="3.01" y2="18"/>
+            </svg>
+          </div>
+          <div class="sider-sidebar-icon" title="Mobile">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <rect x="5" y="2" width="14" height="20" rx="2" ry="2"/>
+              <line x1="12" y1="18" x2="12.01" y2="18"/>
+            </svg>
+          </div>
+          <div class="sider-sidebar-icon" title="Target">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <circle cx="12" cy="12" r="10"/>
+              <circle cx="12" cy="12" r="6"/>
+              <circle cx="12" cy="12" r="2"/>
+            </svg>
+          </div>
+          <div class="sider-sidebar-icon sider-sidebar-icon-active" id="sider-profile-icon" title="Profile">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/>
+              <circle cx="12" cy="7" r="4"/>
+            </svg>
+          </div>
+        </div>
+        <div class="sider-profile-dropdown" id="sider-profile-dropdown" style="display: none;">
+          <div class="sider-profile-dropdown-header">
+            <div class="sider-profile-dropdown-icon">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/>
+                <circle cx="12" cy="7" r="4"/>
+              </svg>
+            </div>
+            <div class="sider-profile-dropdown-text">
+              <span>Log in to start using Sider.</span>
+            </div>
+            <button class="sider-profile-login-btn" id="sider-profile-login-btn">Log in</button>
+          </div>
+          <div class="sider-profile-dropdown-divider"></div>
+          <div class="sider-profile-dropdown-menu">
+            <div class="sider-profile-menu-item" data-action="whats-new">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9s3-2 3-9"/>
+                <path d="M13.73 21a2 2 0 0 1-3.46 0"/>
+                <path d="M2 8a6 6 0 0 1 10.33-4.5"/>
+              </svg>
+              <span>What's new</span>
+            </div>
+            <div class="sider-profile-menu-item" data-action="rewards">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M6 9H4.5a2.5 2.5 0 0 1 0-5H6"/>
+                <path d="M18 9h1.5a2.5 2.5 0 0 0 0-5H18"/>
+                <path d="M4 22h16"/>
+                <path d="M10 14.66V17c0 .55-.47.98-.97 1.21C7.85 18.75 7 20.24 7 22"/>
+                <path d="M14 14.66V17c0 .55.47.98.97 1.21C16.15 18.75 17 20.24 17 22"/>
+                <path d="M18 2H6v7a6 6 0 0 0 12 0V2Z"/>
+              </svg>
+              <span>Rewards center</span>
+            </div>
+            <div class="sider-profile-menu-item" data-action="help">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <circle cx="12" cy="12" r="10"/>
+                <path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3"/>
+                <line x1="12" y1="17" x2="12.01" y2="17"/>
+              </svg>
+              <span>Help center</span>
+            </div>
+            <div class="sider-profile-menu-item" data-action="feedback">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/>
+                <polyline points="22,6 12,13 2,6"/>
+              </svg>
+              <span>Feedback</span>
+            </div>
+          </div>
+        </div>
       </div>
     `;
     
@@ -649,6 +780,70 @@
   let fileInput = null;
   let pendingAttachments = [];
   
+  function toggleProfileDropdown() {
+    const profileDropdown = document.getElementById('sider-profile-dropdown');
+    const profileIcon = document.getElementById('sider-profile-icon');
+    
+    if (!profileDropdown || !profileIcon) return;
+    
+    const isVisible = profileDropdown.style.display !== 'none';
+    
+    if (isVisible) {
+      profileDropdown.style.display = 'none';
+    } else {
+      // Position dropdown relative to profile icon (bottom-right)
+      const iconRect = profileIcon.getBoundingClientRect();
+      
+      if (iconRect) {
+        profileDropdown.style.display = 'block';
+        // Position above the icon with some spacing
+        const dropdownHeight = 200; // Approximate height
+        profileDropdown.style.bottom = `${window.innerHeight - iconRect.top + 8}px`;
+        profileDropdown.style.right = `${window.innerWidth - iconRect.right - 48}px`;
+        
+        // Ensure dropdown stays within viewport
+        const dropdownRect = profileDropdown.getBoundingClientRect();
+        if (dropdownRect.right > window.innerWidth) {
+          profileDropdown.style.right = '20px';
+        }
+        if (dropdownRect.bottom > window.innerHeight) {
+          profileDropdown.style.bottom = '80px';
+        }
+      } else {
+        profileDropdown.style.display = 'block';
+      }
+    }
+  }
+  
+  function handleProfileLogin() {
+    if (window.SiderLoginModal) {
+      window.SiderLoginModal.show('login');
+    }
+  }
+  
+  function handleProfileMenuAction(action) {
+    switch (action) {
+      case 'whats-new':
+        console.log('What\'s new clicked');
+        // Handle what's new action
+        break;
+      case 'rewards':
+        console.log('Rewards center clicked');
+        // Handle rewards action
+        break;
+      case 'help':
+        console.log('Help center clicked');
+        // Handle help action
+        break;
+      case 'feedback':
+        console.log('Feedback clicked');
+        // Handle feedback action
+        break;
+      default:
+        console.log('Unknown action:', action);
+    }
+  }
+  
   function initializePanel() {
     chatPanel = createChatPanel();
     
@@ -814,6 +1009,47 @@
         updateAISelectorIcon(currentModel);
       }
     });
+    
+    // Profile icon dropdown
+    const profileIcon = document.getElementById('sider-profile-icon');
+    const profileDropdown = document.getElementById('sider-profile-dropdown');
+    const profileLoginBtn = document.getElementById('sider-profile-login-btn');
+    
+    if (profileIcon && profileDropdown) {
+      profileIcon.addEventListener('click', (e) => {
+        e.stopPropagation();
+        toggleProfileDropdown();
+      });
+      
+      // Close dropdown when clicking outside
+      document.addEventListener('click', (e) => {
+        if (profileDropdown && profileDropdown.style.display !== 'none') {
+          if (!profileDropdown.contains(e.target) && !profileIcon.contains(e.target)) {
+            profileDropdown.style.display = 'none';
+          }
+        }
+      });
+      
+      // Menu item click handlers
+      const menuItems = profileDropdown.querySelectorAll('.sider-profile-menu-item');
+      menuItems.forEach(item => {
+        item.addEventListener('click', (e) => {
+          e.stopPropagation();
+          const action = item.getAttribute('data-action');
+          handleProfileMenuAction(action);
+          profileDropdown.style.display = 'none';
+        });
+      });
+      
+      // Login button handler
+      if (profileLoginBtn) {
+        profileLoginBtn.addEventListener('click', (e) => {
+          e.stopPropagation();
+          handleProfileLogin();
+          profileDropdown.style.display = 'none';
+        });
+      }
+    }
     
     // Screenshot capture
     screenshotBtn?.addEventListener('click', () => {
