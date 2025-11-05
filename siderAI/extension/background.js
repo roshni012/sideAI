@@ -1,5 +1,5 @@
 chrome.runtime.onInstalled.addListener(() => {
-  console.log('SiderAI extension installed');
+  // Extension installed
 });
 
 // Clicking the toolbar icon toggles the right-side chat panel
@@ -26,13 +26,13 @@ chrome.action.onClicked.addListener(async (tab) => {
           setTimeout(() => {
             chrome.tabs.sendMessage(tab.id, { type: 'TOGGLE_PANEL' });
           }, 100);
-        }).catch(err => {
-          console.log('Could not inject content script:', err);
+        }).catch(() => {
+          // Content script injection failed
         });
       }
     });
   } catch (error) {
-    console.log('Error toggling panel:', error);
+    // Error toggling panel
   }
 });
 
@@ -73,7 +73,6 @@ async function handleChatRequest(request, sendResponse) {
     const response = await callAIModel(model, message);
     sendResponse({ text: response });
   } catch (error) {
-    console.error('Chat error:', error);
     sendResponse({ error: error.message });
   }
 }

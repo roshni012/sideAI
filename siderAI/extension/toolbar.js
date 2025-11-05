@@ -99,10 +99,22 @@
 
   function hide() { 
     if (isUpdatingMenu) return; // Don't hide during menu updates
+    
+    // Check if user is typing in the input area or clicking inside the panel
+    const input = document.getElementById('sider-chat-input');
+    const panel = document.getElementById('sider-ai-chat-panel');
+    const isTypingInInput = input && document.activeElement === input;
+    const isInsidePanel = panel && panel.contains(document.activeElement);
+    
     if (toolbarEl) toolbarEl.style.display = 'none'; 
     
-    // Dispatch event to clear input box when selection is cleared
-    window.dispatchEvent(new CustomEvent('sider:text-cleared'));
+    // Only dispatch event to clear input box if user is not typing in it
+    // and not clicking inside the panel - don't hide selected text section
+    if (!isTypingInInput && !isInsidePanel) {
+      window.dispatchEvent(new CustomEvent('sider:text-cleared', {
+        detail: { hideSelectedText: false } // Don't hide selected text section when toolbar hides
+      }));
+    }
     
     selectedText = ''; 
   }
@@ -388,11 +400,27 @@
       if (e.target.closest('.sider-selection-btn')) return;
       if (e.target.closest('.sider-more-menu')) return;
       
+      // Don't hide if clicking inside the input area or selected text section
+      const input = document.getElementById('sider-chat-input');
+      const inputArea = document.querySelector('.sider-input-area');
+      const selectedTextSection = document.getElementById('sider-selected-text-section');
+      const panel = document.getElementById('sider-ai-chat-panel');
+      
+      // Don't hide if clicking inside the extension panel
+      if (panel && panel.contains(e.target)) return;
+      
+      if (input && input.contains(e.target)) return;
+      if (inputArea && inputArea.contains(e.target)) return;
+      if (selectedTextSection && selectedTextSection.contains(e.target)) return;
+      
       // Only hide if clicking outside AND selection is actually cleared
       // Use a small delay to allow button clicks to complete first
       setTimeout(() => {
-        // Double-check that we're not inside toolbar (button click might have triggered)
+        // Double-check that we're not inside toolbar or panel (button click might have triggered)
         if (toolbarEl && !toolbarEl.contains(e.target)) {
+          // Also check if click is outside the panel
+          if (panel && panel.contains(e.target)) return;
+          
           const selection = window.getSelection();
           if (!selection || selection.toString().trim().length === 0) {
             // Only hide if toolbar is still visible (wasn't already hidden by action)

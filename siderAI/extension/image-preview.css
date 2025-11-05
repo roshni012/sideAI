@@ -82,7 +82,7 @@
 
 .sider-image-menu {
   width: 180px;
-  min-width: 180px;
+  min-width: 150px;
   max-width: calc(100vw - 20px);
   background: rgba(30, 41, 59, 0.98);
   border-radius: 8px;
@@ -151,7 +151,7 @@
 
 .sider-image-submenu {
   width: 180px;
-  min-width: 180px;
+  min-width: 150px;
   max-width: calc(100vw - 20px);
   background: rgba(30, 41, 59, 0.98);
   border-radius: 8px;

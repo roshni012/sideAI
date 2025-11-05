@@ -237,36 +237,43 @@
             
             <div class="sider-action-buttons">
               <button class="sider-action-btn" data-action="fullscreen">
-                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
                   <rect x="3" y="3" width="18" height="18" rx="2" ry="2"/>
-                  <path d="M7 8h10M7 12h10M7 16h8"/>
+                  <line x1="7" y1="8" x2="17" y2="8"/>
+                  <line x1="7" y1="12" x2="17" y2="12"/>
+                  <line x1="7" y1="16" x2="15" y2="16"/>
                 </svg>
                 <span>Full Screen Chat</span>
               </button>
               <button class="sider-action-btn" data-action="research">
-                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                  <path d="M12 2a3 3 0 0 0-3 3v7a3 3 0 0 0 6 0V5a3 3 0 0 0-3-3Z"/>
-                  <path d="M19 10v2a7 7 0 0 1-14 0v-2"/>
-                  <line x1="12" y1="19" x2="12" y2="22"/>
-                  <line x1="8" y1="22" x2="16" y2="22"/>
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                  <circle cx="11" cy="11" r="8"/>
+                  <path d="m21 21-4.35-4.35"/>
                 </svg>
                 <span>Deep Research</span>
               </button>
               <button class="sider-action-btn" data-action="highlights">
-                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                  <path d="M4 19.5v-15A2.5 2.5 0 0 1 6.5 2H20v20H6.5a2.5 2.5 0 0 1 0-5H20"/>
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                  <rect x="5" y="2" width="14" height="20" rx="2" ry="2"/>
+                  <line x1="12" y1="18" x2="12" y2="18"/>
+                  <path d="M9 6h6M9 10h6M9 14h4"/>
+                  <path d="M19 6h2v2h-2z"/>
                 </svg>
                 <span>My Highlights</span>
               </button>
               <button class="sider-action-btn" data-action="slides">
-                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
                   <rect x="3" y="3" width="18" height="14" rx="2" ry="2"/>
                   <line x1="8" y1="21" x2="16" y2="21"/>
                   <line x1="12" y1="17" x2="12" y2="21"/>
+                  <rect x="6" y="6" width="12" height="6" rx="1"/>
+                  <line x1="6" y1="9" x2="18" y2="9"/>
                 </svg>
                 <span>AI Slides</span>
               </button>
             </div>
+            
+            
             
           </div>
           
@@ -275,25 +282,48 @@
           </div>
         </div>
         
+        <div class="sider-summarize-card" id="sider-summarize-card" style="display: none;">
+              <button class="sider-summarize-close-btn" id="sider-summarize-close-btn" title="Close">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                  <line x1="18" y1="6" x2="6" y2="18"/>
+                  <line x1="6" y1="6" x2="18" y2="18"/>
+                </svg>
+              </button>
+              <div class="sider-summarize-card-left">
+                <div class="sider-summarize-icon">
+                  <svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                    <circle cx="12" cy="12" r="10" fill="#8b5cf6"/>
+                    <line x1="2" y1="12" x2="22" y2="12" stroke="#ffffff" stroke-width="2"/>
+                    <path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z" fill="#ffffff" opacity="0.3"/>
+                  </svg>
+                </div>
+                <span class="sider-summarize-site-name" id="sider-summarize-site-name"></span>
+              </div>
+              <div class="sider-summarize-card-right">
+                <button class="sider-summarize-btn" id="sider-summarize-btn" data-action="summarize">
+                  Summarize
+                </button>
+                <button class="sider-summarize-copy-btn" id="sider-summarize-copy-btn" title="Copy URL">
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <rect x="9" y="9" width="13" height="13" rx="2" ry="2"/>
+                    <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/>
+                  </svg>
+                </button>
+              </div>
+            </div>
         <div class="sider-panel-footer">
           <div class="sider-input-wrapper">
             <div class="sider-toolbar">
               <button class="sider-toolbar-btn sider-ai-selector-btn" id="sider-ai-selector-btn" title="Select AI Model">
                 <div class="sider-ai-selector-icon">
-                  <svg width="18" height="18" viewBox="0 0 24 24" fill="none">
-                    <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm0 18c-4.41 0-8-3.59-8-8s3.59-8 8-8 8 3.59 8 8-3.59 8-8 8z" fill="#3b82f6"/>
-                    <circle cx="12" cy="12" r="6" fill="#3b82f6"/>
-                  </svg>
+                  <img src="${chrome.runtime.getURL('icons/fusion.png')}" alt="AI Model" style="width: 18px; height: 18px; object-fit: contain; display: block;" />
                 </div>
                 <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="sider-dropdown-arrow">
                   <polyline points="6 9 12 15 18 9"/>
                 </svg>
               </button>
               <button class="sider-toolbar-btn" id="sider-screenshot-btn" title="Capture Selected Area">
-                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                  <path d="M6 9V2h12v7M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2"/>
-                  <path d="M6 14h12"/>
-                </svg>
+                <img src="${chrome.runtime.getURL('icons/cut.png')}" alt="Cut" style="width: 18px; height: 18px; object-fit: contain;" />
               </button>
               <button class="sider-toolbar-btn" id="sider-attach-btn" title="Attach File">
                 <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
@@ -350,39 +380,17 @@
                 </div>
               </div>
             </div>
-            <div class="sider-selected-text-section" id="sider-selected-text-section" style="display: none;">
-              <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;">
-                <span style="font-size: 12px; font-weight: 500; color: #6b7280;">Text from your selection</span>
-                <button id="sider-remove-selection-btn" style="background: none; border: none; cursor: pointer; padding: 4px; display: flex; align-items: center; color: #9ca3af;">
-                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                    <line x1="18" y1="6" x2="6" y2="18"/>
-                    <line x1="6" y1="6" x2="18" y2="18"/>
-                  </svg>
-                </button>
-              </div>
-              <div id="sider-selected-text-display" style="background: #f9fafb; border: 1px solid #e5e7eb; border-radius: 8px; padding: 12px; font-size: 14px; color: #111827; line-height: 1.5; max-height: 120px; overflow-y: auto; white-space: pre-wrap; word-wrap: break-word; margin-bottom: 12px;"></div>
-              <div class="sider-selection-actions" id="sider-selection-actions" style="display: grid; grid-template-columns: repeat(2, 1fr); gap: 8px; margin-bottom: 12px;">
-                <button class="sider-action-btn" data-action="explain" style="background: #ffffff; border: 1px solid #e5e7eb; border-radius: 8px; padding: 8px 12px; font-size: 14px; font-weight: 500; color: #111827; cursor: pointer; display: flex; align-items: center; justify-content: center; transition: all 0.2s;">
-                  <span>Explain</span>
-                </button>
-                <button class="sider-action-btn" data-action="translate" style="background: #ffffff; border: 1px solid #e5e7eb; border-radius: 8px; padding: 8px 12px; font-size: 14px; font-weight: 500; color: #111827; cursor: pointer; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 2px; transition: all 0.2s;">
-                  <span>Translate</span>
-                  <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                    <polyline points="6 9 12 15 18 9"/>
-                  </svg>
-                </button>
-                <button class="sider-action-btn" data-action="summarize" style="background: #ffffff; border: 1px solid #e5e7eb; border-radius: 8px; padding: 8px 12px; font-size: 14px; font-weight: 500; color: #111827; cursor: pointer; display: flex; align-items: center; justify-content: center; transition: all 0.2s;">
-                  <span>Summarize</span>
-                </button>
-                <button class="sider-action-btn" id="sider-more-actions-btn" style="background: #ffffff; border: 1px solid #e5e7eb; border-radius: 8px; padding: 8px 12px; font-size: 14px; font-weight: 500; color: #111827; cursor: pointer; display: flex; align-items: center; justify-content: center; transition: all 0.2s;">
-                  <span>...</span>
-                </button>
-              </div>
-              <div style="height: 1px; background: #e5e7eb; margin: 0 -16px 12px;"></div>
-            </div>
             <div class="sider-image-preview-section" id="sider-image-preview-section" style="display: none;">
               <div style="display: flex; gap: 12px; margin-bottom: 12px;">
-                <img id="sider-image-preview-thumb" src="" alt="Preview" style="width: 80px; height: 80px; object-fit: cover; border-radius: 8px; border: 1px solid #e5e7eb; flex-shrink: 0;">
+                <div style="position: relative; flex-shrink: 0;">
+                  <img id="sider-image-preview-thumb" src="" alt="Preview" style="width: 80px; height: 80px; object-fit: cover; border-radius: 8px; border: 1px solid #e5e7eb;">
+                  <button id="sider-image-preview-close" class="sider-image-preview-close-btn" title="Remove image" style="position: absolute; top: -8px; right: -8px; width: 24px; height: 24px; border-radius: 50%; background: #ffffff; border: 1px solid #d1d5db; box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1); cursor: pointer; display: flex; align-items: center; justify-content: center; padding: 0; font-size: 14px; color: #6b7280; transition: all 0.2s; z-index: 10;">
+                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                      <line x1="18" y1="6" x2="6" y2="18"></line>
+                      <line x1="6" y1="6" x2="18" y2="18"></line>
+                    </svg>
+                  </button>
+                </div>
                 <div style="flex: 1; display: flex; flex-direction: column; gap: 8px;">
                   <div style="display: flex; gap: 8px; flex-wrap: wrap;">
                     <button class="sider-image-action-btn" data-action="extract-text" style="background: #f3f4f6; border: 1px solid #e5e7eb; border-radius: 6px; padding: 6px 12px; font-size: 13px; font-weight: 500; color: #111827; cursor: pointer; transition: all 0.2s; white-space: nowrap;">
@@ -403,6 +411,36 @@
               <div style="height: 1px; background: #e5e7eb; margin: 0 -16px 12px;"></div>
             </div>
             <div class="sider-input-area">
+              <div class="sider-selected-text-section" id="sider-selected-text-section" style="display: none;">
+                <div class="sider-selected-text-header">
+                  <span class="sider-selected-text-title">Text from your selection</span>
+                  <button id="sider-remove-selection-btn" class="sider-remove-selection-btn" title="Close">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                      <line x1="18" y1="6" x2="6" y2="18"/>
+                      <line x1="6" y1="6" x2="18" y2="18"/>
+                    </svg>
+                  </button>
+                </div>
+                <div id="sider-selected-text-display" class="sider-selected-text-display"></div>
+                <div class="sider-selection-actions" id="sider-selection-actions">
+                  <button class="sider-action-btn" data-action="explain">
+                    <span>Explain</span>
+                  </button>
+                  <button class="sider-action-btn" data-action="translate">
+                    <span>Translate</span>
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                      <polyline points="6 9 12 15 18 9"/>
+                    </svg>
+                  </button>
+                  <button class="sider-action-btn" data-action="summarize">
+                    <span>Summarize</span>
+                  </button>
+                  <button class="sider-action-btn" id="sider-more-actions-btn">
+                    <span>...</span>
+                  </button>
+                </div>
+                <div class="sider-selection-divider"></div>
+              </div>
               <div class="sider-attachments" id="sider-attachments"></div>
               <textarea 
                 id="sider-chat-input" 
@@ -410,40 +448,34 @@
                 placeholder="Ask anything, @models, / prompts"
                 rows="1"
               ></textarea>
-            </div>
-            <div class="sider-input-buttons">
-              <div style="display: flex; gap: 8px; flex: 1;">
-                <button class="sider-bottom-action-btn" data-action="think" style="background: #f3f4f6; border: 1px solid #e5e7eb; border-radius: 6px; padding: 6px 12px; font-size: 13px; font-weight: 500; color: #111827; cursor: pointer; display: flex; align-items: center; gap: 6px; transition: all 0.2s;">
-                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                    <circle cx="12" cy="12" r="10"/>
-                    <line x1="12" y1="6" x2="12" y2="8"/>
-                    <line x1="12" y1="16" x2="12" y2="18"/>
-                    <path d="M9 9h6M9 15h6"/>
+              <div class="sider-input-buttons">
+                <div class="sider-input-buttons-left">
+                  <button class="sider-bottom-action-btn" data-action="think">
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                      <circle cx="12" cy="12" r="10"/>
+                      <line x1="12" y1="6" x2="12" y2="8"/>
+                      <line x1="12" y1="16" x2="12" y2="18"/>
+                      <path d="M9 9h6M9 15h6"/>
+                    </svg>
+                    <span>Think</span>
+                  </button>
+                  <button class="sider-bottom-action-btn" data-action="deep-research">
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                      <circle cx="11" cy="11" r="8"/>
+                      <path d="m21 21-4.35-4.35"/>
+                    </svg>
+                    <span>Deep Research</span>
+                  </button>
+                </div>
+                <button class="sider-mic-btn" id="sider-mic-btn" title="Voice Input">
+                  <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <path d="M12 1a3 3 0 0 0-3 3v8a3 3 0 0 0 6 0V4a3 3 0 0 0-3-3z"/>
+                    <path d="M19 10v2a7 7 0 0 1-14 0v-2"/>
+                    <line x1="12" y1="19" x2="12" y2="23"/>
+                    <line x1="8" y1="23" x2="16" y2="23"/>
                   </svg>
-                  <span>Think</span>
-                </button>
-                <button class="sider-bottom-action-btn" data-action="deep-research" style="background: #f3f4f6; border: 1px solid #e5e7eb; border-radius: 6px; padding: 6px 12px; font-size: 13px; font-weight: 500; color: #111827; cursor: pointer; display: flex; align-items: center; gap: 6px; transition: all 0.2s;">
-                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                    <circle cx="11" cy="11" r="8"/>
-                    <path d="m21 21-4.35-4.35"/>
-                  </svg>
-                  <span>Deep Research</span>
                 </button>
               </div>
-              <button class="sider-mic-btn" id="sider-mic-btn" title="Voice Input" style="background: none; border: none; cursor: pointer; padding: 8px; display: flex; align-items: center; justify-content: center; color: #6b7280; transition: all 0.2s;">
-                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                  <path d="M12 1a3 3 0 0 0-3 3v8a3 3 0 0 0 6 0V4a3 3 0 0 0-3-3z"/>
-                  <path d="M19 10v2a7 7 0 0 1-14 0v-2"/>
-                  <line x1="12" y1="19" x2="12" y2="23"/>
-                  <line x1="8" y1="23" x2="16" y2="23"/>
-                </svg>
-              </button>
-              <button class="sider-send-btn" id="sider-send-btn" title="Send">
-                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                  <line x1="22" y1="2" x2="11" y2="13"/>
-                  <polygon points="22 2 15 22 11 13 2 9 22 2"/>
-                </svg>
-              </button>
             </div>
           </div>
           <input type="file" id="sider-file-input" style="display: none;" multiple>
@@ -468,6 +500,11 @@
       chatPanel.style.transform = 'translateX(0)';
       // Compress website when panel opens
       compressWebsite(true);
+      
+      // Show summarize card when panel opens
+      setTimeout(() => {
+        checkAndShowSummarizeCard();
+      }, 300);
     } else {
       chatPanel.classList.remove('sider-panel-open');
       chatPanel.classList.remove('sider-panel-collapsed');
@@ -481,6 +518,100 @@
     }
     
     chrome.storage.local.set({ siderPanelOpen: isPanelOpen });
+  }
+  
+  function checkAndShowSummarizeCard() {
+    // Get current page information
+    const pageUrl = window.location.href;
+    const pageTitle = document.title || new URL(pageUrl).hostname;
+    
+    // Show summarize card with page info
+    const summarizeCard = document.getElementById('sider-summarize-card');
+    const siteNameSpan = document.getElementById('sider-summarize-site-name');
+    
+    if (summarizeCard && siteNameSpan) {
+      // Extract site name from URL or title
+      let siteName = pageTitle;
+      try {
+        const url = new URL(pageUrl);
+        siteName = url.hostname.replace('www.', '');
+        // Take first part of hostname (e.g., "webbybutter" from "webbybutter.com")
+        const parts = siteName.split('.');
+        if (parts.length > 1) {
+          siteName = parts[0];
+        }
+        // Capitalize first letter
+        siteName = siteName.charAt(0).toUpperCase() + siteName.slice(1);
+        
+        // If title is shorter and more descriptive, use it
+        if (pageTitle && pageTitle.length < 50 && pageTitle.length > siteName.length) {
+          siteName = pageTitle.substring(0, 40);
+          if (pageTitle.length > 40) {
+            siteName += '...';
+          }
+        }
+      } catch (e) {
+        // Use title as fallback
+        siteName = pageTitle.substring(0, 40);
+        if (pageTitle.length > 40) {
+          siteName += '...';
+        }
+      }
+      
+      siteNameSpan.textContent = siteName;
+      summarizeCard.style.display = 'flex';
+    }
+  }
+  
+  function handleSummarizeClick() {
+    const chatContainer = document.getElementById('sider-chat-container');
+    const welcome = document.querySelector('.sider-welcome');
+    const messagesContainer = document.getElementById('sider-chat-messages');
+    const summarizeCard = document.getElementById('sider-summarize-card');
+    
+    if (!chatContainer || !messagesContainer) return;
+    
+    // Show chat container, hide welcome and summarize card
+    chatContainer.style.display = 'flex';
+    if (welcome) {
+      welcome.style.display = 'none';
+    }
+    if (summarizeCard) {
+      summarizeCard.style.display = 'none';
+    }
+    
+    // Get page information
+    const pageTitle = document.title || 'Page';
+    const pageUrl = window.location.href;
+    const pageText = document.body.innerText.substring(0, 3000) || '';
+    
+    // Create summarize message using URL
+    const summarizePrompt = `Summarize this page: ${pageTitle}\n\nURL: ${pageUrl}${pageText ? `\n\nContent preview: ${pageText.substring(0, 2000)}${pageText.length > 2000 ? '...' : ''}` : ''}`;
+    
+    // Add user message
+    addMessage('user', `📄 Summarize: ${pageTitle}`);
+    
+    // Add thinking message
+    const thinkingMsg = addMessage('assistant', 'Thinking...', true);
+    
+    // Send to background for AI processing
+    try {
+      chrome.runtime.sendMessage({
+        type: 'CHAT_REQUEST',
+        message: summarizePrompt,
+        model: currentModel || 'chatgpt'
+      }, (response) => {
+        if (response && response.error) {
+          updateMessage(thinkingMsg, 'assistant', `Error: ${response.error}`);
+        } else if (response && response.text) {
+          updateMessage(thinkingMsg, 'assistant', response.text);
+        } else {
+          updateMessage(thinkingMsg, 'assistant', 'Unable to generate summary. Please try again.');
+        }
+      });
+    } catch (error) {
+      updateMessage(thinkingMsg, 'assistant', `Error: ${error.message}`);
+    }
   }
   
   function closePanel() {
@@ -520,7 +651,6 @@
     
     const toggleBtn = document.getElementById('sider-toggle-btn');
     const closeBtn = document.getElementById('sider-close-btn');
-    const sendBtn = document.getElementById('sider-send-btn');
     const chatInput = document.getElementById('sider-chat-input');
     const aiSelectorBtn = document.getElementById('sider-ai-selector-btn');
     const aiDropdown = document.getElementById('sider-ai-dropdown');
@@ -563,11 +693,9 @@
     // Microphone button
     micBtn?.addEventListener('click', (e) => {
       e.stopPropagation();
-      // TODO: Implement voice input
-      console.log('Voice input clicked');
+      // Voice input feature not implemented
     });
     
-    sendBtn?.addEventListener('click', () => sendMessage());
     chatInput?.addEventListener('keydown', (e) => {
       if (e.key === 'Enter' && !e.shiftKey) {
         e.preventDefault();
@@ -638,22 +766,61 @@
       });
     });
     
-    chrome.storage.local.get(['siderPanelOpen'], (result) => {
-      if (result.siderPanelOpen) {
-        isPanelOpen = true;
-        chatPanel.classList.add('sider-panel-open');
-        chatPanel.classList.remove('sider-panel-collapsed');
-        chatPanel.style.transform = 'translateX(0)';
-        compressWebsite(true);
-      } else {
-        // Ensure panel is closed if state says it should be
-        isPanelOpen = false;
-        chatPanel.classList.remove('sider-panel-open');
-        chatPanel.classList.remove('sider-panel-collapsed');
-        chatPanel.style.transform = 'translateX(100%)';
-        compressWebsite(false);
-      }
-    });
+    // Summarize button click handler
+    const summarizeBtn = document.getElementById('sider-summarize-btn');
+    const summarizeCopyBtn = document.getElementById('sider-summarize-copy-btn');
+    const summarizeCloseBtn = document.getElementById('sider-summarize-close-btn');
+    
+    if (summarizeBtn) {
+      summarizeBtn.addEventListener('click', (e) => {
+        e.stopPropagation();
+        handleSummarizeClick();
+      });
+    }
+    
+    if (summarizeCopyBtn) {
+      summarizeCopyBtn.addEventListener('click', (e) => {
+        e.stopPropagation();
+        const pageUrl = window.location.href;
+        navigator.clipboard.writeText(pageUrl).then(() => {
+          // Show feedback
+          const originalTitle = summarizeCopyBtn.getAttribute('title');
+          summarizeCopyBtn.setAttribute('title', 'Copied!');
+          setTimeout(() => {
+            summarizeCopyBtn.setAttribute('title', originalTitle || 'Copy URL');
+          }, 2000);
+        }).catch(() => {
+          // Fallback for older browsers
+          const textArea = document.createElement('textarea');
+          textArea.value = pageUrl;
+          document.body.appendChild(textArea);
+          textArea.select();
+          document.execCommand('copy');
+          document.body.removeChild(textArea);
+        });
+      });
+    }
+    
+    if (summarizeCloseBtn) {
+      summarizeCloseBtn.addEventListener('click', (e) => {
+        e.stopPropagation();
+        const summarizeCard = document.getElementById('sider-summarize-card');
+        if (summarizeCard) {
+          summarizeCard.style.display = 'none';
+        }
+      });
+    }
+    
+    // Don't auto-open panel on page load - only open when extension icon is clicked
+    // Ensure panel is closed by default
+    isPanelOpen = false;
+    chatPanel.classList.remove('sider-panel-open');
+    chatPanel.classList.remove('sider-panel-collapsed');
+    chatPanel.style.transform = 'translateX(100%)';
+    compressWebsite(false);
+    
+    // Clear the stored state so it doesn't auto-open on next page load
+    chrome.storage.local.set({ siderPanelOpen: false });
     
     // Handle window resize for responsiveness
     window.addEventListener('resize', () => {
@@ -693,23 +860,42 @@
         welcome.style.display = 'none';
         break;
       default:
-        console.log('Action:', action);
+        // Unknown action
     }
   }
   
   function updateAISelectorIcon(model) {
-    const icons = {
-      chatgpt: '🤖',
-      gpt4: '🧠',
-      gemini: '⭐',
-      claude: '🌟',
-      groq: '⚡'
+    const iconMap = {
+      'Sider Fusion': chrome.runtime.getURL('icons/fusion.png'),
+      'GPT-5 mini': chrome.runtime.getURL('icons/gpt_5mini.png'),
+      'Cloude Haiku 4.5': chrome.runtime.getURL('icons/claude.png'),
+      'Gemini 2.5 Flash': chrome.runtime.getURL('icons/gemini.png'),
+      'GPT-5': chrome.runtime.getURL('icons/chatgpt.png'),
+      'GPT-4.0': chrome.runtime.getURL('icons/chatgpt.png'),
+      'DeepSeek V3.1': chrome.runtime.getURL('icons/deepseek.png'),
+      'Cloude Sonnet 4.5': chrome.runtime.getURL('icons/claude.png'),
+      'Gemini 2.5 Pro': chrome.runtime.getURL('icons/gemini.png'),
+      'Grok 4': chrome.runtime.getURL('icons/grok.png'),
+      'claude-3.5-haiku': chrome.runtime.getURL('icons/claude.png'),
+      'kimi-k2': chrome.runtime.getURL('icons/kimi.png'),
+      'deepseek-v3': chrome.runtime.getURL('icons/deepseek.png'),
+      'claude-3.7-sonnet': chrome.runtime.getURL('icons/claude.png'),
+      'claude-sonnet-4': chrome.runtime.getURL('icons/claude.png'),
+      'claude-opus-4.1': chrome.runtime.getURL('icons/claude.png'),
+      // Legacy values for backward compatibility
+      'chatgpt': chrome.runtime.getURL('icons/fusion.png'),
+      'gpt4': chrome.runtime.getURL('icons/chatgpt.png'),
+      'gemini': chrome.runtime.getURL('icons/gemini.png'),
+      'claude': chrome.runtime.getURL('icons/claude.png'),
+      'groq': chrome.runtime.getURL('icons/grok.png')
     };
+    
     const btn = document.getElementById('sider-ai-selector-btn');
     if (btn) {
       const iconDiv = btn.querySelector('.sider-ai-selector-icon');
       if (iconDiv) {
-        iconDiv.textContent = icons[model] || '🤖';
+        const imageUrl = iconMap[model] || iconMap['chatgpt'] || chrome.runtime.getURL('icons/fusion.png');
+        iconDiv.innerHTML = `<img src="${imageUrl}" alt="${model}" style="width: 18px; height: 18px; object-fit: contain; display: block;" />`;
       }
     }
   }
@@ -875,8 +1061,7 @@
         }
       });
     } catch (error) {
-      console.error('Screenshot error:', error);
-      // Fallback: use html2canvas if available
+      // Screenshot error
       alert('Screenshot captured. Note: Full screenshot feature requires additional permissions.');
     }
   }
@@ -1045,12 +1230,19 @@
     // Reset chat container and show welcome screen
     const chatContainer = document.getElementById('sider-chat-container');
     const welcome = document.querySelector('.sider-welcome');
+    const summarizeCard = document.getElementById('sider-summarize-card');
     
     if (chatContainer) {
       chatContainer.style.display = 'none';
     }
     if (welcome) {
       welcome.style.display = 'block';
+    }
+    // Show summarize card again when creating new chat
+    if (summarizeCard) {
+      setTimeout(() => {
+        checkAndShowSummarizeCard();
+      }, 100);
     }
     
     // Close AI dropdown if open
@@ -1132,7 +1324,7 @@
         return true;
       }
     } catch (error) {
-      console.error('Error handling message:', error);
+      // Error handling message
       if (sendResponse) {
         sendResponse({ error: error.message });
       }
@@ -1650,20 +1842,47 @@
   });
 
   // Listen for text cleared events (when clicking outside)
-  window.addEventListener('sider:text-cleared', () => {
-    const selectedTextSection = document.getElementById('sider-selected-text-section');
+  // Only hide if explicitly requested, not when user is typing
+  window.addEventListener('sider:text-cleared', (e) => {
     const imagePreviewSection = document.getElementById('sider-image-preview-section');
     const input = document.getElementById('sider-chat-input');
     
-    if (selectedTextSection) {
-      selectedTextSection.style.display = 'none';
+    // Only hide selected text section if explicitly requested via event detail
+    const shouldHideSelectedText = e.detail?.hideSelectedText === true;
+    if (shouldHideSelectedText) {
+      const selectedTextSection = document.getElementById('sider-selected-text-section');
+      if (selectedTextSection) {
+        selectedTextSection.style.display = 'none';
+      }
     }
+    
     if (imagePreviewSection) {
       imagePreviewSection.style.display = 'none';
     }
-    if (input) {
-      input.value = '';
-      autoResize(input);
+    // Don't clear input value - let user keep typing
+    // if (input) {
+    //   input.value = '';
+    //   autoResize(input);
+    // }
+  });
+
+  // Add click listener to close selected text section when clicking outside the panel
+  document.addEventListener('mousedown', (e) => {
+    const selectedTextSection = document.getElementById('sider-selected-text-section');
+    if (!selectedTextSection || selectedTextSection.style.display === 'none') {
+      return;
+    }
+
+    // Check if click is outside the extension panel
+    const panel = document.getElementById('sider-ai-chat-panel');
+    if (!panel) return;
+
+    // Check if click is inside the panel
+    const isInsidePanel = panel.contains(e.target);
+    
+    // Only hide if clicking outside the panel
+    if (!isInsidePanel) {
+      selectedTextSection.style.display = 'none';
     }
   });
 
@@ -1710,9 +1929,11 @@
           handleImageAction(action, src, alt);
         };
       });
+      
+      // Setup close button
+      setupImagePreviewCloseButton();
     }
     
-    console.log('Chat with image:', src);
   });
   
   function handleImageAction(action, src, alt) {
@@ -1732,6 +1953,27 @@
     }
     autoResize(input);
     input.focus();
+  }
+
+  function setupImagePreviewCloseButton() {
+    const closeBtn = document.getElementById('sider-image-preview-close');
+    const imagePreviewSection = document.getElementById('sider-image-preview-section');
+    const imageThumb = document.getElementById('sider-image-preview-thumb');
+    
+    if (closeBtn && imagePreviewSection && imageThumb) {
+      // Remove existing listeners by cloning the button
+      const newCloseBtn = closeBtn.cloneNode(true);
+      closeBtn.parentNode.replaceChild(newCloseBtn, closeBtn);
+      
+      // Attach new listener
+      newCloseBtn.onclick = (e) => {
+        e.stopPropagation();
+        e.preventDefault();
+        imagePreviewSection.style.display = 'none';
+        imageThumb.src = '';
+        imageThumb.alt = '';
+      };
+    }
   }
 
   window.addEventListener('sider:extract-text', (e) => {
@@ -1759,6 +2001,7 @@
       imageThumb.src = src;
       imageThumb.alt = alt || 'Image';
       imagePreviewSection.style.display = 'block';
+      setupImagePreviewCloseButton();
     }
     
     // Set input with extract text prompt
@@ -1768,16 +2011,13 @@
       autoResize(input);
     }
     
-    console.log('Extract text from image:', src);
-    // TODO: Implement OCR/image text extraction
+    // OCR/image text extraction feature not implemented
   });
 
   window.addEventListener('sider:save-wisebase', (e) => {
     const { src, alt } = e.detail || {};
     if (!src) return;
     
-    console.log('Save to Wisebase:', src, alt);
-    // TODO: Implement Wisebase save functionality
     alert('Save to Wisebase feature coming soon!');
   });
 
@@ -1805,6 +2045,7 @@
       imageThumb.src = src;
       imageThumb.alt = alt || 'Image';
       imagePreviewSection.style.display = 'block';
+      setupImagePreviewCloseButton();
     }
     
     const toolLabels = {
@@ -1824,8 +2065,7 @@
       autoResize(input);
     }
     
-    console.log('Image tool:', tool, src);
-    // TODO: Implement image tool functionality
+    // Image tool functionality not implemented
   });
 
   // Initialize core panel only; toolbar handled by toolbar.js, image preview by image-preview.js

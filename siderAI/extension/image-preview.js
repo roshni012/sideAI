@@ -110,15 +110,10 @@
 
   function attachOverlayListeners(overlay, img) {
     try {
-      console.log('attachOverlayListeners called', { overlay, img, overlayHTML: overlay.innerHTML.substring(0, 200) });
-      
       const aiToolsBtn = overlay.querySelector('.sider-ai-tools-btn');
       const closeBtn = overlay.querySelector('.sider-image-close-btn');
-      
-      console.log('Found buttons:', { aiToolsBtn: !!aiToolsBtn, closeBtn: !!closeBtn });
 
       if (!aiToolsBtn) {
-        console.error('AI Tools button not found in overlay!', overlay.innerHTML);
         return;
       }
 
@@ -130,14 +125,13 @@
       try {
         menuTimeout = setTimeout(() => {
           try {
-            console.log('showMenuOnHover called for image:', img);
             showMenu(overlay, img);
           } catch (err) {
-            console.error('Error in showMenuOnHover:', err);
+            // Error in showMenuOnHover
           }
         }, 50); // Reduced delay for faster response
       } catch (err) {
-        console.error('Error setting menu timeout:', err);
+        // Error setting menu timeout
       }
     };
 
@@ -169,7 +163,6 @@
       // Also show menu on hover over the AI Tools button specifically
       aiToolsBtn.addEventListener('mouseenter', (e) => {
         e.stopPropagation();
-        console.log('AI Tools button mouseenter');
         showMenuOnHover();
       });
 
@@ -177,16 +170,13 @@
       aiToolsBtn.addEventListener('click', (e) => {
         e.stopPropagation();
         e.preventDefault();
-        console.log('AI Tools button clicked');
         clearTimeout(menuTimeout);
         // Always show menu on click, don't hide it
         try {
-          console.log('Showing menu on click');
           showMenu(overlay, img);
           // Ensure menu is visible after creation
           setTimeout(() => {
             if (currentMenu && currentMenu.parentNode) {
-              console.log('Forcing menu visibility after click');
               currentMenu.style.display = 'block';
               currentMenu.style.visibility = 'visible';
               currentMenu.style.opacity = '1';
@@ -198,34 +188,19 @@
                                 rect.bottom <= window.innerHeight && 
                                 rect.right <= window.innerWidth;
               
-              console.log('Menu state:', {
-                display: currentMenu.style.display,
-                visibility: currentMenu.style.visibility,
-                opacity: currentMenu.style.opacity,
-                zIndex: currentMenu.style.zIndex,
-                parent: currentMenu.parentNode,
-                computed: window.getComputedStyle(currentMenu).display,
-                rect: rect,
-                inViewport: inViewport,
-                viewport: { width: window.innerWidth, height: window.innerHeight }
-              });
               
               // If menu is off-screen, adjust position
               if (!inViewport) {
-                console.warn('Menu is off-screen, adjusting position');
                 const overlayRect = overlay.getBoundingClientRect();
                 const menuTop = overlayRect.bottom + window.scrollY + 5;
                 const menuLeft = overlayRect.left + window.scrollX;
                 currentMenu.style.top = `${menuTop}px`;
                 currentMenu.style.left = `${menuLeft}px`;
-                console.log('Menu repositioned to:', menuTop, menuLeft);
               }
-            } else {
-              console.error('currentMenu is null or not in DOM after showMenu call!');
             }
           }, 50);
         } catch (err) {
-          console.error('Error in click handler:', err);
+          // Error in click handler
         }
       });
 
@@ -238,17 +213,27 @@
         });
       }
     } catch (err) {
-      console.error('Error in attachOverlayListeners:', err, err.stack);
+      // Error in attachOverlayListeners
     }
+  }
+
+  function getSidebarInfo() {
+    const sidebar = document.querySelector('#sider-ai-chat-panel.sider-panel-open');
+    if (!sidebar) {
+      return { isOpen: false, width: 0 };
+    }
+    const sidebarRect = sidebar.getBoundingClientRect();
+    return { 
+      isOpen: true, 
+      width: sidebarRect.width || (window.innerWidth <= 768 ? window.innerWidth : window.innerWidth <= 1024 ? 320 : 380),
+      left: sidebarRect.left
+    };
   }
 
   function showMenu(overlay, img) {
     try {
-      console.log('showMenu called', { overlay, img, currentMenu: currentMenu?.parentNode ? 'exists' : 'none' });
-      
       // If menu already exists and is visible, ensure it's shown
       if (currentMenu && currentMenu.parentNode && currentMenu.style.display !== 'none') {
-        console.log('Menu already exists, making visible');
         currentMenu.style.display = 'block';
         currentMenu.style.visibility = 'visible';
         currentMenu.style.opacity = '1';
@@ -270,8 +255,21 @@
     `).join('');
 
     const overlayRect = overlay.getBoundingClientRect();
+    const sidebarInfo = getSidebarInfo();
     const viewportWidth = window.innerWidth;
     const viewportHeight = window.innerHeight;
+    
+    // Calculate available width (considering sidebar if open)
+    const availableWidth = sidebarInfo.isOpen 
+      ? sidebarInfo.left - 20  // Available space up to sidebar minus padding
+      : viewportWidth - 40;
+    
+    // Calculate responsive menu width
+    // When sidebar is open, reduce menu width to fit available space
+    const baseMenuWidth = 180;
+    const menuWidth = sidebarInfo.isOpen
+      ? Math.min(baseMenuWidth, Math.max(150, availableWidth))  // Min 150px when sidebar open
+      : Math.min(baseMenuWidth, availableWidth);
     
     menu.style.position = 'fixed';
     menu.style.zIndex = '100001';
@@ -279,21 +277,44 @@
     menu.style.visibility = 'visible';
     menu.style.opacity = '1';
     menu.style.pointerEvents = 'auto';
+    menu.style.width = `${menuWidth}px`;
+    menu.style.minWidth = `${Math.min(menuWidth, 150)}px`;
+    menu.style.maxWidth = `${menuWidth}px`;
+    // Use !important to override CSS defaults when sidebar is open
+    if (sidebarInfo.isOpen) {
+      menu.style.setProperty('width', `${menuWidth}px`, 'important');
+      menu.style.setProperty('min-width', `${Math.min(menuWidth, 150)}px`, 'important');
+      menu.style.setProperty('max-width', `${menuWidth}px`, 'important');
+    }
     
     // Use viewport coordinates (not scroll-adjusted) for fixed positioning
     let menuTop = overlayRect.bottom + 5;  // Relative to viewport
     let menuLeft = overlayRect.left;       // Relative to viewport
     
-    // Adjust if menu would overflow viewport (responsive)
-    const menuWidth = Math.min(180, viewportWidth - 40);
     const menuHeight = MENU_ITEMS.length * 40 + 12; // Approximate height
     
-    // Adjust horizontal position (viewport-relative)
-    if (menuLeft + menuWidth > viewportWidth) {
-      menuLeft = Math.max(10, viewportWidth - menuWidth - 10);
+    // Adjust horizontal position (viewport-relative, accounting for sidebar)
+    const maxRight = sidebarInfo.isOpen 
+      ? sidebarInfo.left - 10  // Leave gap before sidebar
+      : viewportWidth - 10;
+    
+    if (menuLeft + menuWidth > maxRight) {
+      // Try positioning to the left of overlay
+      const leftPosition = overlayRect.right - menuWidth;
+      if (leftPosition >= 10) {
+        menuLeft = leftPosition;
+      } else {
+        // Position as far left as possible
+        menuLeft = Math.max(10, maxRight - menuWidth);
+      }
     }
     if (menuLeft < 10) {
       menuLeft = 10;
+    }
+    
+    // Ensure menu doesn't overlap with sidebar
+    if (sidebarInfo.isOpen && menuLeft + menuWidth > sidebarInfo.left - 5) {
+      menuLeft = Math.max(10, sidebarInfo.left - menuWidth - 10);
     }
     
     // Adjust vertical position (viewport-relative)
@@ -323,13 +344,6 @@
                       menuRect.bottom <= window.innerHeight && 
                       menuRect.right <= window.innerWidth;
     
-    console.log('Menu position verification:', {
-      menuRect,
-      isVisible,
-      inViewport,
-      scrollY: window.scrollY,
-      scrollX: window.scrollX
-    });
 
     attachMenuListeners(menu, overlay, img);
     
@@ -364,34 +378,14 @@
       document.addEventListener('click', onClickOutside, true);
     }, 0);
 
-    // Debug: log menu creation
-    console.log('Menu created and appended', {
-      top: menuTop,
-      left: menuLeft,
-      width: menuWidth,
-      display: menu.style.display,
-      zIndex: menu.style.zIndex,
-      element: menu,
-      parent: menu.parentNode,
-      computedStyle: window.getComputedStyle(menu)
-    });
     
     // Double-check visibility after a brief delay
     setTimeout(() => {
       if (currentMenu && currentMenu.parentNode) {
         const computed = window.getComputedStyle(currentMenu);
-        console.log('Menu visibility check:', {
-          display: computed.display,
-          visibility: computed.visibility,
-          opacity: computed.opacity,
-          zIndex: computed.zIndex,
-          top: currentMenu.style.top,
-          left: currentMenu.style.left
-        });
         
         // Force visibility if still not showing
         if (computed.display === 'none' || computed.visibility === 'hidden' || computed.opacity === '0') {
-          console.warn('Menu not visible, forcing visibility');
           currentMenu.style.display = 'block';
           currentMenu.style.visibility = 'visible';
           currentMenu.style.opacity = '1';
@@ -400,7 +394,7 @@
       }
     }, 50);
     } catch (err) {
-      console.error('Error in showMenu:', err, err.stack);
+      // Error in showMenu
     }
   }
 
@@ -419,29 +413,61 @@
     `).join('');
 
     const menuRect = currentMenu.getBoundingClientRect();
+    const sidebarInfo = getSidebarInfo();
     const viewportWidth = window.innerWidth;
     const viewportHeight = window.innerHeight;
     
-    subMenu.style.position = 'fixed';
-    let subMenuTop = menuRect.top;
-    let subMenuLeft = menuRect.right + window.scrollX + 5;
+    // Calculate available width (considering sidebar if open)
+    const availableWidth = sidebarInfo.isOpen 
+      ? sidebarInfo.left - 20  // Available space up to sidebar minus padding
+      : viewportWidth - 40;
     
-    // Adjust if submenu would overflow viewport (responsive)
-    const subMenuWidth = Math.min(180, viewportWidth - 40);
+    // Calculate responsive submenu width
+    // When sidebar is open, reduce submenu width to fit available space
+    const baseSubMenuWidth = 180;
+    const subMenuWidth = sidebarInfo.isOpen
+      ? Math.min(baseSubMenuWidth, Math.max(150, availableWidth))  // Min 150px when sidebar open
+      : Math.min(baseSubMenuWidth, availableWidth);
+    
+    subMenu.style.position = 'fixed';
+    subMenu.style.width = `${subMenuWidth}px`;
+    subMenu.style.minWidth = `${Math.min(subMenuWidth, 150)}px`;
+    subMenu.style.maxWidth = `${subMenuWidth}px`;
+    // Use !important to override CSS defaults when sidebar is open
+    if (sidebarInfo.isOpen) {
+      subMenu.style.setProperty('width', `${subMenuWidth}px`, 'important');
+      subMenu.style.setProperty('min-width', `${Math.min(subMenuWidth, 150)}px`, 'important');
+      subMenu.style.setProperty('max-width', `${subMenuWidth}px`, 'important');
+    }
+    
+    let subMenuTop = menuRect.top;
+    // Use viewport coordinates (not scroll-adjusted) for fixed positioning
+    let subMenuLeft = menuRect.right + 5;
+    
     const subMenuHeight = IMAGE_TOOLS_SUBMENU.length * 40 + 12;
     
+    // Calculate max right position (accounting for sidebar)
+    const maxRight = sidebarInfo.isOpen 
+      ? sidebarInfo.left - 10  // Leave gap before sidebar
+      : viewportWidth - 10;
+    
     // Adjust horizontal position
-    if (subMenuLeft + subMenuWidth > viewportWidth) {
+    if (subMenuLeft + subMenuWidth > maxRight) {
       // Show submenu to the left instead
-      subMenuLeft = Math.max(10, menuRect.left + window.scrollX - subMenuWidth - 5);
+      subMenuLeft = Math.max(10, menuRect.left - subMenuWidth - 5);
     }
     if (subMenuLeft < 10) {
       subMenuLeft = 10;
     }
     
-    // Adjust vertical position
-    if (subMenuTop + subMenuHeight > viewportHeight + window.scrollY) {
-      subMenuTop = Math.max(10, viewportHeight + window.scrollY - subMenuHeight - 10);
+    // Ensure submenu doesn't overlap with sidebar
+    if (sidebarInfo.isOpen && subMenuLeft + subMenuWidth > sidebarInfo.left - 5) {
+      subMenuLeft = Math.max(10, sidebarInfo.left - subMenuWidth - 10);
+    }
+    
+    // Adjust vertical position (viewport-relative)
+    if (subMenuTop + subMenuHeight > viewportHeight) {
+      subMenuTop = Math.max(10, viewportHeight - subMenuHeight - 10);
     }
     if (subMenuTop < 10) {
       subMenuTop = 10;
@@ -572,6 +598,22 @@
         // Check if image is actually visible in DOM
         if (!img.isConnected || !document.body.contains(img)) return;
 
+        // Skip images inside sider-input-area (extension's input area)
+        const inputArea = img.closest('.sider-input-area');
+        if (inputArea) return;
+        
+        // Skip images in sider-attachments (attachment previews)
+        const attachments = img.closest('.sider-attachments');
+        if (attachments) return;
+        
+        // Skip images in sider-image-preview-section (image preview section)
+        const imagePreview = img.closest('.sider-image-preview-section');
+        if (imagePreview) return;
+        
+        // Skip images inside sider-ai-chat-panel (entire extension panel)
+        const chatPanel = img.closest('#sider-ai-chat-panel');
+        if (chatPanel) return;
+
         const rect = img.getBoundingClientRect();
         const computedStyle = window.getComputedStyle(img);
         
@@ -603,7 +645,7 @@
         }
       } catch (e) {
         // Silently fail if there's an issue
-        console.debug('Error processing image:', e);
+        // Error processing image
       }
     };
 
@@ -642,6 +684,22 @@
     setTimeout(processExistingImages, 1500);
     setTimeout(processExistingImages, 3000);
 
+    // Cleanup function to remove overlays for images inside extension panel
+    const cleanupExtensionPanelOverlays = () => {
+      imageOverlays.forEach((overlay, img) => {
+        if (!img.isConnected) return;
+        
+        const inputArea = img.closest('.sider-input-area');
+        const attachments = img.closest('.sider-attachments');
+        const imagePreview = img.closest('.sider-image-preview-section');
+        const chatPanel = img.closest('#sider-ai-chat-panel');
+        
+        if (inputArea || attachments || imagePreview || chatPanel) {
+          hideOverlay(img);
+        }
+      });
+    };
+
     // Watch for new images (SPA support)
     const observer = new MutationObserver((mutations) => {
       mutations.forEach((mutation) => {
@@ -659,6 +717,17 @@
                   processImage(img);
                 }
               });
+            }
+            
+            // Cleanup overlays if extension panel elements are added
+            if (node.matches && (
+              node.matches('.sider-input-area') ||
+              node.matches('.sider-attachments') ||
+              node.matches('.sider-image-preview-section') ||
+              node.matches('#sider-ai-chat-panel') ||
+              node.querySelector('.sider-input-area, .sider-attachments, .sider-image-preview-section, #sider-ai-chat-panel')
+            )) {
+              cleanupExtensionPanelOverlays();
             }
           }
         });
