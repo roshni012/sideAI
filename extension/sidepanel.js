@@ -623,8 +623,17 @@
   }
   
   function handleProfileLogin() {
+    // Wait for login modal to be available
     if (window.SiderLoginModal) {
       window.SiderLoginModal.show('login');
+    } else {
+      setTimeout(() => {
+        if (window.SiderLoginModal) {
+          window.SiderLoginModal.show('login');
+        } else {
+          console.error('Login modal not available');
+        }
+      }, 100);
     }
   }
   
@@ -1408,11 +1417,29 @@
       }
     });
     
-    // Update page title when tab changes
-    chrome.tabs.onUpdated.addListener((tabId, changeInfo, tab) => {
-      if (changeInfo.status === 'complete' && currentTab && tabId === currentTab.id) {
-        currentTab = tab;
-        updatePageTitle();
+    chrome.tabs.onActivated.addListener(async (activeInfo) => {
+      try {
+        const [tab] = await chrome.tabs.query({ active: true, currentWindow: true });
+        if (tab) {
+          currentTab = tab;
+          updatePageTitle();
+        }
+      } catch (e) {
+        console.error('Error updating tab on activation:', e);
+      }
+    });
+    
+    chrome.tabs.onUpdated.addListener(async (tabId, changeInfo, tab) => {
+      try {
+        const [activeTab] = await chrome.tabs.query({ active: true, currentWindow: true });
+        if (activeTab && tabId === activeTab.id) {
+          if (changeInfo.status === 'complete' || changeInfo.title) {
+            currentTab = tab;
+            updatePageTitle();
+          }
+        }
+      } catch (e) {
+        console.error('Error updating tab on update:', e);
       }
     });
   }
