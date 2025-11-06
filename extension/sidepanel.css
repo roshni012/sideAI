@@ -269,7 +269,7 @@ body {
 
 .sider-profile-dropdown-text {
   flex: 1;
-  font-size: 14px;
+  font-size: 12px;
   color: #111827;
   line-height: 1.4;
 }
@@ -280,7 +280,7 @@ body {
   border: none;
   border-radius: 8px;
   padding: 8px 16px;
-  font-size: 14px;
+  font-size: 12px;
   font-weight: 600;
   cursor: pointer;
   transition: all 0.2s;
@@ -315,7 +315,7 @@ body {
   cursor: pointer;
   transition: all 0.2s;
   color: #111827;
-  font-size: 14px;
+  font-size: 12px;
 }
 
 .sider-profile-menu-item:hover {
@@ -428,7 +428,7 @@ body {
 }
 
 .sider-chat-controls-label {
-  font-size: 14px;
+  font-size: 12px;
   font-weight: 500;
   color: #111827;
   flex: 1;
@@ -458,7 +458,7 @@ body {
   border: 1px solid #e5e7eb;
   border-radius: 6px;
   background: #ffffff;
-  font-size: 14px;
+  font-size: 12px;
   color: #111827;
   cursor: pointer;
   appearance: none;
@@ -486,7 +486,7 @@ body {
   padding: 6px 12px;
   border-radius: 6px;
   background: #ffffff;
-  font-size: 14px;
+  font-size: 12px;
   color: #111827;
   cursor: pointer;
   transition: all 0.2s;
@@ -632,7 +632,7 @@ body {
 }
 
 .sider-generation-model-name {
-  font-size: 14px;
+  font-size: 12px;
   font-weight: 600;
   color: #111827;
 }
@@ -649,7 +649,7 @@ body {
 }
 
 .sider-generation-model-cost {
-  font-size: 14px;
+  font-size: 12px;
   font-weight: 500;
   color: #111827;
 }
@@ -676,7 +676,7 @@ body {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  font-size: 14px;
+  font-size: 12px;
   font-weight: 600;
   color: #111827;
 }
@@ -724,7 +724,7 @@ body {
 }
 
 .sider-welcome p {
-  font-size: 14px;
+  font-size: 12px;
   color: #6b7280;
   margin: 0 0 24px 0;
 }
@@ -741,7 +741,7 @@ body {
   flex-direction: row !important;
   align-items: center !important;
   justify-content: flex-start !important;
-  padding: 12px 16px !important;
+  padding: 5px !important;
   background: #ffffff !important;
   border: 1px solid #e5e7eb !important;
   border-radius: 12px !important;
@@ -752,7 +752,7 @@ body {
   color: #111827 !important;
   box-shadow: 0 1px 2px rgba(0, 0, 0, 0.05) !important;
   min-height: auto !important;
-  gap: 12px !important;
+  gap: 6px !important;
 }
 
 .sider-action-btn {
@@ -766,7 +766,7 @@ body {
   border-radius: 12px;
   cursor: pointer;
   transition: all 0.2s;
-  font-size: 14px;
+  font-size: 12px;
   font-weight: 500;
   color: #111827;
   box-shadow: 0 1px 2px rgba(0, 0, 0, 0.05);
@@ -793,8 +793,8 @@ body {
 }
 
 .sider-welcome .sider-action-buttons .sider-action-btn svg {
-  width: 20px !important;
-  height: 20px !important;
+  width: 16px !important;
+  height: 16px !important;
   color: #111827 !important;
   flex-shrink: 0 !important;
 }
@@ -808,6 +808,7 @@ body {
 
 .sider-welcome .sider-action-buttons .sider-action-btn span {
   text-align: left !important;
+  font-size: 12px !important;
   line-height: 1.4 !important;
 }
 
@@ -878,7 +879,7 @@ body {
 .sider-message-text {
   padding: 10px 14px;
   border-radius: 12px;
-  font-size: 14px;
+  font-size: 12px;
   line-height: 1.5;
   color: #111827;
   background: #f3f4f6;
@@ -962,7 +963,7 @@ body {
 }
 
 .sider-selected-text-display {
-  font-size: 14px;
+  font-size: 12px;
   line-height: 1.6;
   color: #111827;
   background: #ffffff !important;
@@ -1156,7 +1157,7 @@ body {
 }
 
 .sider-summarize-site-name {
-  font-size: 14px;
+  font-size: 12px;
   font-weight: 500;
   color: #111827;
   white-space: nowrap;
@@ -1352,7 +1353,7 @@ body {
   border-radius: 50%;
   background: transparent;
   color: white;
-  font-size: 14px;
+  font-size: 12px;
 }
 
 .sider-ai-selector-icon img {
@@ -1422,7 +1423,7 @@ body {
   cursor: pointer;
   border-radius: 8px;
   transition: all 0.2s;
-  font-size: 14px;
+  font-size: 12px;
   color: #111827;
 }
 
@@ -1445,7 +1446,7 @@ body {
   padding-bottom: 40px;
   border: none;
   border-radius: 0;
-  font-size: 14px;
+  font-size: 12px;
   font-family: inherit;
   resize: none;
   overflow-y: hidden !important;
@@ -1639,7 +1640,6 @@ body {
 /* Responsive */
 @media (max-width: 400px) {
   .sider-action-buttons {
-    grid-template-columns: 1fr;
     gap: 8px;
   }
   

@@ -13,7 +13,6 @@
     modal.id = 'sider-login-modal';
     modal.style.display = 'none';
     modal.innerHTML = `
-      <div class="sider-login-modal-overlay" id="sider-login-modal-overlay"></div>
       <div class="sider-login-modal-content">
         <button class="sider-login-close-btn" id="sider-login-close-btn" title="Close">
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
@@ -297,7 +296,6 @@
     createLoginModal();
     
     const loginModal = document.getElementById('sider-login-modal');
-    const loginModalOverlay = document.getElementById('sider-login-modal-overlay');
     const loginCloseBtn = document.getElementById('sider-login-close-btn');
     const loginGoogleBtn = document.getElementById('sider-login-google-btn');
     const loginAppleBtn = document.getElementById('sider-login-apple-btn');
@@ -309,12 +307,6 @@
       if (loginCloseBtn) {
         loginCloseBtn.addEventListener('click', (e) => {
           e.stopPropagation();
-          hideLoginModal();
-        });
-      }
-      
-      if (loginModalOverlay) {
-        loginModalOverlay.addEventListener('click', () => {
           hideLoginModal();
         });
       }
