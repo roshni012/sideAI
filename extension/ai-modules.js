@@ -230,11 +230,14 @@
       return;
     }
 
-    // Find chat panel for positioning context
+    // Find chat panel or side panel container for positioning context
+    // Support both old injected panel and new side panel
     const chatPanel = document.getElementById('sider-ai-chat-panel');
-    if (!chatPanel) {
-      return;
-    }
+    const sidePanelContainer = document.querySelector('.sider-panel-container');
+    const panelContext = chatPanel || sidePanelContainer;
+    
+    // If neither exists, we can still work but positioning might be different
+    // Don't return early - allow modal to open anyway
 
     // Remove existing modal if any
     const existingWrapper = document.getElementById('sider-ai-modules-modal');

@@ -526,9 +526,32 @@
 
     switch (action) {
       case 'chat':
-        window.dispatchEvent(new CustomEvent('sider:chat-image', {
-          detail: { src: imgSrc, alt: imgAlt, element: img }
-        }));
+        // Convert image to data URL if it's not already
+        if (imgSrc.startsWith('data:')) {
+          // Already a data URL, send directly
+          chrome.runtime.sendMessage({
+            type: 'CHAT_WITH_IMAGE',
+            dataUrl: imgSrc,
+            alt: imgAlt
+          });
+        } else {
+          // Need to convert to data URL
+          convertImageToDataUrl(imgSrc).then(dataUrl => {
+            chrome.runtime.sendMessage({
+              type: 'CHAT_WITH_IMAGE',
+              dataUrl: dataUrl,
+              alt: imgAlt
+            });
+          }).catch(err => {
+            console.error('Error converting image to data URL:', err);
+            // Fallback: send the URL and let side panel handle it
+            chrome.runtime.sendMessage({
+              type: 'CHAT_WITH_IMAGE',
+              imageUrl: imgSrc,
+              alt: imgAlt
+            });
+          });
+        }
         break;
       case 'extract':
         window.dispatchEvent(new CustomEvent('sider:extract-text', {
@@ -541,6 +564,40 @@
         }));
         break;
     }
+  }
+  
+  // Helper function to convert image URL to data URL
+  function convertImageToDataUrl(url) {
+    return new Promise((resolve, reject) => {
+      // Handle CORS issues by using fetch if possible
+      fetch(url)
+        .then(response => response.blob())
+        .then(blob => {
+          const reader = new FileReader();
+          reader.onloadend = () => resolve(reader.result);
+          reader.onerror = reject;
+          reader.readAsDataURL(blob);
+        })
+        .catch(() => {
+          // Fallback: try using an image element
+          const img = new Image();
+          img.crossOrigin = 'anonymous';
+          img.onload = function() {
+            try {
+              const canvas = document.createElement('canvas');
+              canvas.width = img.width;
+              canvas.height = img.height;
+              const ctx = canvas.getContext('2d');
+              ctx.drawImage(img, 0, 0);
+              resolve(canvas.toDataURL('image/png'));
+            } catch (e) {
+              reject(e);
+            }
+          };
+          img.onerror = reject;
+          img.src = url;
+        });
+    });
   }
 
   function handleImageToolAction(tool, img) {
