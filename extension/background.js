@@ -1,31 +1,22 @@
+// Set side panel to open when extension icon is clicked
 chrome.runtime.onInstalled.addListener(() => {
-  // Extension installed
+  chrome.sidePanel.setOptions({
+    path: 'sidepanel.html'
+  });
 });
 
-// Clicking the toolbar icon toggles the right-side chat panel
+// Enable side panel to open when extension icon is clicked
+chrome.sidePanel.setPanelBehavior({ openPanelOnActionClick: true });
+
+// Clicking the toolbar icon opens the side panel
 chrome.action.onClicked.addListener(async (tab) => {
   if (!tab || !tab.id) return;
   
   try {
-    // Toggle panel
-    chrome.tabs.sendMessage(tab.id, { type: 'TOGGLE_PANEL' }, (response) => {
-      if (chrome.runtime.lastError) {
-        // Content script not ready - inject it
-        chrome.scripting.executeScript({
-          target: { tabId: tab.id },
-          files: ['content.js']
-        }).then(() => {
-          // Try again after injection
-          setTimeout(() => {
-            chrome.tabs.sendMessage(tab.id, { type: 'TOGGLE_PANEL' });
-          }, 100);
-        }).catch(() => {
-          // Content script injection failed
-        });
-      }
-    });
+    // Open side panel for the current tab
+    await chrome.sidePanel.open({ tabId: tab.id });
   } catch (error) {
-    // Error toggling panel
+    // Error opening side panel
   }
 });
 
@@ -36,6 +27,11 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
   } else if (request.type === 'CAPTURE_SCREENSHOT') {
     captureScreenshot(request.bounds, sender.tab?.id, sendResponse);
     return true; // Indicates we will send a response asynchronously
+  } else if (request.type === 'SCREENSHOT_CAPTURED' || request.type === 'TEXT_SELECTED' || request.type === 'CHAT_WITH_IMAGE' || request.type === 'TEXT_ACTION') {
+    // Forward messages from content script to side panel
+    // The side panel will receive these messages via chrome.runtime.onMessage
+    // No need to forward explicitly as chrome.runtime.sendMessage broadcasts to all listeners
+    return false;
   }
   return false;
 });

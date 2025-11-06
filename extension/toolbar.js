@@ -70,12 +70,43 @@
       if (!isUpdatingMenu) hide();
       return;
     }
+    
+    const range = selection.getRangeAt(0);
+    
+    // Check if selection is inside input field - exclude selections within input textarea
+    const input = document.getElementById('sider-chat-input');
+    const inputArea = document.querySelector('.sider-input-area');
+    
+    // Check if the selection's common ancestor container is inside the input field
+    const commonAncestor = range.commonAncestorContainer;
+    
+    // Helper function to check if a node is inside the input field
+    function isInsideInputField(node) {
+      if (!node) return false;
+      if (node === input || node === inputArea) return true;
+      if (node.nodeType === Node.TEXT_NODE) {
+        return input && input.contains(node.parentElement);
+      }
+      return input && input.contains(node);
+    }
+    
+    // Check both start and end containers of the selection
+    const startContainer = range.startContainer;
+    const endContainer = range.endContainer;
+    
+    // If selection is inside input field (textarea or input area), don't show toolbar
+    if (isInsideInputField(startContainer) || isInsideInputField(endContainer) || 
+        isInsideInputField(commonAncestor)) {
+      if (!isUpdatingMenu) hide();
+      return;
+    }
+    
     selectedText = selection.toString().trim();
     if (selectedText.length < 3) {
       if (!isUpdatingMenu) hide();
       return;
     }
-    const range = selection.getRangeAt(0);
+    
     const rect = range.getBoundingClientRect();
     const el = createToolbar();
     const toolbarHeight = 40;
@@ -511,6 +542,13 @@
   }
 
   window.SiderToolbar = { init, open: showToolbar, hide };
+  
+  // Auto-initialize
+  if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', init);
+  } else {
+    init();
+  }
 })();
 
 
