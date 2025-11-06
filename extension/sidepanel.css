@@ -603,22 +603,49 @@ body {
   margin-bottom: 24px;
 }
 
+.sider-welcome .sider-action-buttons .sider-action-btn {
+  display: flex !important;
+  flex-direction: row !important;
+  align-items: center !important;
+  justify-content: flex-start !important;
+  padding: 12px 16px !important;
+  background: #ffffff !important;
+  border: 1px solid #e5e7eb !important;
+  border-radius: 12px !important;
+  cursor: pointer !important;
+  transition: all 0.2s !important;
+  font-size: 14px !important;
+  font-weight: 500 !important;
+  color: #111827 !important;
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.05) !important;
+  min-height: auto !important;
+  gap: 12px !important;
+}
+
 .sider-action-btn {
   display: flex;
-  flex-direction: column;
+  flex-direction: row;
   align-items: center;
-  justify-content: center;
-  padding: 5px 2px;
+  justify-content: flex-start;
+  padding: 12px 16px;
   background: #ffffff;
   border: 1px solid #e5e7eb;
   border-radius: 12px;
   cursor: pointer;
   transition: all 0.2s;
-  font-size: 10px;
+  font-size: 14px;
   font-weight: 500;
   color: #111827;
   box-shadow: 0 1px 2px rgba(0, 0, 0, 0.05);
-  min-height: 100px;
+  min-height: auto;
+  gap: 12px;
+}
+
+.sider-welcome .sider-action-buttons .sider-action-btn:hover {
+  background: #ffffff !important;
+  border-color: #d1d5db !important;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1) !important;
+  transform: translateY(-2px) !important;
 }
 
 .sider-action-btn:hover {
@@ -632,15 +659,27 @@ body {
   transform: translateY(0);
 }
 
+.sider-welcome .sider-action-buttons .sider-action-btn svg {
+  width: 20px !important;
+  height: 20px !important;
+  color: #111827 !important;
+  flex-shrink: 0 !important;
+}
+
 .sider-action-btn svg {
-  width: 24px;
-  height: 24px;
+  width: 20px;
+  height: 20px;
   color: #111827;
   flex-shrink: 0;
 }
 
+.sider-welcome .sider-action-buttons .sider-action-btn span {
+  text-align: left !important;
+  line-height: 1.4 !important;
+}
+
 .sider-action-btn span {
-  text-align: center;
+  text-align: left;
   line-height: 1.4;
 }
 
@@ -1472,13 +1511,14 @@ body {
   }
   
   .sider-action-btn {
-    min-height: 80px;
-    font-size: 9px;
+    min-height: auto;
+    font-size: 12px;
+    padding: 10px 12px;
   }
   
   .sider-action-btn svg {
-    width: 20px;
-    height: 20px;
+    width: 18px;
+    height: 18px;
   }
   
   .sider-welcome h3 {
