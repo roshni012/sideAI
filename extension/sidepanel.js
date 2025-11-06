@@ -121,17 +121,67 @@
     }
   }
   
-  function startScreenshotMode() {
-    if (!currentTab || !currentTab.id) return;
+  async function startScreenshotMode() {
+    // Refresh current tab to ensure we have the latest tab info
+    currentTab = await getCurrentTab();
     
-    // Send message to content script to start screenshot mode
-    chrome.tabs.sendMessage(currentTab.id, {
-      type: 'START_SCREENSHOT_MODE'
-    }, (response) => {
-      if (chrome.runtime.lastError) {
-        console.error('Error starting screenshot mode:', chrome.runtime.lastError);
-      }
-    });
+    if (!currentTab || !currentTab.id) {
+      console.error('No active tab found');
+      alert('No active tab found. Please open a webpage and try again.');
+      return;
+    }
+    
+    // Check if the tab URL is injectable (not chrome://, extension://, etc.)
+    const url = currentTab.url || '';
+    if (url.startsWith('chrome://') || url.startsWith('chrome-extension://') || 
+        url.startsWith('moz-extension://') || url.startsWith('edge://') ||
+        url.startsWith('about:')) {
+      console.error('Screenshot mode is not available on this page');
+      alert('Screenshot mode is not available on Chrome internal pages or extension pages.');
+      return;
+    }
+    
+    try {
+      // Send message to content script to start screenshot mode
+      chrome.tabs.sendMessage(currentTab.id, {
+        type: 'START_SCREENSHOT_MODE'
+      }, (response) => {
+        if (chrome.runtime.lastError) {
+          const errorMsg = chrome.runtime.lastError.message;
+          console.error('Error starting screenshot mode:', errorMsg);
+          
+          // If content script is not loaded, try to inject it
+          if (errorMsg.includes('Receiving end does not exist') || 
+              errorMsg.includes('Could not establish connection')) {
+            // Try to inject all content scripts
+            chrome.scripting.executeScript({
+              target: { tabId: currentTab.id },
+              files: ['ai-modules.js', 'toolbar.js', 'image-preview.js', 'login-modal.js', 'content.js']
+            }).then(() => {
+              // Retry sending message after injection
+              setTimeout(() => {
+                chrome.tabs.sendMessage(currentTab.id, {
+                  type: 'START_SCREENSHOT_MODE'
+                }, (retryResponse) => {
+                  if (chrome.runtime.lastError) {
+                    console.error('Error starting screenshot mode after injection:', chrome.runtime.lastError);
+                    alert('Failed to start screenshot mode. Please refresh the page and try again.');
+                  }
+                });
+              }, 100);
+            }).catch((error) => {
+              console.error('Failed to inject content script:', error);
+              alert('Failed to start screenshot mode. This page may not support content scripts. Please try on a regular webpage.');
+            });
+          } else {
+            alert('Failed to start screenshot mode: ' + errorMsg);
+          }
+        }
+      });
+    } catch (error) {
+      console.error('Error in startScreenshotMode:', error);
+      alert('Failed to start screenshot mode. Please try again.');
+    }
   }
   
   function renderAttachments() {
@@ -848,7 +898,6 @@
       screenshotIcon.src = chrome.runtime.getURL('icons/cut.png');
     }
     
-    const closeBtn = document.getElementById('sider-close-btn');
     const chatInput = document.getElementById('sider-chat-input');
     const aiSelectorBtn = document.getElementById('sider-ai-selector-btn');
     const aiDropdown = document.getElementById('sider-ai-dropdown');
@@ -858,17 +907,6 @@
     const newChatBtn = document.getElementById('sider-new-chat-btn');
     const micBtn = document.getElementById('sider-mic-btn');
     fileInput = document.getElementById('sider-file-input');
-    
-    // Close button - close side panel
-    closeBtn?.addEventListener('click', async () => {
-      try {
-        if (currentTab && currentTab.id) {
-          await chrome.sidePanel.setOptions({ tabId: currentTab.id, enabled: false });
-        }
-      } catch (e) {
-        console.error('Error closing side panel:', e);
-      }
-    });
     
     // New Chat button
     newChatBtn?.addEventListener('click', () => {
