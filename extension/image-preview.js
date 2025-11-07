@@ -75,10 +75,51 @@
     overlay.style.top = '10px';
     overlay.style.left = '10px';
     overlay.style.zIndex = '100000';
+    overlay.style.opacity = '0';
+    overlay.style.pointerEvents = 'none';
+    overlay.style.transition = 'opacity 0.2s ease';
 
     imageOverlays.set(img, overlay);
     attachOverlayListeners(overlay, img);
+    attachImageHoverListeners(img, overlay);
     return overlay;
+  }
+  
+  function attachImageHoverListeners(img, overlay) {
+    img.addEventListener('mouseenter', () => {
+      if (overlay && overlay.parentNode) {
+        overlay.style.opacity = '1';
+        overlay.style.pointerEvents = 'auto';
+      }
+    });
+    
+    // Hide overlay when mouse leaves image
+    img.addEventListener('mouseleave', (e) => {
+      // Don't hide if moving to overlay or menu
+      if (overlay && overlay.parentNode) {
+        const relatedTarget = e.relatedTarget;
+        if (!overlay.contains(relatedTarget) && 
+            !currentMenu?.contains(relatedTarget) && 
+            !currentSubMenu?.contains(relatedTarget)) {
+          overlay.style.opacity = '0';
+          overlay.style.pointerEvents = 'none';
+          hideMenu();
+        }
+      }
+    });
+    
+    // Also handle when leaving overlay itself
+    overlay.addEventListener('mouseleave', (e) => {
+      const relatedTarget = e.relatedTarget;
+      // Don't hide if moving to menu or back to image
+      if (!img.contains(relatedTarget) && 
+          !currentMenu?.contains(relatedTarget) && 
+          !currentSubMenu?.contains(relatedTarget)) {
+        overlay.style.opacity = '0';
+        overlay.style.pointerEvents = 'none';
+        hideMenu();
+      }
+    });
   }
 
   function attachOverlayListeners(overlay, img) {
@@ -120,14 +161,14 @@
     // Show menu when hovering over overlay
     overlay.addEventListener('mouseenter', () => {
       overlay.style.opacity = '1';
+      overlay.style.pointerEvents = 'auto';
       showMenuOnHover();
     });
 
     overlay.addEventListener('mouseleave', (e) => {
-      // Only reduce opacity if not moving to menu
       if (!currentMenu?.contains(e.relatedTarget) && 
-          !currentSubMenu?.contains(e.relatedTarget)) {
-        overlay.style.opacity = '0.9';
+          !currentSubMenu?.contains(e.relatedTarget) &&
+          !img.contains(e.relatedTarget)) {
         isMenuHovered = false;
         hideMenuOnLeave();
       }
@@ -328,19 +369,27 @@
       menu.style.opacity = '1';
       isMenuHovered = true;
       clearTimeout(menuHoverTimeout);
+      if (overlay && overlay.parentNode) {
+        overlay.style.opacity = '1';
+        overlay.style.pointerEvents = 'auto';
+      }
     });
 
     menu.addEventListener('mouseleave', (e) => {
-      // Hide menu when leaving, unless moving to submenu or overlay
       isMenuHovered = false;
-      if (!currentSubMenu?.contains(e.relatedTarget) && 
-          !overlay.contains(e.relatedTarget) &&
-          !overlay.matches(':hover')) {
+      const relatedTarget = e.relatedTarget;
+      if (!currentSubMenu?.contains(relatedTarget) && 
+          !overlay.contains(relatedTarget) &&
+          !img.contains(relatedTarget)) {
         menuHoverTimeout = setTimeout(() => {
-          if (!overlay.contains(e.relatedTarget) && 
-              !currentSubMenu?.contains(e.relatedTarget) &&
-              !overlay.matches(':hover')) {
+          if (!overlay.contains(relatedTarget) && 
+              !currentSubMenu?.contains(relatedTarget) &&
+              !img.contains(relatedTarget)) {
             hideMenu();
+            if (overlay && overlay.parentNode) {
+              overlay.style.opacity = '0';
+              overlay.style.pointerEvents = 'none';
+            }
           }
         }, 200);
       }
@@ -452,11 +501,74 @@
 
     document.body.appendChild(subMenu);
     currentSubMenu = subMenu;
+    subMenu.addEventListener('mouseenter', () => {
+      if (overlay && overlay.parentNode) {
+        overlay.style.opacity = '1';
+        overlay.style.pointerEvents = 'auto';
+      }
+      if (currentSubMenu && currentSubMenu.parentNode) {
+        currentSubMenu.style.display = 'block';
+        currentSubMenu.style.visibility = 'visible';
+        currentSubMenu.style.opacity = '1';
+      }
+    });
+
+    subMenu.addEventListener('mouseleave', (e) => {
+      const relatedTarget = e.relatedTarget;
+      if (!currentMenu?.contains(relatedTarget) && 
+          !overlay.contains(relatedTarget) &&
+          !img.contains(relatedTarget)) {
+        setTimeout(() => {
+          if (!currentMenu?.contains(relatedTarget) && 
+              !overlay.contains(relatedTarget) &&
+              !img.contains(relatedTarget)) {
+            if (currentSubMenu) {
+              currentSubMenu.remove();
+              currentSubMenu = null;
+            }
+          }
+        }, 200);
+      }
+    });
 
     attachSubMenuListeners(subMenu, img);
   }
 
   function attachMenuListeners(menu, overlay, img) {
+    const menuItems = menu.querySelectorAll('.sider-menu-item');
+    let subMenuTimeout;
+    
+    menuItems.forEach(item => {
+      const id = item.getAttribute('data-id');
+      const action = item.getAttribute('data-action');
+      if (id === 'image-tools') {
+        item.addEventListener('mouseenter', () => {
+          clearTimeout(subMenuTimeout);
+          subMenuTimeout = setTimeout(() => {
+            showSubMenu(item, overlay, img);
+          }, 150); // Small delay to prevent accidental triggers
+        });
+        
+        item.addEventListener('mouseleave', (e) => {
+          clearTimeout(subMenuTimeout);
+          const relatedTarget = e.relatedTarget;
+          if (!currentSubMenu?.contains(relatedTarget) && 
+              !currentMenu?.contains(relatedTarget)) {
+            subMenuTimeout = setTimeout(() => {
+              if (currentSubMenu && 
+                  !currentSubMenu.matches(':hover') && 
+                  !currentSubMenu.contains(relatedTarget)) {
+                if (currentSubMenu) {
+                  currentSubMenu.remove();
+                  currentSubMenu = null;
+                }
+              }
+            }, 200);
+          }
+        });
+      }
+    });
+    
     menu.addEventListener('click', (e) => {
       e.stopPropagation();
       const item = e.target.closest('.sider-menu-item');
@@ -466,7 +578,7 @@
       const id = item.getAttribute('data-id');
 
       if (id === 'image-tools') {
-        showSubMenu(item, overlay, img);
+        return;
       } else {
         handleMenuAction(action, img);
         hideMenu();
@@ -504,6 +616,12 @@
         !e.target.closest('.sider-image-overlay') &&
         !e.target.closest('.sider-ai-tools-btn')) {
       hideMenu();
+      imageOverlays.forEach((overlay) => {
+        if (overlay && overlay.parentNode) {
+          overlay.style.opacity = '0';
+          overlay.style.pointerEvents = 'none';
+        }
+      });
       document.removeEventListener('click', onClickOutside, true);
     }
   }
@@ -677,11 +795,11 @@
           if (rect.width < 40 || rect.height < 40) return;
         }
 
-        // Create overlay immediately and make it visible
         const overlay = createOverlay(img);
         if (overlay) {
           overlay.style.display = 'flex';
-          overlay.style.opacity = '1';
+          overlay.style.opacity = '0';
+          overlay.style.pointerEvents = 'none';
         }
       } catch (e) {
         // Silently fail if there's an issue

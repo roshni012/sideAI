@@ -15,7 +15,7 @@
 
 .sider-image-overlay:hover {
   opacity: 1 !important;
-  padding: 8px 12px;
+  padding: 5px;
 }
 
 .sider-image-overlay:hover .sider-ai-tools-text {
@@ -33,7 +33,7 @@
   background: transparent;
   border: none;
   color: #ffffff;
-  font-size: 14px;
+  font-size: 11px;
   font-weight: 500;
   cursor: pointer;
   border-radius: 6px;
@@ -42,8 +42,8 @@
 }
 
 .sider-ai-tools-icon {
-  width: 24px;
-  height: 24px;
+  width: 15px;
+  height: 15px;
   object-fit: contain;
   flex-shrink: 0;
   display: block;
@@ -178,7 +178,7 @@
   }
 
   .sider-image-overlay:hover {
-    padding: 6px 10px;
+    padding: 5px;
   }
 
   .sider-ai-tools-btn {
@@ -188,8 +188,8 @@
   }
 
   .sider-ai-tools-icon {
-    width: 20px;
-    height: 20px;
+    width: 15px;
+    height: 15px;
   }
 
   .sider-ai-tools-text {
