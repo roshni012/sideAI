@@ -199,7 +199,7 @@ export default function Hero() {
       <div className="relative z-10 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
         <motion.div
           ref={badgeRef}
-          className="inline-flex items-center gap-2 px-5 py-2.5 rounded-full bg-gradient-to-r from-indigo-100 to-purple-100 dark:from-indigo-900/40 dark:to-purple-900/40 text-indigo-700 dark:text-indigo-300 mb-8 shadow-xl backdrop-blur-sm border border-indigo-200/50 dark:border-indigo-800/50"
+          className="inline-flex items-center gap-2 px-5 py-2.5 rounded-full bg-gradient-to-r from-indigo-100 to-purple-100 dark:from-indigo-900/40 dark:to-purple-900/40 text-indigo-700 dark:text-indigo-300 mb-8 shadow-xl backdrop-blur-sm border border-indigo-200/50 dark:border-indigo-800/50 mt-[2%]"
           whileHover={{ scale: 1.08, y: -2 }}
           whileTap={{ scale: 0.95 }}
           transition={{ type: 'spring', stiffness: 400, damping: 15 }}
