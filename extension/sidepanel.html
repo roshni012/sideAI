@@ -1,0 +1,822 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Sider: Chat with all AI</title>
+  <link rel="stylesheet" href="sidepanel.css">
+  <link rel="stylesheet" href="ai-modules.css">
+  <link rel="stylesheet" href="login-modal.css">
+</head>
+<body>
+  <div class="sider-panel-container">
+    <div class="sider-panel-main">
+      <div class="sider-panel-body" id="sider-panel-body">
+        <div class="sider-welcome">
+          <h3>Hi,</h3>
+          <p>How can I assist you today?</p>
+          
+          <div class="sider-action-buttons">
+            <button class="sider-action-btn" data-action="fullscreen">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <rect x="3" y="3" width="18" height="18" rx="2" ry="2"/>
+                <line x1="7" y1="8" x2="17" y2="8"/>
+                <line x1="7" y1="12" x2="17" y2="12"/>
+                <line x1="7" y1="16" x2="15" y2="16"/>
+              </svg>
+              <span>Full Screen Chat</span>
+            </button>
+            <button class="sider-action-btn" data-action="research">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <circle cx="11" cy="11" r="8"/>
+                <path d="m21 21-4.35-4.35"/>
+              </svg>
+              <span>Deep Research</span>
+            </button>
+            <button class="sider-action-btn" data-action="highlights">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <rect x="5" y="2" width="14" height="20" rx="2" ry="2"/>
+                <line x1="12" y1="18" x2="12" y2="18"/>
+                <path d="M9 6h6M9 10h6M9 14h4"/>
+                <path d="M19 6h2v2h-2z"/>
+              </svg>
+              <span>My Highlights</span>
+            </button>
+            <button class="sider-action-btn" data-action="slides">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <rect x="3" y="3" width="18" height="14" rx="2" ry="2"/>
+                <line x1="8" y1="21" x2="16" y2="21"/>
+                <line x1="12" y1="17" x2="12" y2="21"/>
+                <rect x="6" y="6" width="12" height="6" rx="1"/>
+                <line x1="6" y1="9" x2="18" y2="9"/>
+              </svg>
+              <span>AI Slides</span>
+            </button>
+          </div>
+        </div>
+        
+        <div class="sider-chat-container" id="sider-chat-container" style="display: none;">
+          <div class="sider-chat-messages" id="sider-chat-messages"></div>
+        </div>
+      </div>
+      
+      <div class="sider-summarize-card" id="sider-summarize-card" style="display: none;">
+        <button class="sider-summarize-close-btn" id="sider-summarize-close-btn" title="Close">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <line x1="18" y1="6" x2="6" y2="18"/>
+            <line x1="6" y1="6" x2="18" y2="18"/>
+          </svg>
+        </button>
+        <div class="sider-summarize-card-left">
+          <div class="sider-summarize-icon">
+            <svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+              <circle cx="12" cy="12" r="10" fill="#8b5cf6"/>
+              <line x1="2" y1="12" x2="22" y2="12" stroke="#ffffff" stroke-width="2"/>
+              <path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z" fill="#ffffff" opacity="0.3"/>
+            </svg>
+          </div>
+          <span class="sider-summarize-site-name" id="sider-summarize-site-name"></span>
+        </div>
+        <div class="sider-summarize-card-right">
+          <button class="sider-summarize-btn" id="sider-summarize-btn" data-action="summarize">
+            Summarize
+          </button>
+          <button class="sider-summarize-copy-btn" id="sider-summarize-copy-btn" title="Copy URL">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <rect x="9" y="9" width="13" height="13" rx="2" ry="2"/>
+              <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/>
+            </svg>
+          </button>
+        </div>
+      </div>
+      
+      <div class="sider-panel-footer">
+        <div class="sider-input-wrapper">
+          <div class="sider-toolbar">
+            <button class="sider-toolbar-btn sider-ai-selector-btn" id="sider-ai-selector-btn" title="Select AI Model">
+              <div class="sider-ai-selector-icon">
+                <img id="sider-ai-icon-img" src="" alt="AI Model" style="width: 18px; height: 18px; object-fit: contain; display: block;" />
+              </div>
+              <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="sider-dropdown-arrow">
+                <polyline points="6 9 12 15 18 9"/>
+              </svg>
+            </button>
+            <button class="sider-toolbar-btn" id="sider-screenshot-btn" title="Capture Selected Area">
+              <img id="sider-screenshot-icon" src="" alt="Cut" style="width: 18px; height: 18px; object-fit: contain;" />
+            </button>
+            <button class="sider-toolbar-btn" id="sider-attach-btn" title="Attach File">
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <path d="M21.44 11.05l-9.19 9.19a6 6 0 0 1-8.49-8.49l9.19-9.19a4 4 0 0 1 5.66 5.66l-9.2 9.19a2 2 0 0 1-2.83-2.83l8.49-8.48"/>
+              </svg>
+            </button>
+            <button class="sider-toolbar-btn" id="sider-read-page-btn" title="Read This Page">
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"/>
+                <path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"/>
+                <line x1="8" y1="7" x2="16" y2="7"/>
+                <line x1="8" y1="11" x2="16" y2="11"/>
+              </svg>
+            </button>
+            <button class="sider-toolbar-btn" id="sider-filter-btn" title="Chat control">
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <line x1="3" y1="6" x2="21" y2="6"/>
+                <line x1="7" y1="12" x2="17" y2="12"/>
+                <line x1="11" y1="18" x2="13" y2="18"/>
+              </svg>
+              <span class="sider-notification-dot"></span>
+            </button>
+            <button class="sider-toolbar-btn" id="sider-history-btn" title="Chat History">
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <circle cx="12" cy="12" r="10"/>
+                <polyline points="12 6 12 12 16 14"/>
+              </svg>
+            </button>
+            <button class="sider-toolbar-btn" id="sider-new-chat-btn" title="New Chat">
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <line x1="12" y1="5" x2="12" y2="19"/>
+                <line x1="5" y1="12" x2="19" y2="12"/>
+              </svg>
+            </button>
+          </div>
+          <div class="sider-ai-dropdown" id="sider-ai-dropdown" style="display: none;">
+            <div class="sider-ai-dropdown-section">
+              <div class="sider-ai-dropdown-title">Basic</div>
+              <div class="sider-ai-option" data-model="chatgpt">
+                <div class="sider-ai-option-icon">🤖</div>
+                <span>GPT-3.5</span>
+              </div>
+              <div class="sider-ai-option" data-model="gpt4">
+                <div class="sider-ai-option-icon">🧠</div>
+                <span>GPT-4</span>
+              </div>
+              <div class="sider-ai-option" data-model="gemini">
+                <div class="sider-ai-option-icon">⭐</div>
+                <span>Gemini</span>
+              </div>
+              <div class="sider-ai-option" data-model="claude">
+                <div class="sider-ai-option-icon">🌟</div>
+                <span>Claude</span>
+              </div>
+            </div>
+          </div>
+          <div class="sider-input-area">
+            <div class="sider-image-preview-section" id="sider-image-preview-section" style="display: none;">
+              <div style="display: flex; flex-direction: column; align-items: flex-start; gap: 8px; margin-bottom: 8px; width: 100%;">
+                <div class="sider-images-row" style="display: flex; flex-direction: row; gap: 8px; align-items: flex-start; flex-wrap: wrap;">
+                </div>
+                <div style="display: flex; flex-direction: row; gap: 8px; align-items: flex-start; flex-wrap: wrap;">
+                  <button class="sider-image-action-btn" data-action="extract-text" style="background: #f3f4f6; border: 1px solid #e5e7eb; border-radius: 6px; padding: 6px 12px; font-size: 10px; font-weight: 500; color: #111827; cursor: pointer; transition: all 0.2s; white-space: nowrap;">
+                    Extract text
+                  </button>
+                  <button class="sider-image-action-btn" data-action="math-solver" style="background: #f3f4f6; border: 1px solid #e5e7eb; border-radius: 6px; padding: 6px 12px; font-size: 10px; font-weight: 500; color: #111827; cursor: pointer; transition: all 0.2s; white-space: nowrap;">
+                    Math Solver
+                  </button>
+                  <button class="sider-image-action-btn" data-action="translate-image" style="background: #f3f4f6; border: 1px solid #e5e7eb; border-radius: 6px; padding: 6px 12px; font-size: 10px; font-weight: 500; color: #111827; cursor: pointer; transition: all 0.2s; white-space: nowrap; display: flex; align-items: center; gap: 4px;">
+                    <span>Translate</span>
+                    <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                      <polyline points="6 9 12 15 18 9"/>
+                    </svg>
+                  </button>
+                </div>
+              </div>
+            </div>
+            <div class="sider-selected-text-section" id="sider-selected-text-section" style="display: none;">
+              <div class="sider-selected-text-header">
+                <span class="sider-selected-text-title">Text from your selection</span>
+                <button id="sider-remove-selection-btn" class="sider-remove-selection-btn" title="Close">
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <line x1="18" y1="6" x2="6" y2="18"/>
+                    <line x1="6" y1="6" x2="18" y2="18"/>
+                  </svg>
+                </button>
+              </div>
+              <div id="sider-selected-text-display" class="sider-selected-text-display"></div>
+              <div class="sider-selection-actions" id="sider-selection-actions">
+                <button class="sider-action-btn" data-action="explain">
+                  <span>Explain</span>
+                </button>
+                <button class="sider-action-btn" data-action="translate">
+                  <span>Translate</span>
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <polyline points="6 9 12 15 18 9"/>
+                  </svg>
+                </button>
+                <button class="sider-action-btn" data-action="summarize">
+                  <span>Summarize</span>
+                </button>
+                <button class="sider-action-btn" id="sider-more-actions-btn">
+                  <span>...</span>
+                </button>
+              </div>
+              <div class="sider-selection-divider"></div>
+            </div>
+            <div class="sider-attachments" id="sider-attachments"></div>
+            <textarea 
+              id="sider-chat-input" 
+              class="sider-chat-input" 
+              placeholder="Ask anything, @models, / prompts"
+              rows="1"
+            ></textarea>
+            <div class="sider-input-buttons">
+              <div class="sider-input-buttons-left">
+                <button class="sider-bottom-action-btn" data-action="think">
+                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <circle cx="12" cy="12" r="10"/>
+                    <line x1="12" y1="6" x2="12" y2="8"/>
+                    <line x1="12" y1="16" x2="12" y2="18"/>
+                    <path d="M9 9h6M9 15h6"/>
+                  </svg>
+                  <span>Think</span>
+                </button>
+                <button class="sider-bottom-action-btn" data-action="deep-research">
+                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <circle cx="11" cy="11" r="8"/>
+                    <path d="m21 21-4.35-4.35"/>
+                  </svg>
+                  <span>Deep Research</span>
+                </button>
+              </div>
+              <button class="sider-mic-btn" id="sider-mic-btn" title="Voice Input" style="display: none;">
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                  <path d="M12 1a3 3 0 0 0-3 3v8a3 3 0 0 0 6 0V4a3 3 0 0 0-3-3z"/>
+                  <path d="M19 10v2a7 7 0 0 1-14 0v-2"/>
+                  <line x1="12" y1="19" x2="12" y2="23"/>
+                  <line x1="8" y1="23" x2="16" y2="23"/>
+                </svg>
+              </button>
+              <button class="sider-send-btn" id="sider-send-btn" title="Send" style="display: none;">
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                  <line x1="22" y1="2" x2="11" y2="13"/>
+                  <polygon points="22 2 15 22 11 13 2 9 22 2"/>
+                </svg>
+              </button>
+            </div>
+          </div>
+        </div>
+        <input type="file" id="sider-file-input" style="display: none;" multiple>
+      </div>
+    </div>
+    
+    <div class="sider-panel-sidebar">
+      <div class="sider-sidebar-icon" id="sider-collapse-navbar-btn" title="Collapse Nav Bar">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+          <polyline points="9 18 15 12 9 6"/>
+          <line x1="19" y1="12" x2="19" y2="12" stroke-width="3"/>
+        </svg>
+      </div>
+      <div class="sider-sidebar-icon" id="sider-fullpage-chat-btn" title="Full page chat">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <polyline points="16 18 22 12 16 6"/>
+          <polyline points="8 6 2 12 8 18"/>
+        </svg>
+      </div>
+      <div class="sider-sidebar-hamburger" id="sider-sidebar-hamburger" style="display: none;">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+          <line x1="3" y1="6" x2="21" y2="6"/>
+          <line x1="3" y1="12" x2="21" y2="12"/>
+          <line x1="3" y1="18" x2="21" y2="18"/>
+        </svg>
+      </div>
+      <div class="sider-sidebar-icon sider-sidebar-icon-purple" title="Chat">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/>
+        </svg>
+      </div>
+      <div class="sider-sidebar-icon" title="Documents">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/>
+          <polyline points="14 2 14 8 20 8"/>
+          <line x1="16" y1="13" x2="8" y2="13"/>
+          <line x1="16" y1="17" x2="8" y2="17"/>
+          <polyline points="10 9 9 9 8 9"/>
+        </svg>
+        <span class="sider-sidebar-badge">0</span>
+      </div>
+      <div class="sider-sidebar-icon" id="sider-more-options-icon" title="More Options">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <circle cx="12" cy="12" r="1"/>
+          <circle cx="19" cy="12" r="1"/>
+          <circle cx="5" cy="12" r="1"/>
+        </svg>
+      </div>
+      <div class="sider-sidebar-icon sider-sidebar-icon-spacer" title="Painter">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M14.7 6.3a1 1 0 0 0 0 1.4l1.6 1.6a1 1 0 0 0 1.4 0l3.77-3.77a6 6 0 0 1-7.94 7.94l-6.91 6.91a2.12 2.12 0 0 1-3-3l6.91-6.91a6 6 0 0 1 7.94-7.94l-3.76 3.76z"/>
+        </svg>
+      </div>
+      <div class="sider-sidebar-icon" title="ChatPDF">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <rect x="4" y="4" width="16" height="16" rx="2" ry="2"/>
+          <path d="M12 6l-4 4h3v4h2v-4h3l-4-4z"/>
+          <path d="M8 10h8"/>
+        </svg>
+      </div>
+      <div class="sider-sidebar-icon" title="Wisebase">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <rect x="3" y="8" width="18" height="4" rx="1"/>
+          <rect x="5" y="14" width="18" height="4" rx="1"/>
+          <path d="M19 4l-2 2 2 2"/>
+          <circle cx="20" cy="5" r="1.5" fill="currentColor"/>
+        </svg>
+      </div>
+      <div class="sider-sidebar-icon sider-sidebar-icon-spacer" title="Mobile">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <rect x="5" y="2" width="14" height="20" rx="2" ry="2"/>
+          <line x1="8" y1="5" x2="16" y2="5"/>
+          <line x1="12" y1="19" x2="12.01" y2="19"/>
+        </svg>
+      </div>
+      <div class="sider-sidebar-icon" title="Options">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M12 2l-2.5 2.5L12 7l2.5-2.5L12 2z"/>
+          <path d="M12 22l-2.5-2.5L12 17l2.5 2.5L12 22z"/>
+          <path d="M2 12l2.5-2.5L2 7l2.5 2.5L2 12z"/>
+          <path d="M22 12l-2.5-2.5L22 7l-2.5 2.5L22 12z"/>
+          <path d="M7 12l2.5-2.5L7 7l2.5 2.5L7 12z"/>
+          <path d="M17 12l-2.5-2.5L17 7l-2.5 2.5L17 12z"/>
+          <circle cx="12" cy="12" r="3" fill="currentColor"/>
+        </svg>
+      </div>
+      <div class="sider-sidebar-icon sider-sidebar-icon-active" id="sider-profile-icon" title="Profile">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/>
+          <circle cx="12" cy="7" r="4"/>
+        </svg>
+      </div>
+    </div>
+    
+    <div class="sider-sidebar-popup" id="sider-sidebar-popup" style="display: none;">
+      <div class="sider-sidebar-popup-header">
+        <div class="sider-sidebar-icon" id="sider-expand-navbar-popup-btn" title="Expand Nav Bar">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+            <polyline points="9 18 15 12 9 6"/>
+            <line x1="19" y1="12" x2="19" y2="12" stroke-width="3"/>
+          </svg>
+        </div>
+        <div class="sider-sidebar-icon" id="sider-fullpage-chat-popup-btn" title="Full page chat">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <polyline points="16 18 22 12 16 6"/>
+            <polyline points="8 6 2 12 8 18"/>
+          </svg>
+        </div>
+      </div>
+      <div class="sider-sidebar-popup-content">
+        <div class="sider-sidebar-popup-item" data-action="chat">
+          <div class="sider-sidebar-popup-icon sider-sidebar-icon-purple">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/>
+            </svg>
+          </div>
+          <span>Chat</span>
+        </div>
+        <div class="sider-sidebar-popup-item" data-action="documents">
+          <div class="sider-sidebar-popup-icon">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/>
+              <polyline points="14 2 14 8 20 8"/>
+              <line x1="16" y1="13" x2="8" y2="13"/>
+              <line x1="16" y1="17" x2="8" y2="17"/>
+            </svg>
+          </div>
+          <span>Documents</span>
+        </div>
+        <div class="sider-sidebar-popup-item" data-action="refresh">
+          <div class="sider-sidebar-popup-icon">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <polyline points="23 4 23 10 17 10"/>
+              <polyline points="1 20 1 14 7 14"/>
+              <path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"/>
+            </svg>
+          </div>
+          <span>Refresh</span>
+        </div>
+        <div class="sider-sidebar-popup-item" data-action="more">
+          <div class="sider-sidebar-popup-icon">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <circle cx="12" cy="12" r="1"/>
+              <circle cx="19" cy="12" r="1"/>
+              <circle cx="5" cy="12" r="1"/>
+            </svg>
+          </div>
+          <span>More</span>
+        </div>
+        <div class="sider-sidebar-popup-item" data-action="link">
+          <div class="sider-sidebar-popup-icon">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"/>
+              <path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"/>
+            </svg>
+          </div>
+          <span>Link</span>
+        </div>
+        <div class="sider-sidebar-popup-item" data-action="share">
+          <div class="sider-sidebar-popup-icon">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <line x1="22" y1="2" x2="11" y2="13"/>
+              <polygon points="22 2 15 22 11 13 2 9 22 2"/>
+            </svg>
+          </div>
+          <span>Share</span>
+        </div>
+        <div class="sider-sidebar-popup-item" data-action="layers">
+          <div class="sider-sidebar-popup-icon">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <line x1="8" y1="6" x2="21" y2="6"/>
+              <line x1="8" y1="12" x2="21" y2="12"/>
+              <line x1="8" y1="18" x2="21" y2="18"/>
+              <line x1="3" y1="6" x2="3.01" y2="6"/>
+              <line x1="3" y1="12" x2="3.01" y2="12"/>
+              <line x1="3" y1="18" x2="3.01" y2="18"/>
+            </svg>
+          </div>
+          <span>Layers</span>
+        </div>
+        <div class="sider-sidebar-popup-item" data-action="mobile">
+          <div class="sider-sidebar-popup-icon">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <rect x="5" y="2" width="14" height="20" rx="2" ry="2"/>
+              <line x1="12" y1="18" x2="12.01" y2="18"/>
+            </svg>
+          </div>
+          <span>Mobile</span>
+        </div>
+        <div class="sider-sidebar-popup-item" data-action="target">
+          <div class="sider-sidebar-popup-icon">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <circle cx="12" cy="12" r="10"/>
+              <circle cx="12" cy="12" r="6"/>
+              <circle cx="12" cy="12" r="2"/>
+            </svg>
+          </div>
+          <span>Target</span>
+        </div>
+        <div class="sider-sidebar-popup-item" data-action="profile">
+          <div class="sider-sidebar-popup-icon">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/>
+              <circle cx="12" cy="7" r="4"/>
+            </svg>
+          </div>
+          <span>Profile</span>
+        </div>
+      </div>
+    </div>
+    
+    <div class="sider-profile-dropdown" id="sider-profile-dropdown" style="display: none;">
+      <div class="sider-profile-dropdown-header">
+        <div class="sider-profile-dropdown-icon">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/>
+            <circle cx="12" cy="7" r="4"/>
+          </svg>
+        </div>
+        <div class="sider-profile-dropdown-text">
+          <span>Log in to start using Sider.</span>
+        </div>
+        <button class="sider-profile-login-btn" id="sider-profile-login-btn">Log in</button>
+      </div>
+      <div class="sider-profile-dropdown-divider"></div>
+      <div class="sider-profile-dropdown-menu">
+        <div class="sider-profile-menu-item" data-action="whats-new">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9s3-2 3-9"/>
+            <path d="M13.73 21a2 2 0 0 1-3.46 0"/>
+            <path d="M2 8a6 6 0 0 1 10.33-4.5"/>
+          </svg>
+          <span>What's new</span>
+        </div>
+        <div class="sider-profile-menu-item" data-action="rewards">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M6 9H4.5a2.5 2.5 0 0 1 0-5H6"/>
+            <path d="M18 9h1.5a2.5 2.5 0 0 0 0-5H18"/>
+            <path d="M4 22h16"/>
+            <path d="M10 14.66V17c0 .55-.47.98-.97 1.21C7.85 18.75 7 20.24 7 22"/>
+            <path d="M14 14.66V17c0 .55.47.98.97 1.21C16.15 18.75 17 20.24 17 22"/>
+            <path d="M18 2H6v7a6 6 0 0 0 12 0V2Z"/>
+          </svg>
+          <span>Rewards center</span>
+        </div>
+        <div class="sider-profile-menu-item" data-action="help">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <circle cx="12" cy="12" r="10"/>
+            <path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3"/>
+            <line x1="12" y1="17" x2="12.01" y2="17"/>
+          </svg>
+          <span>Help center</span>
+        </div>
+        <div class="sider-profile-menu-item" data-action="feedback">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/>
+            <polyline points="22,6 12,13 2,6"/>
+          </svg>
+          <span>Feedback</span>
+        </div>
+      </div>
+    </div>
+    
+    <!-- Chat Controls Popup -->
+    <div class="sider-chat-controls-popup" id="sider-chat-controls-popup" style="display: none;">
+      <div class="sider-chat-controls-content">
+        <h2 class="sider-chat-controls-title">Chat controls</h2>
+        
+        <div class="sider-chat-controls-section">
+          <div class="sider-chat-controls-section-title">Capabilities</div>
+          
+          <div class="sider-chat-controls-item">
+            <div class="sider-chat-controls-item-left">
+              <div class="sider-chat-controls-icon" style="background: #10b981;">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                  <rect x="3" y="3" width="18" height="18" rx="2"/>
+                  <rect x="7" y="7" width="10" height="10" rx="1"/>
+                </svg>
+              </div>
+              <span class="sider-chat-controls-label">Artifacts</span>
+            </div>
+            <label class="sider-chat-controls-toggle">
+              <input type="checkbox" data-capability="artifacts">
+              <span class="sider-chat-controls-toggle-slider"></span>
+            </label>
+          </div>
+          
+          <div class="sider-chat-controls-item">
+            <div class="sider-chat-controls-item-left">
+              <div class="sider-chat-controls-icon" style="background: #8b5cf6;">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                  <circle cx="12" cy="12" r="10"/>
+                  <line x1="2" y1="12" x2="22" y2="12"/>
+                  <path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"/>
+                </svg>
+              </div>
+              <span class="sider-chat-controls-label">Search</span>
+            </div>
+            <label class="sider-chat-controls-toggle">
+              <input type="checkbox" data-capability="search">
+              <span class="sider-chat-controls-toggle-slider"></span>
+            </label>
+          </div>
+          
+          <div class="sider-chat-controls-item">
+            <div class="sider-chat-controls-item-left">
+              <div class="sider-chat-controls-icon" style="background: #f97316;">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                  <rect x="3" y="3" width="18" height="18" rx="2" ry="2"/>
+                  <circle cx="8.5" cy="8.5" r="1.5"/>
+                  <polyline points="21 15 16 10 5 21"/>
+                </svg>
+              </div>
+              <span class="sider-chat-controls-label">Image</span>
+            </div>
+            <div class="sider-chat-controls-item-right">
+              <button class="sider-chat-controls-model-btn" id="sider-image-model-btn" data-capability="image-model">
+                <span class="sider-chat-controls-model-text">Nano Banana</span>
+                <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                  <polyline points="6 9 12 15 18 9"/>
+                </svg>
+              </button>
+              <label class="sider-chat-controls-toggle">
+                <input type="checkbox" data-capability="image">
+                <span class="sider-chat-controls-toggle-slider"></span>
+              </label>
+            </div>
+          </div>
+          
+          <div class="sider-chat-controls-item">
+            <div class="sider-chat-controls-item-left">
+              <div class="sider-chat-controls-icon" style="background: #3b82f6;">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                  <rect x="3" y="3" width="18" height="18" rx="2"/>
+                  <path d="M9 9h6v6H9z"/>
+                  <path d="M21 15l-5-5-5 5"/>
+                </svg>
+              </div>
+              <span class="sider-chat-controls-label">Data Analysis</span>
+            </div>
+            <label class="sider-chat-controls-toggle">
+              <input type="checkbox" data-capability="data-analysis">
+              <span class="sider-chat-controls-toggle-slider"></span>
+            </label>
+          </div>
+          
+          <div class="sider-chat-controls-item">
+            <div class="sider-chat-controls-item-left">
+              <div class="sider-chat-controls-icon" style="background: #06b6d4;">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                  <circle cx="12" cy="12" r="10"/>
+                  <path d="M12 6v6l4 2"/>
+                </svg>
+              </div>
+              <span class="sider-chat-controls-label">Think</span>
+            </div>
+            <label class="sider-chat-controls-toggle">
+              <input type="checkbox" data-capability="think">
+              <span class="sider-chat-controls-toggle-slider"></span>
+            </label>
+          </div>
+        </div>
+        
+        <div class="sider-chat-controls-section">
+          <div class="sider-chat-controls-section-title">Personalization</div>
+          
+          <div class="sider-chat-controls-item">
+            <div class="sider-chat-controls-item-left">
+              <div class="sider-chat-controls-icon" style="background: #8b5cf6;">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                  <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/>
+                  <polyline points="14 2 14 8 20 8"/>
+                  <line x1="16" y1="13" x2="8" y2="13"/>
+                  <line x1="16" y1="17" x2="8" y2="17"/>
+                  <polyline points="10 9 9 9 8 9"/>
+                </svg>
+              </div>
+              <span class="sider-chat-controls-label">Custom Instructions</span>
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="sider-chat-controls-edit-icon">
+                <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/>
+                <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/>
+              </svg>
+            </div>
+            <label class="sider-chat-controls-toggle">
+              <input type="checkbox" data-capability="custom-instructions">
+              <span class="sider-chat-controls-toggle-slider"></span>
+            </label>
+          </div>
+          
+          <div class="sider-chat-controls-item">
+            <div class="sider-chat-controls-item-left">
+              <div class="sider-chat-controls-icon" style="background: #8b5cf6;">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                  <circle cx="12" cy="12" r="10"/>
+                  <path d="M2 12h20M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"/>
+                </svg>
+              </div>
+              <span class="sider-chat-controls-label">Response language</span>
+            </div>
+            <select class="sider-chat-controls-dropdown" data-capability="response-language">
+              <option value="auto">Auto</option>
+              <option value="en">English</option>
+              <option value="es">Spanish</option>
+              <option value="fr">French</option>
+              <option value="de">German</option>
+              <option value="zh">Chinese</option>
+            </select>
+          </div>
+        </div>
+      </div>
+    </div>
+    
+    <!-- Generation Model Selection Modal -->
+    <div class="sider-generation-model-modal" id="sider-generation-model-modal" style="display: none;">
+      <div class="sider-generation-model-content">
+        <h3 class="sider-generation-model-title">Select Generation Model</h3>
+        <div class="sider-generation-model-options">
+          <div class="sider-generation-model-option" data-model="nano-banana">
+            <div class="sider-generation-model-option-content">
+              <div class="sider-generation-model-option-main">
+                <span class="sider-generation-model-name">Nano Banana</span>
+                <span class="sider-generation-model-subtitle">Gemini 2.5 Flash Image Preview</span>
+              </div>
+              <div class="sider-generation-model-indicator">
+                <span class="sider-generation-model-cost">5</span>
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#8b5cf6" stroke-width="2" class="sider-generation-model-star">
+                  <path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"/>
+                </svg>
+              </div>
+            </div>
+          </div>
+          
+          <div class="sider-generation-model-option" data-model="low">
+            <div class="sider-generation-model-option-content">
+              <div class="sider-generation-model-option-main">
+                <span class="sider-generation-model-name">Low</span>
+                <span class="sider-generation-model-subtitle">GPT-image-1</span>
+              </div>
+              <div class="sider-generation-model-indicator">
+                <span class="sider-generation-model-cost">10</span>
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#10b981" stroke-width="2" class="sider-generation-model-lightning">
+                  <path d="M13 2L3 14h9l-1 8 10-12h-9l1-8z"/>
+                </svg>
+              </div>
+            </div>
+          </div>
+          
+          <div class="sider-generation-model-option" data-model="medium">
+            <div class="sider-generation-model-option-content">
+              <div class="sider-generation-model-option-main">
+                <span class="sider-generation-model-name">Medium</span>
+                <span class="sider-generation-model-subtitle">GPT-image-1</span>
+              </div>
+              <div class="sider-generation-model-indicator">
+                <span class="sider-generation-model-cost">5</span>
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#8b5cf6" stroke-width="2" class="sider-generation-model-star">
+                  <path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"/>
+                </svg>
+              </div>
+            </div>
+          </div>
+          
+          <div class="sider-generation-model-option" data-model="high">
+            <div class="sider-generation-model-option-content">
+              <div class="sider-generation-model-option-main">
+                <span class="sider-generation-model-name">High</span>
+                <span class="sider-generation-model-subtitle">GPT-image-1</span>
+              </div>
+              <div class="sider-generation-model-indicator">
+                <span class="sider-generation-model-cost">20</span>
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#8b5cf6" stroke-width="2" class="sider-generation-model-star">
+                  <path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"/>
+                </svg>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+    <div class="sider-more-options-popup" id="sider-more-options-popup" style="display: none;">
+      <div class="sider-more-options-grid">
+        <div class="sider-more-options-item" data-action="agent">
+          <div class="sider-more-options-icon">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <circle cx="12" cy="12" r="10"/>
+              <path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"/>
+            </svg>
+          </div>
+          <span class="sider-more-options-label">Agent</span>
+        </div>
+        <div class="sider-more-options-item" data-action="write">
+          <div class="sider-more-options-icon">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/>
+              <polyline points="14 2 14 8 20 8"/>
+              <line x1="16" y1="13" x2="8" y2="13"/>
+              <line x1="16" y1="17" x2="8" y2="17"/>
+              <polyline points="10 9 9 9 8 9"/>
+            </svg>
+          </div>
+          <span class="sider-more-options-label">Write</span>
+        </div>
+        <div class="sider-more-options-item" data-action="translate">
+          <div class="sider-more-options-icon">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <rect x="3" y="3" width="18" height="18" rx="2"/>
+              <line x1="3" y1="9" x2="21" y2="9"/>
+              <line x1="9" y1="3" x2="9" y2="21"/>
+              <path d="M12 3v18M3 12h18"/>
+            </svg>
+          </div>
+          <span class="sider-more-options-label">Translate</span>
+        </div>
+        <div class="sider-more-options-item" data-action="ocr">
+          <div class="sider-more-options-icon">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <rect x="3" y="3" width="18" height="18" rx="2"/>
+              <line x1="7" y1="7" x2="17" y2="7"/>
+              <line x1="7" y1="11" x2="17" y2="11"/>
+              <line x1="7" y1="15" x2="12" y2="15"/>
+            </svg>
+          </div>
+          <span class="sider-more-options-label">OCR</span>
+        </div>
+        <div class="sider-more-options-item" data-action="grammar">
+          <div class="sider-more-options-icon">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <path d="M9 11l3 3L22 4"/>
+              <path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"/>
+            </svg>
+          </div>
+          <span class="sider-more-options-label">Grammar</span>
+        </div>
+        <div class="sider-more-options-item" data-action="ask">
+          <div class="sider-more-options-icon">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <circle cx="12" cy="12" r="10"/>
+              <path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3"/>
+              <line x1="12" y1="17" x2="12.01" y2="17"/>
+            </svg>
+          </div>
+          <span class="sider-more-options-label">Ask</span>
+        </div>
+        <div class="sider-more-options-item" data-action="search">
+          <div class="sider-more-options-icon">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <circle cx="11" cy="11" r="8"/>
+              <path d="m21 21-4.35-4.35"/>
+            </svg>
+          </div>
+          <span class="sider-more-options-label">Search</span>
+        </div>
+        <div class="sider-more-options-item" data-action="tools">
+          <div class="sider-more-options-icon">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <path d="M14.7 6.3a1 1 0 0 0 0 1.4l1.6 1.6a1 1 0 0 0 1.4 0l3.77-3.77a6 6 0 0 1-7.94 7.94l-6.91 6.91a2.12 2.12 0 0 1-3-3l6.91-6.91a6 6 0 0 1 7.94-7.94l-3.76 3.76z"/>
+            </svg>
+          </div>
+          <span class="sider-more-options-label">Tools</span>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script src="ai-modules.js"></script>
+  <script src="login-modal.js"></script>
+  <script src="sidepanel.js"></script>
+</body>
+</html>

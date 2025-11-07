@@ -4,5 +4,36 @@
 # build and env files
 dist/
 build/
+.next/
+.vercel/
 .env
+.env.local
+.env.development.local
+.env.test.local
+.env.production.local
 *.log
+
+# TypeScript
+*.tsbuildinfo
+next-env.d.ts
+
+# OS files
+.DS_Store
+Thumbs.db
+*.swp
+*.swo
+*~
+
+# IDE
+.vscode/
+.idea/
+*.sublime-project
+*.sublime-workspace
+
+# Testing
+coverage/
+.nyc_output/
+
+# Misc
+.cache/
+.turbo/
