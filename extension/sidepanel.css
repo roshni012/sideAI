@@ -51,6 +51,26 @@ body {
   overflow: hidden;
 }
 
+.sider-sidebar-top-icons {
+  display: flex;
+  flex-direction: row;
+  gap: 4px;
+  width: 100%;
+  justify-content: center;
+  align-items: center;
+}
+
+.sider-sidebar-top-icons .sider-sidebar-icon {
+  width: 20px;
+  height: 20px;
+  flex-shrink: 0;
+}
+
+.sider-sidebar-top-icons .sider-sidebar-icon svg {
+  width: 14px;
+  height: 14px;
+}
+
 .sider-sidebar-hamburger {
   position: fixed;
   right: 0;

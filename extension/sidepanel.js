@@ -157,7 +157,15 @@
     }
   }
   
-  function handleAction(action) {
+  async function handleAction(action) {
+    // Check authentication for actions that require it
+    if (action === 'fullscreen' || action === 'research' || action === 'highlights' || action === 'slides') {
+      const isAuthenticated = await requireAuth();
+      if (!isAuthenticated) {
+        return;
+      }
+    }
+    
     const chatContainer = document.getElementById('sider-chat-container');
     const welcome = document.querySelector('.sider-welcome');
     
@@ -372,6 +380,12 @@
   }
   
   async function sendMessage() {
+    // Check authentication before sending message
+    const isAuthenticated = await requireAuth();
+    if (!isAuthenticated) {
+      return;
+    }
+    
     const input = document.getElementById('sider-chat-input');
     const messagesContainer = document.getElementById('sider-chat-messages');
     const chatContainer = document.getElementById('sider-chat-container');
@@ -538,7 +552,13 @@
     }
   }
   
-  function handleSummarizeClick() {
+  async function handleSummarizeClick() {
+    // Check authentication before summarizing
+    const isAuthenticated = await requireAuth();
+    if (!isAuthenticated) {
+      return;
+    }
+    
     if (!currentTab || !currentTab.id) return;
     
     const chatContainer = document.getElementById('sider-chat-container');
@@ -1558,10 +1578,278 @@
     });
   }
   
+  // Authentication functions
+  async function checkAuthStatus() {
+    if (!window.SiderAuthService) {
+      return false;
+    }
+    return await window.SiderAuthService.isAuthenticated();
+  }
+
+  async function updateUIForAuthStatus() {
+    // Add a small delay to ensure storage operations are complete
+    await new Promise(resolve => setTimeout(resolve, 100));
+    
+    const isAuthenticated = await checkAuthStatus();
+    
+    if (isAuthenticated) {
+      // Hide login modal if open
+      if (window.SiderLoginModal) {
+        window.SiderLoginModal.hide();
+      }
+      
+      // Try to get current user info from API first
+      try {
+        const userResult = await window.SiderAuthService.getCurrentUser();
+        if (userResult.success && userResult.data) {
+          console.log('User profile loaded from API:', userResult.data);
+          // Save user info to storage for future use
+          if (window.SiderAuthService && window.SiderAuthService.saveUserInfo) {
+            await window.SiderAuthService.saveUserInfo(userResult.data);
+          }
+          // Update UI with fresh data from API
+          updateProfileDropdown(true);
+          updateWelcomeMessage(true);
+        } else {
+          // Fallback to cached data
+          updateProfileDropdown(true);
+          updateWelcomeMessage(true);
+        }
+      } catch (error) {
+        console.error('Error getting user info:', error);
+        // Still update UI with cached data from storage
+        updateProfileDropdown(true);
+        updateWelcomeMessage(true);
+      }
+      
+      // Enable all features
+      enableFeatures(true);
+    } else {
+      // Show login prompt in profile dropdown
+      updateProfileDropdown(false);
+      
+      // Reset welcome message
+      updateWelcomeMessage(false);
+      
+      // Disable features (but don't block UI)
+      enableFeatures(false);
+    }
+  }
+
+  function updateWelcomeMessage(isAuthenticated) {
+    const welcomeHeading = document.querySelector('.sider-welcome h3');
+    
+    if (isAuthenticated) {
+      chrome.storage.local.get(['sider_user_name', 'sider_user_email'], (result) => {
+        const userName = result.sider_user_name || result.sider_user_email?.split('@')[0] || 'there';
+        if (welcomeHeading) {
+          welcomeHeading.textContent = `Hi, ${userName}!`;
+        }
+      });
+    } else {
+      if (welcomeHeading) {
+        welcomeHeading.textContent = 'Hi,';
+      }
+    }
+  }
+  
+  // Make function globally available
+  window.updateUIForAuthStatus = updateUIForAuthStatus;
+
+  function updateProfileDropdown(isAuthenticated) {
+    const profileDropdown = document.getElementById('sider-profile-dropdown');
+    const profileDropdownText = document.getElementById('sider-profile-dropdown-text') || 
+                                 profileDropdown?.querySelector('.sider-profile-dropdown-text span');
+    const profileLoginBtn = document.getElementById('sider-profile-login-btn');
+    
+    if (!profileDropdown) {
+      console.warn('Profile dropdown not found');
+      return;
+    }
+    
+    if (isAuthenticated) {
+      // Get user info from storage first (for immediate update)
+      chrome.storage.local.get(['sider_user_email', 'sider_user_name', 'sider_user_logged_in'], (result) => {
+        // Double-check authentication status
+        if (!result.sider_user_logged_in) {
+          // If not logged in, update to show login prompt
+          if (profileDropdownText) {
+            profileDropdownText.textContent = 'Log in to start using Sider.';
+          }
+          if (profileLoginBtn) {
+            profileLoginBtn.textContent = 'Log in';
+            profileLoginBtn.onclick = () => {
+              if (window.SiderLoginModal) {
+                window.SiderLoginModal.show('login');
+              }
+            };
+          }
+          return;
+        }
+        
+        // Display user email or name (prefer name, fallback to email)
+        const userName = result.sider_user_name || '';
+        const userEmail = result.sider_user_email || '';
+        const displayText = userName || userEmail || 'User';
+        
+        if (profileDropdownText) {
+          profileDropdownText.textContent = displayText;
+          console.log('Updated profile dropdown text to:', displayText);
+        } else {
+          console.warn('Profile dropdown text element not found');
+        }
+        
+        if (profileLoginBtn) {
+          profileLoginBtn.textContent = 'Log out';
+          profileLoginBtn.onclick = async () => {
+            if (window.SiderAuthService) {
+              await window.SiderAuthService.clearAuth();
+              const emailInput = document.getElementById('sider-login-email');
+              const passwordInput = document.getElementById('sider-login-password');
+              const submitBtn = document.getElementById('sider-login-submit-btn');
+              const submitText = document.getElementById('sider-login-submit-text');
+              
+              if (emailInput) {
+                emailInput.value = '';
+              }
+              if (passwordInput) {
+                passwordInput.value = '';
+              }
+              if (submitBtn) {
+                submitBtn.disabled = false;
+              }
+              if (submitText) {
+                submitText.textContent = 'Log in';
+              }
+              
+              updateUIForAuthStatus();
+            }
+          };
+        }
+      });
+      
+      // Also fetch fresh data from API to ensure we have the latest info
+      if (window.SiderAuthService) {
+        window.SiderAuthService.getCurrentUser().then((userResult) => {
+          if (userResult.success && userResult.data) {
+            const userData = userResult.data;
+            const displayText = userData.name || userData.username || userData.email || 'User';
+            
+            if (profileDropdownText) {
+              profileDropdownText.textContent = displayText;
+              console.log('Updated profile dropdown text from API to:', displayText);
+            }
+          }
+        }).catch((error) => {
+          console.error('Error fetching user profile for dropdown:', error);
+          // Keep the cached data if API call fails
+        });
+      }
+    } else {
+      if (profileDropdownText) {
+        profileDropdownText.textContent = 'Log in to start using Sider.';
+      }
+      
+      if (profileLoginBtn) {
+        profileLoginBtn.textContent = 'Log in';
+        profileLoginBtn.onclick = () => {
+          if (window.SiderLoginModal) {
+            window.SiderLoginModal.show('login');
+          }
+        };
+      }
+    }
+  }
+
+  function enableFeatures(enabled) {
+    // Features are always visible, but we can add visual indicators
+    // The actual blocking happens in feature handlers
+  }
+
+  async function requireAuth(callback) {
+    const isAuthenticated = await checkAuthStatus();
+    
+    if (!isAuthenticated) {
+      // Show login modal
+      if (window.SiderLoginModal) {
+        window.SiderLoginModal.show('login');
+      }
+      return false;
+    }
+    
+    if (callback) {
+      callback();
+    }
+    return true;
+  }
+
+  // Listen for auth state changes
+  chrome.storage.onChanged.addListener((changes, namespace) => {
+    if (namespace === 'local') {
+      if (changes.sider_user_logged_in || changes.sider_access_token) {
+        updateUIForAuthStatus();
+      }
+    }
+  });
+
   // Initialize when DOM is ready
   if (document.readyState === 'loading') {
-    document.addEventListener('DOMContentLoaded', initializePanel);
+    document.addEventListener('DOMContentLoaded', async () => {
+      initializePanel();
+      // Update UI immediately with cached data
+      updateProfileDropdown(false);
+      updateWelcomeMessage(false);
+      
+      // Wait for auth service to load
+      const checkAuthService = setInterval(() => {
+        if (window.SiderAuthService) {
+          clearInterval(checkAuthService);
+          updateUIForAuthStatus();
+        }
+      }, 100);
+      
+      setTimeout(() => {
+        clearInterval(checkAuthService);
+        if (window.SiderAuthService) {
+          updateUIForAuthStatus();
+        } else {
+          // Even if auth service not loaded, check storage and update UI
+          chrome.storage.local.get(['sider_user_logged_in'], (result) => {
+            if (result.sider_user_logged_in) {
+              updateProfileDropdown(true);
+              updateWelcomeMessage(true);
+            }
+          });
+        }
+      }, 2000);
+    });
   } else {
     initializePanel();
+    // Update UI immediately with cached data
+    updateProfileDropdown(false);
+    updateWelcomeMessage(false);
+    
+    // Wait for auth service to load
+    const checkAuthService = setInterval(() => {
+      if (window.SiderAuthService) {
+        clearInterval(checkAuthService);
+        updateUIForAuthStatus();
+      }
+    }, 100);
+    
+    setTimeout(() => {
+      clearInterval(checkAuthService);
+      if (window.SiderAuthService) {
+        updateUIForAuthStatus();
+      } else {
+        // Even if auth service not loaded, check storage and update UI
+        chrome.storage.local.get(['sider_user_logged_in'], (result) => {
+          if (result.sider_user_logged_in) {
+            updateProfileDropdown(true);
+            updateWelcomeMessage(true);
+          }
+        });
+      }
+    }, 2000);
   }
 })();

@@ -8,11 +8,17 @@
     "storage",
     "scripting",
     "sidePanel",
-    "tabs"
+    "tabs",
+    "identity"
   ],
   "host_permissions": [
-    "<all_urls>"
+    "<all_urls>",
+    "https://accounts.google.com/*",
+    "https://www.googleapis.com/*"
   ],
+  "content_security_policy": {
+    "extension_pages": "script-src 'self' 'wasm-unsafe-eval' http://localhost:* http://127.0.0.1:*; object-src 'self';"
+  },
   "background": {
     "service_worker": "background.js",
     "type": "module"
@@ -20,7 +26,7 @@
   "content_scripts": [
     {
       "matches": ["<all_urls>"],
-      "js": ["ai-modules.js", "toolbar.js", "image-preview.js", "login-modal.js", "content.js"],
+      "js": ["auth-service.js", "ai-modules.js", "toolbar.js", "image-preview.js", "login-modal.js", "content.js"],
       "css": ["ai-modules.css", "toolbar.css", "image-preview.css", "login-modal.css", "content.css"],
       "run_at": "document_idle"
     }
@@ -38,4 +44,3 @@
     }
   ]
 }
-

@@ -1,6 +1,9 @@
 (function() {
   'use strict';
 
+  // API base URL - same as auth-service.js
+  const API_BASE_URL = 'http://localhost:8000';
+
   let loginModal = null;
 
   function createLoginModal() {
@@ -56,6 +59,44 @@
           <h1 class="sider-login-title" id="sider-login-title">Log in</h1>
           <p class="sider-login-subtitle" id="sider-login-subtitle" style="display: none;"></p>
         </div>
+        <div class="sider-login-form" id="sider-login-form">
+          <div class="sider-login-form-group">
+            <label for="sider-login-email" class="sider-login-label">Email</label>
+            <input 
+              type="email" 
+              id="sider-login-email" 
+              class="sider-login-input" 
+              placeholder="Enter your email"
+              autocomplete="email"
+            />
+          </div>
+          <div class="sider-login-form-group" id="sider-login-username-group" style="display: none;">
+            <label for="sider-login-username" class="sider-login-label">Username (optional)</label>
+            <input 
+              type="text" 
+              id="sider-login-username" 
+              class="sider-login-input" 
+              placeholder="Enter username"
+              autocomplete="username"
+            />
+          </div>
+          <div class="sider-login-form-group">
+            <label for="sider-login-password" class="sider-login-label">Password</label>
+            <input 
+              type="password" 
+              id="sider-login-password" 
+              class="sider-login-input" 
+              placeholder="Enter your password"
+              autocomplete="current-password"
+            />
+          </div>
+          <button class="sider-login-submit-btn" id="sider-login-submit-btn">
+            <span id="sider-login-submit-text">Log in</span>
+          </button>
+        </div>
+        <div class="sider-login-divider">
+          <span>or</span>
+        </div>
         <div class="sider-login-options">
           <button class="sider-login-btn sider-login-btn-google" id="sider-login-google-btn">
             <div class="sider-login-btn-icon">
@@ -67,23 +108,6 @@
               </svg>
             </div>
             <span>Continue with Google</span>
-          </button>
-          <button class="sider-login-btn sider-login-btn-apple" id="sider-login-apple-btn">
-            <div class="sider-login-btn-icon">
-              <svg viewBox="0 0 24 24" fill="currentColor" width="20" height="20">
-                <path d="M17.05 20.28c-.98.95-2.05.88-3.08.4-1.09-.5-2.08-.48-3.24 0-1.44.62-2.2.44-3.06-.4C2.79 15.25 3.51 7.59 9.05 7.31c1.35.07 2.29.74 3.08.8 1.18-.24 2.31-.93 3.57-.84 1.51.12 2.65.72 3.4 1.8-3.12 1.87-2.38 5.98.48 7.13-.57 1.5-1.31 2.99-2.54 4.09l.01-.01zM12.03 7.25c-.15-2.23 1.66-4.07 3.74-4.25.29 2.58-2.34 4.5-3.74 4.25z"/>
-              </svg>
-            </div>
-            <span>Continue with Apple</span>
-          </button>
-          <button class="sider-login-btn sider-login-btn-phone" id="sider-login-phone-btn">
-            <div class="sider-login-btn-icon">
-              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" width="20" height="20">
-                <rect x="5" y="2" width="14" height="20" rx="2" ry="2"/>
-                <line x1="12" y1="18" x2="12.01" y2="18"/>
-              </svg>
-            </div>
-            <span>Continue with Phone</span>
           </button>
         </div>
         <div class="sider-login-footer">
@@ -141,7 +165,9 @@
   function setLoginModalMode(mode) {
     const title = document.getElementById('sider-login-title');
     const subtitle = document.getElementById('sider-login-subtitle');
-    const phoneBtn = document.getElementById('sider-login-phone-btn');
+    const usernameGroup = document.getElementById('sider-login-username-group');
+    const submitBtn = document.getElementById('sider-login-submit-btn');
+    const submitText = document.getElementById('sider-login-submit-text');
     const createAccountDiv = document.getElementById('sider-login-create-account');
     const alreadyAccountDiv = document.getElementById('sider-login-already-account');
     
@@ -151,67 +177,459 @@
         subtitle.innerHTML = 'Sign up to get <strong>30 free</strong> credits every day';
         subtitle.style.display = 'block';
       }
-      if (phoneBtn) phoneBtn.style.display = 'none';
+      if (usernameGroup) usernameGroup.style.display = 'block';
+      if (submitText) submitText.textContent = 'Sign up';
       if (createAccountDiv) createAccountDiv.style.display = 'none';
       if (alreadyAccountDiv) alreadyAccountDiv.style.display = 'block';
     } else {
       if (title) title.textContent = 'Log in';
       if (subtitle) subtitle.style.display = 'none';
-      if (phoneBtn) phoneBtn.style.display = 'flex';
+      if (usernameGroup) usernameGroup.style.display = 'none';
+      if (submitText) submitText.textContent = 'Log in';
       if (createAccountDiv) createAccountDiv.style.display = 'block';
       if (alreadyAccountDiv) alreadyAccountDiv.style.display = 'none';
     }
   }
 
-  function handleGoogleLogin() {
+  async function handleEmailLogin() {
+    const emailInput = document.getElementById('sider-login-email');
+    const passwordInput = document.getElementById('sider-login-password');
+    const submitBtn = document.getElementById('sider-login-submit-btn');
+    const submitText = document.getElementById('sider-login-submit-text');
+    
+    if (!emailInput || !passwordInput || !submitBtn) return;
+    
+    const email = emailInput.value.trim();
+    const password = passwordInput.value;
+    
+    if (!email || !password) {
+      showLoginError('Please enter both email and password');
+      return;
+    }
+    
+    if (!window.SiderAuthService) {
+      showLoginError('Auth service not loaded. Please refresh the page.');
+      return;
+    }
+    
+    submitBtn.disabled = true;
+    submitText.textContent = 'Logging in...';
+    
+    try {
+      console.log('Attempting login for:', email);
+      const result = await window.SiderAuthService.login(email, password);
+      console.log('Login result:', result);
+      
+      if (result.success) {
+        showLoginSuccess('Welcome back!');
+        // Wait for storage to be fully written before updating UI
+        await new Promise(resolve => setTimeout(resolve, 300));
+        
+        // Fetch user profile after tokens are saved
+        try {
+          if (window.SiderAuthService) {
+            // Wait a bit more to ensure tokens are fully saved
+            await new Promise(resolve => setTimeout(resolve, 100));
+            
+            const profileResult = await window.SiderAuthService.getCurrentUser();
+            if (profileResult.success && profileResult.data) {
+              console.log('User profile fetched:', profileResult.data);
+            } else {
+              console.warn('Failed to fetch user profile:', profileResult.error);
+            }
+          }
+        } catch (error) {
+          console.error('Error fetching profile after login:', error);
+        }
+        
+        // Update UI immediately without reload
+        setTimeout(() => {
+          hideLoginModal();
+          // Trigger UI update
+          if (window.updateUIForAuthStatus) {
+            window.updateUIForAuthStatus().catch(err => {
+              console.error('Error updating UI:', err);
+              // Retry after a short delay
+              setTimeout(() => {
+                if (window.updateUIForAuthStatus) {
+                  window.updateUIForAuthStatus();
+                }
+              }, 500);
+            });
+          } else {
+            // Fallback: reload if function not available
+            if (window.location) {
+              window.location.reload();
+            }
+          }
+        }, 1500);
+      } else {
+        showLoginError(result.error || 'Login failed');
+        submitBtn.disabled = false;
+        submitText.textContent = 'Log in';
+      }
+    } catch (error) {
+      console.error('Login error:', error);
+      showLoginError(error.message || 'Login failed. Please check your connection.');
+      submitBtn.disabled = false;
+      submitText.textContent = 'Log in';
+    }
+  }
+
+  async function handleEmailRegister() {
+    const emailInput = document.getElementById('sider-login-email');
+    const passwordInput = document.getElementById('sider-login-password');
+    const usernameInput = document.getElementById('sider-login-username');
+    const submitBtn = document.getElementById('sider-login-submit-btn');
+    const submitText = document.getElementById('sider-login-submit-text');
+    
+    if (!emailInput || !passwordInput || !submitBtn) return;
+    
+    const email = emailInput.value.trim();
+    const password = passwordInput.value;
+    const username = usernameInput ? usernameInput.value.trim() : '';
+    
+    if (!email || !password) {
+      showLoginError('Please enter both email and password');
+      return;
+    }
+    
+    if (password.length < 6) {
+      showLoginError('Password must be at least 6 characters');
+      return;
+    }
+    
+    if (!window.SiderAuthService) {
+      showLoginError('Auth service not loaded. Please refresh the page.');
+      return;
+    }
+    
+    submitBtn.disabled = true;
+    submitText.textContent = 'Signing up...';
+    
+    try {
+      console.log('Attempting registration for:', email);
+      const result = await window.SiderAuthService.register(email, password, username);
+      console.log('Registration result:', result);
+      
+      if (result.success) {
+        showLoginSuccess('Account created successfully! Please log in.');
+        // After registration, automatically try to login
+        setTimeout(async () => {
+          const loginResult = await window.SiderAuthService.login(email, password);
+          if (loginResult.success) {
+            showLoginSuccess('Welcome! You are now logged in.');
+            // Wait for storage to be fully written before updating UI
+            await new Promise(resolve => setTimeout(resolve, 200));
+            
+            // Fetch user profile immediately after login
+            try {
+              if (window.SiderAuthService) {
+                const profileResult = await window.SiderAuthService.getCurrentUser();
+                if (profileResult.success && profileResult.data) {
+                  console.log('User profile fetched:', profileResult.data);
+                }
+              }
+            } catch (error) {
+              console.error('Error fetching profile after login:', error);
+            }
+            
+            // Update UI immediately without reload
+            setTimeout(() => {
+              hideLoginModal();
+              // Trigger UI update
+              if (window.updateUIForAuthStatus) {
+                window.updateUIForAuthStatus().catch(err => {
+                  console.error('Error updating UI:', err);
+                  // Retry after a short delay
+                  setTimeout(() => {
+                    if (window.updateUIForAuthStatus) {
+                      window.updateUIForAuthStatus();
+                    }
+                  }, 500);
+                });
+              } else {
+                // Fallback: reload if function not available
+                if (window.location) {
+                  window.location.reload();
+                }
+              }
+            }, 1500);
+          } else {
+            // Registration successful but login failed - show login form
+            setLoginModalMode('login');
+            showLoginError('Account created. Please log in with your credentials.');
+          }
+        }, 1000);
+      } else {
+        showLoginError(result.error || 'Registration failed');
+        submitBtn.disabled = false;
+        submitText.textContent = 'Sign up';
+      }
+    } catch (error) {
+      console.error('Registration error:', error);
+      showLoginError(error.message || 'Registration failed. Please check your connection.');
+      submitBtn.disabled = false;
+      submitText.textContent = 'Sign up';
+    }
+  }
+
+  async function handleGoogleLogin() {
     const loginGoogleBtn = document.getElementById('sider-login-google-btn');
     if (loginGoogleBtn) {
       loginGoogleBtn.disabled = true;
       loginGoogleBtn.innerHTML = '<span>Signing in...</span>';
     }
     
+    if (!window.SiderAuthService) {
+      showLoginError('Auth service not loaded. Please refresh the page.');
+      resetGoogleButton();
+      return;
+    }
+
     try {
-      chrome.runtime.sendMessage({
-        type: 'GOOGLE_LOGIN'
-      }, async (response) => {
-        if (chrome.runtime.lastError) {
-          showLoginError(chrome.runtime.lastError.message || 'Google Sign-In failed');
+      // For Chrome extensions with Manifest V3, we can't load external scripts directly
+      // Use Chrome Identity API or open a popup window for Google OAuth
+      // For now, we'll use a popup window approach
+      
+      // Fetch Google Client ID from backend
+      let googleClientId = null;
+      try {
+        // Get API base URL from storage or use default (same as auth-service.js)
+        const getApiBaseUrl = () => {
+          return new Promise((resolve) => {
+            if (typeof chrome !== 'undefined' && chrome.storage) {
+              chrome.storage.sync.get(['sider_api_base_url'], (result) => {
+                let baseUrl = result.sider_api_base_url || API_BASE_URL;
+                baseUrl = baseUrl.replace(/\/docs\/?$/, '');
+                resolve(baseUrl);
+              });
+            } else {
+              resolve(API_BASE_URL);
+            }
+          });
+        };
+        
+        const apiBaseUrl = await getApiBaseUrl();
+        const clientIdResponse = await fetch(`${apiBaseUrl}/api/auth/google/client-id`);
+        if (clientIdResponse.ok) {
+          const clientIdData = await clientIdResponse.json();
+          googleClientId = clientIdData?.data?.client_id || clientIdData?.client_id;
+        }
+      } catch (error) {
+        console.error('Failed to fetch Google Client ID:', error);
+      }
+
+      if (!googleClientId) {
+        showLoginError('Google OAuth is not configured. Please add GOOGLE_CLIENT_ID to your backend .env file.');
+        resetGoogleButton();
+        console.warn('Google OAuth not configured. Add GOOGLE_CLIENT_ID to backend .env file.');
+        return;
+      }
+
+      // Use Chrome Identity API if available, otherwise use popup window
+      if (typeof chrome !== 'undefined' && chrome.identity) {
+        // Use Chrome Identity API for OAuth
+        const redirectUrl = chrome.identity.getRedirectURL();
+        console.log('Chrome extension redirect URL:', redirectUrl);
+        console.log('IMPORTANT: Add this exact URL to Google Cloud Console authorized redirect URIs:', redirectUrl);
+        
+        const authUrl = `https://accounts.google.com/o/oauth2/v2/auth?` +
+          `client_id=${encodeURIComponent(googleClientId)}&` +
+          `redirect_uri=${encodeURIComponent(redirectUrl)}&` +
+          `response_type=id_token&` +
+          `scope=openid email profile&` +
+          `nonce=${Date.now()}`;
+        
+        chrome.identity.launchWebAuthFlow({
+          url: authUrl,
+          interactive: true
+        }, async (callbackUrl) => {
+          if (chrome.runtime.lastError) {
+            console.error('Chrome identity error:', chrome.runtime.lastError);
+            showLoginError('Google sign-in failed: ' + chrome.runtime.lastError.message);
+            resetGoogleButton();
+            return;
+          }
+          
+          if (!callbackUrl) {
+            showLoginError('Google sign-in was cancelled');
+            resetGoogleButton();
+            return;
+          }
+          
+          // Extract ID token from callback URL
+          // For Chrome Identity API, the token is in the URL fragment (after #)
+          let idToken = null;
+          const hashIndex = callbackUrl.indexOf('#');
+          if (hashIndex !== -1) {
+            const hashParams = new URLSearchParams(callbackUrl.substring(hashIndex + 1));
+            idToken = hashParams.get('id_token');
+          }
+          
+          // If not in hash, try query parameters
+          if (!idToken) {
+            const queryIndex = callbackUrl.indexOf('?');
+            if (queryIndex !== -1) {
+              const queryParams = new URLSearchParams(callbackUrl.substring(queryIndex + 1));
+              idToken = queryParams.get('id_token');
+            }
+          }
+          
+          if (!idToken) {
+            console.error('Callback URL:', callbackUrl);
+            showLoginError('Failed to get ID token from Google');
+            resetGoogleButton();
+            return;
+          }
+          
+          try {
+            // Send the ID token to backend
+            const result = await window.SiderAuthService.googleSignIn(idToken);
+            
+            if (result.success) {
+              showLoginSuccess('Welcome! You are now logged in.');
+              await new Promise(resolve => setTimeout(resolve, 200));
+              
+              // Fetch user profile immediately after login
+              try {
+                if (window.SiderAuthService) {
+                  const profileResult = await window.SiderAuthService.getCurrentUser();
+                  if (profileResult.success && profileResult.data) {
+                    console.log('User profile fetched:', profileResult.data);
+                  }
+                }
+              } catch (error) {
+                console.error('Error fetching profile after login:', error);
+              }
+              
+              setTimeout(() => {
+                hideLoginModal();
+                if (window.updateUIForAuthStatus) {
+                  window.updateUIForAuthStatus().catch(err => {
+                    console.error('Error updating UI:', err);
+                    setTimeout(() => {
+                      if (window.updateUIForAuthStatus) {
+                        window.updateUIForAuthStatus();
+                      }
+                    }, 500);
+                  });
+                } else {
+                  if (window.location) {
+                    window.location.reload();
+                  }
+                }
+              }, 1500);
+            } else {
+              showLoginError(result.error || 'Google sign-in failed');
+              resetGoogleButton();
+            }
+          } catch (error) {
+            console.error('Google sign-in error:', error);
+            showLoginError(error.message || 'Google sign-in failed');
+            resetGoogleButton();
+          }
+        });
+      } else {
+        // Fallback: Open popup window for Google OAuth
+        const redirectUrl = typeof chrome !== 'undefined' && chrome.identity 
+          ? chrome.identity.getRedirectURL() 
+          : window.location.origin + '/oauth/callback';
+        
+        const authUrl = `https://accounts.google.com/o/oauth2/v2/auth?` +
+          `client_id=${encodeURIComponent(googleClientId)}&` +
+          `redirect_uri=${encodeURIComponent(redirectUrl)}&` +
+          `response_type=id_token&` +
+          `scope=openid email profile&` +
+          `nonce=${Date.now()}`;
+        
+        const popup = window.open(
+          authUrl,
+          'Google Sign In',
+          'width=500,height=600,scrollbars=yes,resizable=yes'
+        );
+        
+        if (!popup) {
+          showLoginError('Popup blocked. Please allow popups for this site.');
           resetGoogleButton();
           return;
         }
         
-        if (response && response.success) {
-          const { email, username, name } = response;
+        // Listen for message from popup
+        const messageListener = async (event) => {
+          if (event.origin !== 'https://accounts.google.com' && event.origin !== window.location.origin) {
+            return;
+          }
           
-          chrome.runtime.sendMessage({
-            type: 'REGISTER_USER',
-            email: email,
-            username: username,
-            password: ''
-          }, (registerResponse) => {
-            if (registerResponse && registerResponse.success) {
-              showLoginSuccess(`Welcome, ${name || username}!`);
-              setTimeout(() => {
-                hideLoginModal();
-              }, 1500);
-              chrome.storage.local.set({
-                sider_user_email: email,
-                sider_user_name: name || username,
-                sider_user_logged_in: true
-              });
-            } else {
-              showLoginError(registerResponse?.error || 'Registration failed');
+          if (event.data.type === 'GOOGLE_OAUTH_TOKEN' && event.data.token) {
+            window.removeEventListener('message', messageListener);
+            popup.close();
+            
+            try {
+              const result = await window.SiderAuthService.googleSignIn(event.data.token);
+              
+              if (result.success) {
+                showLoginSuccess('Welcome! You are now logged in.');
+                await new Promise(resolve => setTimeout(resolve, 200));
+                
+                try {
+                  if (window.SiderAuthService) {
+                    const profileResult = await window.SiderAuthService.getCurrentUser();
+                    if (profileResult.success && profileResult.data) {
+                      console.log('User profile fetched:', profileResult.data);
+                    }
+                  }
+                } catch (error) {
+                  console.error('Error fetching profile after login:', error);
+                }
+                
+                setTimeout(() => {
+                  hideLoginModal();
+                  if (window.updateUIForAuthStatus) {
+                    window.updateUIForAuthStatus().catch(err => {
+                      console.error('Error updating UI:', err);
+                      setTimeout(() => {
+                        if (window.updateUIForAuthStatus) {
+                          window.updateUIForAuthStatus();
+                        }
+                      }, 500);
+                    });
+                  } else {
+                    if (window.location) {
+                      window.location.reload();
+                    }
+                  }
+                }, 1500);
+              } else {
+                showLoginError(result.error || 'Google sign-in failed');
+                resetGoogleButton();
+              }
+            } catch (error) {
+              console.error('Google sign-in error:', error);
+              showLoginError(error.message || 'Google sign-in failed');
               resetGoogleButton();
             }
-          });
-        } else {
-          showLoginError(response?.error || 'Google Sign-In failed');
-          resetGoogleButton();
-        }
-      });
+          }
+        };
+        
+        window.addEventListener('message', messageListener);
+        
+        // Check if popup is closed
+        const checkPopup = setInterval(() => {
+          if (popup.closed) {
+            clearInterval(checkPopup);
+            window.removeEventListener('message', messageListener);
+            if (!popup.closed) {
+              showLoginError('Google sign-in was cancelled');
+              resetGoogleButton();
+            }
+          }
+        }, 500);
+      }
+      
     } catch (error) {
       console.error('Google login error:', error);
-      showLoginError('Google Sign-In failed');
+      showLoginError(error.message || 'Google sign-in failed. Please try again.');
       resetGoogleButton();
     }
   }
@@ -295,13 +713,36 @@
   function initializeLoginModal() {
     createLoginModal();
     
+    // Wait for auth service to be available
+    const checkAuthService = setInterval(() => {
+      if (window.SiderAuthService) {
+        clearInterval(checkAuthService);
+        setupLoginModal();
+      }
+    }, 100);
+    
+    // Timeout after 5 seconds
+    setTimeout(() => {
+      clearInterval(checkAuthService);
+      if (!window.SiderAuthService) {
+        console.error('Auth service not loaded after 5 seconds');
+      } else {
+        setupLoginModal();
+      }
+    }, 5000);
+  }
+
+  function setupLoginModal() {
     const loginModal = document.getElementById('sider-login-modal');
     const loginCloseBtn = document.getElementById('sider-login-close-btn');
     const loginGoogleBtn = document.getElementById('sider-login-google-btn');
-    const loginAppleBtn = document.getElementById('sider-login-apple-btn');
-    const loginPhoneBtn = document.getElementById('sider-login-phone-btn');
+    const submitBtn = document.getElementById('sider-login-submit-btn');
+    const emailInput = document.getElementById('sider-login-email');
+    const passwordInput = document.getElementById('sider-login-password');
     const createAccountLink = document.getElementById('sider-create-account-link');
     const loginLink = document.getElementById('sider-login-link');
+    
+    let currentMode = 'login';
     
     if (loginModal) {
       if (loginCloseBtn) {
@@ -311,24 +752,40 @@
         });
       }
       
+      if (submitBtn) {
+        submitBtn.addEventListener('click', async (e) => {
+          e.stopPropagation();
+          if (currentMode === 'signup') {
+            await handleEmailRegister();
+          } else {
+            await handleEmailLogin();
+          }
+        });
+      }
+      
+      if (emailInput && passwordInput) {
+        const handleEnterKey = (e) => {
+          if (e.key === 'Enter') {
+            e.preventDefault();
+            if (submitBtn) submitBtn.click();
+          }
+        };
+        emailInput.addEventListener('keydown', handleEnterKey);
+        passwordInput.addEventListener('keydown', handleEnterKey);
+      }
+      
       if (loginGoogleBtn) {
-        loginGoogleBtn.addEventListener('click', (e) => {
+        // Remove any existing event listeners
+        const newBtn = loginGoogleBtn.cloneNode(true);
+        loginGoogleBtn.parentNode.replaceChild(newBtn, loginGoogleBtn);
+        
+        newBtn.addEventListener('click', async (e) => {
           e.stopPropagation();
-          handleGoogleLogin();
-        });
-      }
-      
-      if (loginAppleBtn) {
-        loginAppleBtn.addEventListener('click', (e) => {
-          e.stopPropagation();
-          handleAppleLogin();
-        });
-      }
-      
-      if (loginPhoneBtn) {
-        loginPhoneBtn.addEventListener('click', (e) => {
-          e.stopPropagation();
-          handlePhoneLogin();
+          e.preventDefault();
+          console.log('Google button clicked, calling handleGoogleLogin');
+          
+          // Always call handleGoogleLogin which will handle the full flow
+          await handleGoogleLogin();
         });
       }
       
@@ -336,6 +793,7 @@
         createAccountLink.addEventListener('click', (e) => {
           e.preventDefault();
           e.stopPropagation();
+          currentMode = 'signup';
           setLoginModalMode('signup');
         });
       }
@@ -344,6 +802,7 @@
         loginLink.addEventListener('click', (e) => {
           e.preventDefault();
           e.stopPropagation();
+          currentMode = 'login';
           setLoginModalMode('login');
         });
       }
@@ -369,4 +828,3 @@
     initializeLoginModal();
   }
 })();
-
