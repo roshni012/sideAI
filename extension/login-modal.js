@@ -2,7 +2,7 @@
   'use strict';
 
   // API base URL - same as auth-service.js
-  const API_BASE_URL = 'http://localhost:8000';
+  const API_BASE_URL = 'https://webby-sider-backend-175d47f9225b.herokuapp.com';
 
   let loginModal = null;
 
