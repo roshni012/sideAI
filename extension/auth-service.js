@@ -443,7 +443,27 @@
             'sider_user_name',
             'sider_user_id',
             'sider_user_logged_in'
-          ], resolve);
+          ], () => {
+            const emailInput = document.getElementById('sider-login-email');
+            const passwordInput = document.getElementById('sider-login-password');
+            const submitBtn = document.getElementById('sider-login-submit-btn');
+            const submitText = document.getElementById('sider-login-submit-text');
+            
+            if (emailInput) {
+              emailInput.value = '';
+            }
+            if (passwordInput) {
+              passwordInput.value = '';
+            }
+            if (submitBtn) {
+              submitBtn.disabled = false;
+            }
+            if (submitText) {
+              submitText.textContent = 'Log in';
+            }
+            
+            resolve();
+          });
         });
       },
   

@@ -721,7 +721,6 @@
   
   function showImagePreview(src, alt = 'Image') {
     const imagePreviewSection = document.getElementById('sider-image-preview-section');
-    const imageThumb = document.getElementById('sider-image-preview-thumb');
     const selectedTextSection = document.getElementById('sider-selected-text-section');
     const input = document.getElementById('sider-chat-input');
     
@@ -729,9 +728,64 @@
       selectedTextSection.style.display = 'none';
     }
     
-    if (imagePreviewSection && imageThumb) {
+    if (imagePreviewSection) {
+      const imagesContainer = imagePreviewSection.querySelector('div:first-child');
+      if (!imagesContainer) return;
+      const imageWrapper = document.createElement('div');
+      imageWrapper.style.position = 'relative';
+      imageWrapper.style.flexShrink = '0';
+      imageWrapper.className = 'sider-image-preview-item';
+      imageWrapper.setAttribute('data-image-src', src);
+      imageWrapper.setAttribute('data-image-alt', alt);
+      
+      const imageThumb = document.createElement('img');
       imageThumb.src = src;
       imageThumb.alt = alt || 'Image';
+      imageThumb.style.width = '60px';
+      imageThumb.style.height = '60px';
+      imageThumb.style.objectFit = 'cover';
+      imageThumb.style.borderRadius = '8px';
+      imageThumb.style.border = '1px solid #e5e7eb';
+      imageThumb.style.display = 'block';
+      
+      const closeBtn = document.createElement('button');
+      closeBtn.className = 'sider-image-preview-close-btn';
+      closeBtn.title = 'Remove image';
+      closeBtn.style.cssText = 'position: absolute; top: -8px; right: -8px; width: 24px; height: 24px; border-radius: 50%; background: #ffffff; border: 1px solid #d1d5db; box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1); cursor: pointer; display: flex; align-items: center; justify-content: center; padding: 0; font-size: 14px; color: #6b7280; transition: all 0.2s; z-index: 10;';
+      closeBtn.innerHTML = `
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <line x1="18" y1="6" x2="6" y2="18"></line>
+          <line x1="6" y1="6" x2="18" y2="18"></line>
+        </svg>
+      `;
+      
+      closeBtn.onclick = (e) => {
+        e.stopPropagation();
+        e.preventDefault();
+        imageWrapper.remove();
+        const remainingImages = imagesContainer.querySelectorAll('.sider-image-preview-item');
+        if (remainingImages.length === 0) {
+          imagePreviewSection.style.display = 'none';
+        }
+      };
+      
+      imageWrapper.appendChild(imageThumb);
+      imageWrapper.appendChild(closeBtn);
+      
+      let imagesRow = imagesContainer.querySelector('.sider-images-row');
+      if (!imagesRow) {
+        imagesRow = document.createElement('div');
+        imagesRow.style.cssText = 'display: flex; flex-direction: row; gap: 8px; align-items: flex-start; flex-wrap: wrap;';
+        imagesRow.className = 'sider-images-row';
+        const actionButtonsDiv = imagesContainer.querySelector('div:last-child');
+        if (actionButtonsDiv && actionButtonsDiv.querySelector('.sider-image-action-btn')) {
+          imagesContainer.insertBefore(imagesRow, actionButtonsDiv);
+        } else {
+          imagesContainer.insertBefore(imagesRow, imagesContainer.firstChild);
+        }
+      }
+      
+      imagesRow.appendChild(imageWrapper);
       imagePreviewSection.style.display = 'block';
       
       if (input) {
@@ -746,11 +800,13 @@
         btn.onclick = (e) => {
           e.stopPropagation();
           const action = btn.getAttribute('data-action');
-          handleImageAction(action, src, alt);
+          const allImages = Array.from(imagesContainer.querySelectorAll('.sider-image-preview-item')).map(item => ({
+            src: item.getAttribute('data-image-src'),
+            alt: item.getAttribute('data-image-alt')
+          }));
+          handleImageAction(action, allImages.length === 1 ? allImages[0].src : allImages, allImages.length === 1 ? allImages[0].alt : 'Images');
         };
       });
-      
-      setupImagePreviewCloseButton();
     }
   }
   
@@ -1375,6 +1431,64 @@
     if (sidebar && sidebar.classList.contains('sider-sidebar-collapsed')) {
       if (hamburger) hamburger.style.display = 'flex';
     }
+    const moreOptionsIcon = document.getElementById('sider-more-options-icon');
+    const moreOptionsPopup = document.getElementById('sider-more-options-popup');
+    
+    if (moreOptionsIcon && moreOptionsPopup) {
+      let moreOptionsTimeout;
+      
+      const showMoreOptionsPopup = () => {
+        clearTimeout(moreOptionsTimeout);
+        if (moreOptionsIcon && moreOptionsPopup) {
+          const iconRect = moreOptionsIcon.getBoundingClientRect();
+          if (iconRect) {
+            moreOptionsPopup.style.display = 'block';
+            const sidebar = document.querySelector('.sider-panel-sidebar');
+            const sidebarWidth = sidebar ? sidebar.offsetWidth : 48;
+            moreOptionsPopup.style.top = `${iconRect.top}px`;
+            moreOptionsPopup.style.right = `${window.innerWidth - iconRect.right + sidebarWidth}px`;
+          }
+        }
+      };
+      
+      const hideMoreOptionsPopup = () => {
+        clearTimeout(moreOptionsTimeout);
+        moreOptionsTimeout = setTimeout(() => {
+          if (moreOptionsPopup && !moreOptionsPopup.matches(':hover') && !moreOptionsIcon.matches(':hover')) {
+            moreOptionsPopup.style.display = 'none';
+          }
+        }, 200);
+      };
+      
+      moreOptionsIcon.addEventListener('mouseenter', () => {
+        showMoreOptionsPopup();
+      });
+      
+      moreOptionsIcon.addEventListener('mouseleave', (e) => {
+        if (!moreOptionsPopup.contains(e.relatedTarget)) {
+          hideMoreOptionsPopup();
+        }
+      });
+      
+      moreOptionsPopup.addEventListener('mouseenter', () => {
+        clearTimeout(moreOptionsTimeout);
+        moreOptionsPopup.style.display = 'block';
+      });
+      
+      moreOptionsPopup.addEventListener('mouseleave', () => {
+        hideMoreOptionsPopup();
+      });
+      
+      const moreOptionsItems = moreOptionsPopup.querySelectorAll('.sider-more-options-item');
+      moreOptionsItems.forEach(item => {
+        item.addEventListener('click', (e) => {
+          e.stopPropagation();
+          const action = item.getAttribute('data-action');
+          console.log('More Options action:', action);
+          moreOptionsPopup.style.display = 'none';
+        });
+      });
+    }
     
     // Action buttons
     document.querySelectorAll('.sider-action-btn').forEach(btn => {
@@ -1590,6 +1704,24 @@
           profileLoginBtn.onclick = async () => {
             if (window.SiderAuthService) {
               await window.SiderAuthService.clearAuth();
+              const emailInput = document.getElementById('sider-login-email');
+              const passwordInput = document.getElementById('sider-login-password');
+              const submitBtn = document.getElementById('sider-login-submit-btn');
+              const submitText = document.getElementById('sider-login-submit-text');
+              
+              if (emailInput) {
+                emailInput.value = '';
+              }
+              if (passwordInput) {
+                passwordInput.value = '';
+              }
+              if (submitBtn) {
+                submitBtn.disabled = false;
+              }
+              if (submitText) {
+                submitText.textContent = 'Log in';
+              }
+              
               updateUIForAuthStatus();
             }
           };
