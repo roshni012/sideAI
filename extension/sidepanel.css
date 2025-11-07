@@ -177,6 +177,73 @@ body {
   color: #111827;
 }
 
+.sider-more-options-popup {
+  position: fixed;
+  width: 280px;
+  background: #ffffff;
+  border: 1px solid #e5e7eb;
+  border-radius: 12px 0 0 12px;
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.15);
+  z-index: 1001;
+  overflow: hidden;
+}
+
+.sider-more-options-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 8px;
+  padding: 12px;
+}
+
+.sider-more-options-item {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 6px;
+  padding: 12px 8px;
+  border-radius: 8px;
+  cursor: pointer;
+  transition: all 0.2s;
+  background: transparent;
+}
+
+.sider-more-options-item:hover {
+  background: #f3f4f6;
+}
+
+.sider-more-options-icon {
+  width: 32px;
+  height: 32px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 8px;
+  color: #6b7280;
+  transition: all 0.2s;
+}
+
+.sider-more-options-item:hover .sider-more-options-icon {
+  background: #ffffff;
+  color: #111827;
+}
+
+.sider-more-options-icon svg {
+  width: 20px;
+  height: 20px;
+}
+
+.sider-more-options-label {
+  font-size: 12px;
+  color: #6b7280;
+  text-align: center;
+  font-weight: 500;
+  transition: color 0.2s;
+}
+
+.sider-more-options-item:hover .sider-more-options-label {
+  color: #111827;
+}
+
 .sider-sidebar-icon {
   position: relative;
   width: 36px;
@@ -209,6 +276,14 @@ body {
   width: 20px;
   height: 20px;
   stroke-width: 2;
+}
+
+.sider-sidebar-icon-spacer {
+  margin-top: 16px;
+}
+
+.sider-sidebar-icon[title="Mobile"] {
+  margin-top: 45px;
 }
 
 .sider-sidebar-badge {
