@@ -162,7 +162,14 @@
           <div class="sider-input-area">
             <div class="sider-image-preview-section" id="sider-image-preview-section" style="display: none;">
               <div style="display: flex; flex-direction: column; align-items: flex-start; gap: 8px; margin-bottom: 8px; width: 100%;">
-                <div class="sider-images-row" style="display: flex; flex-direction: row; gap: 8px; align-items: flex-start; flex-wrap: wrap;">
+                <div style="position: relative; flex-shrink: 0;">
+                  <img id="sider-image-preview-thumb" src="" alt="Preview" style="width: 80px; height: 80px; object-fit: cover; border-radius: 8px; border: 1px solid #e5e7eb; display: block;">
+                  <button id="sider-image-preview-close" class="sider-image-preview-close-btn" title="Remove image" style="position: absolute; top: -8px; right: -8px; width: 24px; height: 24px; border-radius: 50%; background: #ffffff; border: 1px solid #d1d5db; box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1); cursor: pointer; display: flex; align-items: center; justify-content: center; padding: 0; font-size: 14px; color: #6b7280; transition: all 0.2s; z-index: 10;">
+                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                      <line x1="18" y1="6" x2="6" y2="18"></line>
+                      <line x1="6" y1="6" x2="18" y2="18"></line>
+                    </svg>
+                  </button>
                 </div>
                 <div style="display: flex; flex-direction: row; gap: 8px; align-items: flex-start; flex-wrap: wrap;">
                   <button class="sider-image-action-btn" data-action="extract-text" style="background: #f3f4f6; border: 1px solid #e5e7eb; border-radius: 6px; padding: 6px 12px; font-size: 10px; font-weight: 500; color: #111827; cursor: pointer; transition: all 0.2s; white-space: nowrap;">
@@ -292,49 +299,53 @@
         </svg>
         <span class="sider-sidebar-badge">0</span>
       </div>
-      <div class="sider-sidebar-icon" id="sider-more-options-icon" title="More Options">
+      <div class="sider-sidebar-icon" title="Refresh/Redo">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <polyline points="23 4 23 10 17 10"/>
+          <polyline points="1 20 1 14 7 14"/>
+          <path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"/>
+        </svg>
+      </div>
+      <div class="sider-sidebar-icon" title="More Options">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
           <circle cx="12" cy="12" r="1"/>
           <circle cx="19" cy="12" r="1"/>
           <circle cx="5" cy="12" r="1"/>
         </svg>
       </div>
-      <div class="sider-sidebar-icon sider-sidebar-icon-spacer" title="Painter">
+      <div class="sider-sidebar-icon" title="Link/Connect">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-          <path d="M14.7 6.3a1 1 0 0 0 0 1.4l1.6 1.6a1 1 0 0 0 1.4 0l3.77-3.77a6 6 0 0 1-7.94 7.94l-6.91 6.91a2.12 2.12 0 0 1-3-3l6.91-6.91a6 6 0 0 1 7.94-7.94l-3.76 3.76z"/>
+          <path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"/>
+          <path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"/>
         </svg>
       </div>
-      <div class="sider-sidebar-icon" title="ChatPDF">
+      <div class="sider-sidebar-icon" title="Send/Share">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-          <rect x="4" y="4" width="16" height="16" rx="2" ry="2"/>
-          <path d="M12 6l-4 4h3v4h2v-4h3l-4-4z"/>
-          <path d="M8 10h8"/>
+          <line x1="22" y1="2" x2="11" y2="13"/>
+          <polygon points="22 2 15 22 11 13 2 9 22 2"/>
         </svg>
       </div>
-      <div class="sider-sidebar-icon" title="Wisebase">
+      <div class="sider-sidebar-icon" title="Layers/List">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-          <rect x="3" y="8" width="18" height="4" rx="1"/>
-          <rect x="5" y="14" width="18" height="4" rx="1"/>
-          <path d="M19 4l-2 2 2 2"/>
-          <circle cx="20" cy="5" r="1.5" fill="currentColor"/>
+          <line x1="8" y1="6" x2="21" y2="6"/>
+          <line x1="8" y1="12" x2="21" y2="12"/>
+          <line x1="8" y1="18" x2="21" y2="18"/>
+          <line x1="3" y1="6" x2="3.01" y2="6"/>
+          <line x1="3" y1="12" x2="3.01" y2="12"/>
+          <line x1="3" y1="18" x2="3.01" y2="18"/>
         </svg>
       </div>
-      <div class="sider-sidebar-icon sider-sidebar-icon-spacer" title="Mobile">
+      <div class="sider-sidebar-icon" title="Mobile">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
           <rect x="5" y="2" width="14" height="20" rx="2" ry="2"/>
-          <line x1="8" y1="5" x2="16" y2="5"/>
-          <line x1="12" y1="19" x2="12.01" y2="19"/>
+          <line x1="12" y1="18" x2="12.01" y2="18"/>
         </svg>
       </div>
-      <div class="sider-sidebar-icon" title="Options">
+      <div class="sider-sidebar-icon" title="Target">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-          <path d="M12 2l-2.5 2.5L12 7l2.5-2.5L12 2z"/>
-          <path d="M12 22l-2.5-2.5L12 17l2.5 2.5L12 22z"/>
-          <path d="M2 12l2.5-2.5L2 7l2.5 2.5L2 12z"/>
-          <path d="M22 12l-2.5-2.5L22 7l-2.5 2.5L22 12z"/>
-          <path d="M7 12l2.5-2.5L7 7l2.5 2.5L7 12z"/>
-          <path d="M17 12l-2.5-2.5L17 7l-2.5 2.5L17 12z"/>
-          <circle cx="12" cy="12" r="3" fill="currentColor"/>
+          <circle cx="12" cy="12" r="10"/>
+          <circle cx="12" cy="12" r="6"/>
+          <circle cx="12" cy="12" r="2"/>
         </svg>
       </div>
       <div class="sider-sidebar-icon sider-sidebar-icon-active" id="sider-profile-icon" title="Profile">
@@ -471,7 +482,7 @@
           </svg>
         </div>
         <div class="sider-profile-dropdown-text">
-          <span>Log in to start using Sider.</span>
+          <span id="sider-profile-dropdown-text">Log in to start using Sider.</span>
         </div>
         <button class="sider-profile-login-btn" id="sider-profile-login-btn">Log in</button>
       </div>
@@ -730,91 +741,9 @@
         </div>
       </div>
     </div>
-    <div class="sider-more-options-popup" id="sider-more-options-popup" style="display: none;">
-      <div class="sider-more-options-grid">
-        <div class="sider-more-options-item" data-action="agent">
-          <div class="sider-more-options-icon">
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-              <circle cx="12" cy="12" r="10"/>
-              <path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"/>
-            </svg>
-          </div>
-          <span class="sider-more-options-label">Agent</span>
-        </div>
-        <div class="sider-more-options-item" data-action="write">
-          <div class="sider-more-options-icon">
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-              <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/>
-              <polyline points="14 2 14 8 20 8"/>
-              <line x1="16" y1="13" x2="8" y2="13"/>
-              <line x1="16" y1="17" x2="8" y2="17"/>
-              <polyline points="10 9 9 9 8 9"/>
-            </svg>
-          </div>
-          <span class="sider-more-options-label">Write</span>
-        </div>
-        <div class="sider-more-options-item" data-action="translate">
-          <div class="sider-more-options-icon">
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-              <rect x="3" y="3" width="18" height="18" rx="2"/>
-              <line x1="3" y1="9" x2="21" y2="9"/>
-              <line x1="9" y1="3" x2="9" y2="21"/>
-              <path d="M12 3v18M3 12h18"/>
-            </svg>
-          </div>
-          <span class="sider-more-options-label">Translate</span>
-        </div>
-        <div class="sider-more-options-item" data-action="ocr">
-          <div class="sider-more-options-icon">
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-              <rect x="3" y="3" width="18" height="18" rx="2"/>
-              <line x1="7" y1="7" x2="17" y2="7"/>
-              <line x1="7" y1="11" x2="17" y2="11"/>
-              <line x1="7" y1="15" x2="12" y2="15"/>
-            </svg>
-          </div>
-          <span class="sider-more-options-label">OCR</span>
-        </div>
-        <div class="sider-more-options-item" data-action="grammar">
-          <div class="sider-more-options-icon">
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-              <path d="M9 11l3 3L22 4"/>
-              <path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"/>
-            </svg>
-          </div>
-          <span class="sider-more-options-label">Grammar</span>
-        </div>
-        <div class="sider-more-options-item" data-action="ask">
-          <div class="sider-more-options-icon">
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-              <circle cx="12" cy="12" r="10"/>
-              <path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3"/>
-              <line x1="12" y1="17" x2="12.01" y2="17"/>
-            </svg>
-          </div>
-          <span class="sider-more-options-label">Ask</span>
-        </div>
-        <div class="sider-more-options-item" data-action="search">
-          <div class="sider-more-options-icon">
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-              <circle cx="11" cy="11" r="8"/>
-              <path d="m21 21-4.35-4.35"/>
-            </svg>
-          </div>
-          <span class="sider-more-options-label">Search</span>
-        </div>
-        <div class="sider-more-options-item" data-action="tools">
-          <div class="sider-more-options-icon">
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-              <path d="M14.7 6.3a1 1 0 0 0 0 1.4l1.6 1.6a1 1 0 0 0 1.4 0l3.77-3.77a6 6 0 0 1-7.94 7.94l-6.91 6.91a2.12 2.12 0 0 1-3-3l6.91-6.91a6 6 0 0 1 7.94-7.94l-3.76 3.76z"/>
-            </svg>
-          </div>
-          <span class="sider-more-options-label">Tools</span>
-        </div>
-      </div>
-    </div>
   </div>
 
+  <script src="auth-service.js"></script>
   <script src="ai-modules.js"></script>
   <script src="login-modal.js"></script>
   <script src="sidepanel.js"></script>
