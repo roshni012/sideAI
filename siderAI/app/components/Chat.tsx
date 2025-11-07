@@ -368,6 +368,28 @@ export default function Chat() {
     }
   };
 
+  const getToolSlug = (toolName: string): string => {
+    const slugMap: Record<string, string> = {
+      'AI Image Generator': 'ai-image-generator',
+      'Background Remover': 'background-remover',
+      'Text Remover': 'text-remover',
+      'Photo Eraser': 'photo-eraser',
+      'Inpaint': 'inpaint',
+      'Image Upscaler': 'image-upscaler',
+      'Background Changer': 'background-changer',
+      'AI Translator': 'ai-translator',
+      'Image Translator': 'image-translator',
+      'AI Video Shortener': 'ai-video-shortener',
+    };
+    return slugMap[toolName] || toolName.toLowerCase().replace(/\s+/g, '-');
+  };
+
+  const handleToolClick = (toolName: string) => {
+    const slug = getToolSlug(toolName);
+    const url = `/create/image/${slug}`;
+    window.open(url, '_blank');
+  };
+
   return (
     <div className="flex h-screen bg-gray-50 dark:bg-gray-900 overflow-hidden">
       {/* Sidebar */}
@@ -468,6 +490,7 @@ export default function Chat() {
                               initial={{ opacity: 0, x: -10 }}
                               animate={{ opacity: 1, x: 0 }}
                               transition={{ delay: i * 0.03 }}
+                              onClick={() => handleToolClick(item.name)}
                               className="flex items-center gap-2 px-2 py-1.5 rounded-md hover:bg-gray-50 dark:hover:bg-gray-700/50 transition-colors"
                             >
                               <Icon className="w-4 h-4 text-blue-500" />
@@ -497,6 +520,7 @@ export default function Chat() {
                               initial={{ opacity: 0, x: -10 }}
                               animate={{ opacity: 1, x: 0 }}
                               transition={{ delay: 0.25 + i * 0.05 }}
+                              onClick={() => handleToolClick(item.name)}
                               className="flex items-center gap-2 px-2 py-1.5 rounded-md hover:bg-gray-50 dark:hover:bg-gray-700/50 transition-colors"
                             >
                               <Icon className="w-4 h-4 text-orange-500" />
@@ -519,6 +543,7 @@ export default function Chat() {
                           initial={{ opacity: 0, x: -10 }}
                           animate={{ opacity: 1, x: 0 }}
                           transition={{ delay: 0.4 }}
+                          onClick={() => handleToolClick('AI Video Shortener')}
                           className="flex items-center gap-2 px-2 py-1.5 rounded-md hover:bg-gray-50 dark:hover:bg-gray-700/50 transition-colors"
                         >
                           <Video className="w-4 h-4 text-purple-500" />
