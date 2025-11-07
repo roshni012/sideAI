@@ -6,9 +6,7 @@
   "permissions": [
     "activeTab",
     "storage",
-    "scripting",
-    "sidePanel",
-    "tabs"
+    "scripting"
   ],
   "host_permissions": [
     "<all_urls>"
@@ -25,12 +23,7 @@
       "run_at": "document_idle"
     }
   ],
-  "action": {
-    "default_title": "Open AI Sidebar"
-  },
-  "side_panel": {
-    "default_path": "sidepanel.html"
-  },
+  "action": {},
   "web_accessible_resources": [
     {
       "resources": ["icons/*.png", "svg/*.svg"],
