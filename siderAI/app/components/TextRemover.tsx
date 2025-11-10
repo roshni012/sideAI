@@ -232,6 +232,7 @@ export default function TextRemover() {
                     ? 'p-4 cursor-default'
                     : 'p-16 cursor-pointer hover:border-purple-500 dark:hover:border-purple-500 hover:bg-purple-100/50 dark:hover:bg-purple-900/20 hover:shadow-lg'
                 }`}
+                style={{ marginTop: '15%' }}
               >
                 <input
                   ref={fileInputRef}
@@ -252,18 +253,7 @@ export default function TextRemover() {
                       alt="Uploaded"
                       className="max-w-full max-h-[600px] w-auto h-auto object-contain rounded-lg"
                     />
-                    {/* Overlay for re-upload */}
-                    <div className="absolute inset-0 bg-black/0 hover:bg-black/5 transition-colors rounded-xl flex items-center justify-center opacity-0 hover:opacity-100 group-hover:opacity-100">
-                      <button
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          fileInputRef.current?.click();
-                        }}
-                        className="px-4 py-2 bg-white dark:bg-gray-800 text-gray-700 dark:text-gray-300 rounded-lg text-sm font-medium shadow-lg hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors"
-                      >
-                        Change Image
-                      </button>
-                    </div>
+                
                   </motion.div>
                 ) : (
                   <div className="flex flex-col items-center justify-center text-center h-full min-h-[300px]">
@@ -294,12 +284,15 @@ export default function TextRemover() {
                   className="w-48"
                 >
                   <div className="border border-gray-200 dark:border-gray-700 rounded-lg overflow-hidden bg-white dark:bg-gray-800">
-                    <div className="aspect-square bg-gray-100 dark:bg-gray-700 flex items-center justify-center">
-                      <div className="text-center p-2">
-                        <div className="w-16 h-16 mx-auto mb-2 bg-gradient-to-br from-gray-200 to-gray-300 dark:from-gray-600 dark:to-gray-700 rounded-lg flex items-center justify-center">
-                          <ImageIcon className="w-8 h-8 text-gray-400 dark:text-gray-500" />
-                        </div>
-                        <p className="text-xs text-gray-500 dark:text-gray-400">Original Image</p>
+                    <div className="aspect-square bg-gray-100 dark:bg-gray-700 flex items-center justify-center relative">
+                      {/* eslint-disable-next-line @next/next/no-img-element */}
+                      <img
+                        src="/Text.png"
+                        alt="Original Image"
+                        className="max-w-full max-h-full w-auto h-auto object-contain rounded-lg"
+                      />
+                      <div className="absolute top-2 left-2 bg-gray-100 dark:bg-gray-700 rounded-md px-2 py-1">
+                        <p className="text-xs text-gray-600 dark:text-gray-400 font-medium">Original Image</p>
                       </div>
                     </div>
                   </div>
@@ -327,11 +320,14 @@ export default function TextRemover() {
                 >
                   <div className="border border-gray-200 dark:border-gray-700 rounded-lg overflow-hidden bg-white dark:bg-gray-800">
                     <div className="aspect-square bg-white dark:bg-gray-800 flex items-center justify-center relative">
-                      <div className="text-center p-2 relative z-10">
-                        <div className="w-16 h-16 mx-auto mb-2 bg-gradient-to-br from-purple-100 to-purple-200 dark:from-purple-900/30 dark:to-purple-800/30 rounded-lg flex items-center justify-center">
-                          <ImageIcon className="w-8 h-8 text-purple-600 dark:text-purple-400" />
-                        </div>
-                        <p className="text-xs text-gray-500 dark:text-gray-400">Text Removed</p>
+                      {/* eslint-disable-next-line @next/next/no-img-element */}
+                      <img
+                        src="/text removed.png"
+                        alt="Text Removed"
+                        className="max-w-full max-h-full w-auto h-auto object-contain rounded-lg"
+                      />
+                      <div className="absolute top-2 right-2 bg-gray-100 dark:bg-gray-700 rounded-md px-2 py-1">
+                        <p className="text-xs text-gray-600 dark:text-gray-400 font-medium">Text Removed</p>
                       </div>
                     </div>
                   </div>
@@ -340,13 +336,26 @@ export default function TextRemover() {
             </div>
           )}
 
-          {/* Confirm Button */}
+          {/* Confirm Button and Change Image Button */}
           <motion.div
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ delay: 0.3 }}
-            className="flex justify-center mt-6"
+            className="flex justify-center items-center gap-4 mt-6"
           >
+            <motion.button
+              whileHover={{ scale: 1.1 }}
+              whileTap={{ scale: 0.9 }}
+              onClick={() => fileInputRef.current?.click()}
+              disabled={!uploadedImage}
+              className="p-2.5 rounded-lg bg-white dark:bg-gray-800 text-gray-600 dark:text-gray-400 hover:text-purple-600 dark:hover:text-purple-400 transition-colors shadow-sm disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:text-gray-600 dark:disabled:hover:text-gray-400"
+              title="Change Image"
+            >
+              <div className="relative">
+                <ImageIcon className="w-5 h-5" />
+                <Plus className="w-3 h-3 absolute -top-1 -right-1 bg-white dark:bg-gray-800 rounded-full" />
+              </div>
+            </motion.button>
             <motion.button
               whileHover={{ scale: 1.05 }}
               whileTap={{ scale: 0.95 }}

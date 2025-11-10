@@ -39,7 +39,7 @@ const sidebarTools = [
   { name: 'Background Changer', slug: 'background-changer', icon: Layers },
 ];
 
-export default function PhotoEraser() {
+export default function Inpaint() {
   const [uploadedImage, setUploadedImage] = useState<string | null>(null);
   const [, setProcessedImage] = useState<string | null>(null);
   const [isProcessing, setIsProcessing] = useState(false);
@@ -47,6 +47,7 @@ export default function PhotoEraser() {
   const [userProfilePosition, setUserProfilePosition] = useState({ top: 0, left: 0 });
   const [brushSize, setBrushSize] = useState(50);
   const [selectedTool, setSelectedTool] = useState<'brush' | 'eraser'>('brush');
+  const [prompt, setPrompt] = useState('');
   const [mousePosition, setMousePosition] = useState({ x: 0, y: 0 });
   const [isMouseOverImage, setIsMouseOverImage] = useState(false);
   const [isDrawing, setIsDrawing] = useState(false);
@@ -275,11 +276,12 @@ export default function PhotoEraser() {
     }
   };
 
-  const handleConfirm = () => {
-    if (!uploadedImage || paintedAreas.length === 0) return;
+  const handleRedraw = () => {
+    if (!uploadedImage || !prompt.trim() || paintedAreas.length === 0) return;
     setIsProcessing(true);
-    // TODO: Implement photo eraser API call with paintedAreas data
-    // The paintedAreas contain the coordinates that should be erased
+    // TODO: Implement inpaint API call with paintedAreas and prompt
+    // The paintedAreas contain the coordinates that should be removed
+    // The prompt describes what should appear in place of the removed area
     setTimeout(() => {
       // Clear painted areas and history after processing
       setPaintedAreas([]);
@@ -324,7 +326,7 @@ export default function PhotoEraser() {
 
           {sidebarTools.map((item, index) => {
             const Icon = item.icon;
-            const isActive = item.slug === 'photo-eraser';
+            const isActive = item.slug === 'inpaint';
             return (
               <motion.button
                 key={item.slug}
@@ -352,7 +354,7 @@ export default function PhotoEraser() {
           <div className="mb-3">
             <div className="flex items-center gap-2 text-sm text-gray-600 dark:text-gray-400 mb-2">
               <Zap className="w-4 h-4" />
-              <span>49</span>
+              <span>30</span>
               <span className="mx-1">0</span>
               <Star className="w-4 h-4" />
               <span>0</span>
@@ -398,7 +400,7 @@ export default function PhotoEraser() {
 
       {/* Main Content */}
       <main className="flex-1 flex flex-col overflow-hidden relative">
-        <div className="flex-1 flex flex-col items-center justify-center p-8 overflow-y-auto">
+        <div className="flex-1 flex flex-col items-center justify-center p-8 overflow-y-auto pb-24">
           {/* Upload Zone */}
           <div className="w-full max-w-5xl mb-8 mt-8">
             <motion.div
@@ -496,7 +498,17 @@ export default function PhotoEraser() {
                       />
                     )}
                     {/* Overlay for re-upload */}
-                    
+                    {/* <div className="absolute inset-0 bg-black/0 hover:bg-black/5 transition-colors rounded-xl flex items-center justify-center opacity-0 hover:opacity-100 group-hover:opacity-100">
+                      <button
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          fileInputRef.current?.click();
+                        }}
+                        className="px-4 py-2 bg-white dark:bg-gray-800 text-gray-700 dark:text-gray-300 rounded-lg text-sm font-medium shadow-lg hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors"
+                      >
+                        Change Image
+                      </button>
+                    </div> */}
                   </motion.div>
                 ) : (
                   <div className="flex flex-col items-center justify-center text-center h-full min-h-[300px]">
@@ -565,12 +577,12 @@ export default function PhotoEraser() {
                     <div className="aspect-square bg-white dark:bg-gray-800 flex items-center justify-center relative">
                       {/* eslint-disable-next-line @next/next/no-img-element */}
                       <img
-                        src="/eraser image.jpg"
-                        alt="Object Removed"
+                        src="/inpaint removed.jpg"
+                        alt="Inpainted"
                         className="max-w-full max-h-full w-auto h-auto object-contain rounded-lg"
                       />
                       <div className="absolute top-2 right-2 bg-gray-100 dark:bg-gray-700 rounded-md px-2 py-1">
-                        <p className="text-xs text-gray-600 dark:text-gray-400 font-medium">Object Removed</p>
+                        <p className="text-xs text-gray-600 dark:text-gray-400 font-medium">Inpainted</p>
                       </div>
                     </div>
                   </div>
@@ -578,14 +590,15 @@ export default function PhotoEraser() {
               </div>
             </div>
           )}
+        </div>
 
-          {/* Tool Controls Footer */}
-          <motion.div
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            className="fixed bottom-0 left-64 right-0 bg-white dark:bg-gray-900 border-t border-gray-200 dark:border-gray-700 px-6 py-3 shadow-sm z-50"
-          >
-              <div className="max-w-7xl mx-auto flex items-center">
+        {/* Tool Controls Footer */}
+        <motion.div
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          className="fixed bottom-0 left-64 right-0 bg-gray-100 dark:bg-gray-800 border-t border-gray-200 dark:border-gray-700 px-6 py-4 z-50"
+        >
+            <div className="max-w-7xl mx-auto flex items-center justify-between gap-6">
                 {/* Left: Undo/Redo and Paint/Eraser */}
                 <div className="flex items-center gap-2">
                   <motion.button
@@ -593,7 +606,7 @@ export default function PhotoEraser() {
                     whileTap={{ scale: 0.9 }}
                     onClick={handleUndo}
                     disabled={!uploadedImage || historyIndex < 0}
-                    className="p-2.5 rounded-lg bg-white dark:bg-gray-800 text-gray-600 dark:text-gray-400 hover:text-purple-600 dark:hover:text-purple-400 transition-colors shadow-sm disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:text-gray-600 dark:disabled:hover:text-gray-400"
+                    className="p-2.5 rounded-lg bg-white dark:bg-gray-700 text-gray-600 dark:text-gray-400 hover:text-purple-600 dark:hover:text-purple-400 transition-colors shadow-sm disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:text-gray-600 dark:disabled:hover:text-gray-400"
                     title="Undo"
                   >
                     <Undo2 className="w-5 h-5" />
@@ -603,7 +616,7 @@ export default function PhotoEraser() {
                     whileTap={{ scale: 0.9 }}
                     onClick={handleRedo}
                     disabled={!uploadedImage || historyIndex >= history.length - 1}
-                    className="p-2.5 rounded-lg bg-white dark:bg-gray-800 text-gray-600 dark:text-gray-400 hover:text-purple-600 dark:hover:text-purple-400 transition-colors shadow-sm disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:text-gray-600 dark:disabled:hover:text-gray-400"
+                    className="p-2.5 rounded-lg bg-white dark:bg-gray-700 text-gray-600 dark:text-gray-400 hover:text-purple-600 dark:hover:text-purple-400 transition-colors shadow-sm disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:text-gray-600 dark:disabled:hover:text-gray-400"
                     title="Redo"
                   >
                     <Redo2 className="w-5 h-5" />
@@ -613,12 +626,12 @@ export default function PhotoEraser() {
                     whileTap={{ scale: 0.9 }}
                     onClick={() => fileInputRef.current?.click()}
                     disabled={!uploadedImage}
-                    className="p-2.5 rounded-lg bg-white dark:bg-gray-800 text-gray-600 dark:text-gray-400 hover:text-purple-600 dark:hover:text-purple-400 transition-colors shadow-sm disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:text-gray-600 dark:disabled:hover:text-gray-400"
+                    className="p-2.5 rounded-lg bg-white dark:bg-gray-700 text-gray-600 dark:text-gray-400 hover:text-purple-600 dark:hover:text-purple-400 transition-colors shadow-sm disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:text-gray-600 dark:disabled:hover:text-gray-400"
                     title="Change Image"
                   >
                     <div className="relative">
                       <ImageIcon className="w-5 h-5" />
-                      <Plus className="w-3 h-3 absolute -top-1 -right-1 bg-white dark:bg-gray-800 rounded-full" />
+                      <Plus className="w-3 h-3 absolute -top-1 -right-1 bg-white dark:bg-gray-700 rounded-full" />
                     </div>
                   </motion.button>
                   <motion.button
@@ -626,11 +639,10 @@ export default function PhotoEraser() {
                     whileTap={{ scale: 0.9 }}
                     onClick={() => setSelectedTool('brush')}
                     disabled={!uploadedImage}
-                    style={{ marginLeft: '48%' }}
                     className={`p-2.5 rounded-lg transition-colors shadow-sm disabled:opacity-50 disabled:cursor-not-allowed ${
                       selectedTool === 'brush'
                         ? 'bg-purple-100 dark:bg-purple-900/30 text-purple-600 dark:text-purple-400'
-                        : 'bg-white dark:bg-gray-800 text-gray-600 dark:text-gray-400 hover:bg-gray-50 dark:hover:bg-gray-700'
+                        : 'bg-white dark:bg-gray-700 text-gray-600 dark:text-gray-400 hover:bg-gray-50 dark:hover:bg-gray-600'
                     }`}
                     title="Paint"
                   >
@@ -644,7 +656,7 @@ export default function PhotoEraser() {
                     className={`p-2.5 rounded-lg transition-colors shadow-sm disabled:opacity-50 disabled:cursor-not-allowed ${
                       selectedTool === 'eraser'
                         ? 'bg-purple-100 dark:bg-purple-900/30 text-purple-600 dark:text-purple-400'
-                        : 'bg-white dark:bg-gray-800 text-gray-600 dark:text-gray-400 hover:bg-gray-50 dark:hover:bg-gray-700'
+                        : 'bg-white dark:bg-gray-700 text-gray-600 dark:text-gray-400 hover:bg-gray-50 dark:hover:bg-gray-600'
                     }`}
                     title="Eraser"
                   >
@@ -652,8 +664,8 @@ export default function PhotoEraser() {
                   </motion.button>
                 </div>
 
-                {/* Center: Thumbnails Above Slider */}
-                <div className="flex-1 flex flex-col items-center gap-0">
+                {/* Center: Slider */}
+                <div className="flex-1 flex flex-col items-center gap-0 max-w-md">
                   {/* Slider */}
                   <input
                     type="range"
@@ -662,7 +674,7 @@ export default function PhotoEraser() {
                     value={brushSize}
                     onChange={(e) => setBrushSize(Number(e.target.value))}
                     disabled={!uploadedImage}
-                    className="w-1/2 h-2 rounded-lg appearance-none cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
+                    className="w-full h-2 rounded-lg appearance-none cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
                     style={{
                       background: `linear-gradient(to right, rgb(147, 51, 234) 0%, rgb(147, 51, 234) ${((brushSize - 10) / (100 - 10)) * 100}%, rgb(229, 231, 235) ${((brushSize - 10) / (100 - 10)) * 100}%, rgb(229, 231, 235) 100%)`,
                     }}
@@ -704,22 +716,42 @@ export default function PhotoEraser() {
                   `}} />
                 </div>
 
-                {/* Right: Confirm Button */}
-                <motion.button
-                  whileHover={{ scale: 1.05 }}
-                  whileTap={{ scale: 0.95 }}
-                  onClick={handleConfirm}
-                  disabled={!uploadedImage || isProcessing || paintedAreas.length === 0}
-                  style={{ marginLeft: '2%' }}
-                  className="px-6 py-2.5 bg-gradient-to-r from-purple-500 to-purple-600 text-white rounded-lg font-semibold text-sm flex items-center gap-2 hover:from-purple-600 hover:to-purple-700 transition-all disabled:opacity-50 disabled:cursor-not-allowed shadow-lg whitespace-nowrap"
-                >
-                  <Sparkles className="w-4 h-4 text-white" />
-                  {isProcessing ? 'Processing...' : 'Confirm'}
-                </motion.button>
+                {/* Right: Text Input and Redraw Button */}
+                <div className="flex items-end gap-4">
+                  {/* Text Input */}
+                  <div className="flex flex-col gap-1">
+                    <label className="text-xs text-gray-500 dark:text-gray-400">
+                      Describe how you want the marked area to be redrawn.
+                    </label>
+                    <div className="relative">
+                      <input
+                        type="text"
+                        value={prompt}
+                        onChange={(e) => setPrompt(e.target.value)}
+                        placeholder="Describe how you want the marked area to be redrawn"
+                        maxLength={1000}
+                        className="px-3 py-2 pr-20 bg-white dark:bg-gray-700 border border-gray-200 dark:border-gray-600 rounded-lg text-sm text-gray-900 dark:text-white placeholder-gray-500 dark:placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-purple-500 w-80"
+                      />
+                      <span className="absolute right-3 top-1/2 -translate-y-1/2 text-xs text-gray-500 dark:text-gray-400">
+                        {prompt.length} / 1000
+                      </span>
+                    </div>
+                  </div>
+
+                  {/* Redraw Button */}
+                  <motion.button
+                    whileHover={{ scale: 1.05 }}
+                    whileTap={{ scale: 0.95 }}
+                    onClick={handleRedraw}
+                    disabled={!uploadedImage || !prompt.trim() || paintedAreas.length === 0 || isProcessing}
+                    className="px-6 py-2.5 bg-gradient-to-r from-purple-500 to-purple-600 text-white rounded-lg font-semibold text-sm flex items-center gap-2 hover:from-purple-600 hover:to-purple-700 transition-all disabled:opacity-50 disabled:cursor-not-allowed shadow-lg whitespace-nowrap"
+                  >
+                    <Sparkles className="w-4 h-4 text-white" />
+                    {isProcessing ? 'Processing...' : 'Redraw'}
+                  </motion.button>
+                </div>
               </div>
             </motion.div>
-
-        </div>
       </main>
 
       {/* Profile Dropdown */}
