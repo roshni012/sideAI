@@ -6,7 +6,6 @@ import {
   Sparkles,
   Image as ImageIcon,
   Plus,
-  ArrowRight,
   Zap,
   Star,
   Diamond,
@@ -36,12 +35,15 @@ const sidebarTools = [
   { name: 'Background Changer', slug: 'background-changer', icon: Layers },
 ];
 
-export default function BackgroundRemover() {
+const magnificationOptions = [ '4X'];
+
+export default function ImageUpscaler() {
   const [uploadedImage, setUploadedImage] = useState<string | null>(null);
   const [, setProcessedImage] = useState<string | null>(null);
   const [isProcessing, setIsProcessing] = useState(false);
   const [isUserProfileOpen, setIsUserProfileOpen] = useState(false);
   const [userProfilePosition, setUserProfilePosition] = useState({ top: 0, left: 0 });
+  const [selectedMagnification, setSelectedMagnification] = useState('4X');
   const fileInputRef = useRef<HTMLInputElement>(null);
   const userProfileButtonRef = useRef<HTMLButtonElement>(null);
 
@@ -100,9 +102,9 @@ export default function BackgroundRemover() {
   const handleConfirm = () => {
     if (!uploadedImage) return;
     setIsProcessing(true);
-    // TODO: Implement background removal API call
+    // TODO: Implement image upscaling API call
     setTimeout(() => {
-      setProcessedImage(uploadedImage); // Placeholder - replace with actual processed image
+      setProcessedImage(uploadedImage); // Placeholder - replace with actual upscaled image
       setIsProcessing(false);
     }, 2000);
   };
@@ -141,7 +143,7 @@ export default function BackgroundRemover() {
 
           {sidebarTools.map((item, index) => {
             const Icon = item.icon;
-            const isActive = item.slug === 'background-remover';
+            const isActive = item.slug === 'image-upscaler';
             return (
               <motion.button
                 key={item.slug}
@@ -169,7 +171,7 @@ export default function BackgroundRemover() {
           <div className="mb-3">
             <div className="flex items-center gap-2 text-sm text-gray-600 dark:text-gray-400 mb-2">
               <Zap className="w-4 h-4" />
-              <span>49</span>
+              <span>28</span>
               <span className="mx-1">0</span>
               <Star className="w-4 h-4" />
               <span>0</span>
@@ -253,6 +255,18 @@ export default function BackgroundRemover() {
                       alt="Uploaded"
                       className="max-w-full max-h-[600px] w-auto h-auto object-contain rounded-lg"
                     />
+                    {/* Overlay for re-upload */}
+                    <div className="absolute inset-0 bg-black/0 hover:bg-black/5 transition-colors rounded-xl flex items-center justify-center opacity-0 hover:opacity-100 group-hover:opacity-100">
+                      <button
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          fileInputRef.current?.click();
+                        }}
+                        className="px-4 py-2 bg-white dark:bg-gray-800 text-gray-700 dark:text-gray-300 rounded-lg text-sm font-medium shadow-lg hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors"
+                      >
+                        Change Image
+                      </button>
+                    </div>
                   </motion.div>
                 ) : (
                   <div className="flex flex-col items-center justify-center text-center h-full min-h-[300px]">
@@ -264,7 +278,7 @@ export default function BackgroundRemover() {
                       Click or drag image here
                     </p>
                     <p className="text-sm text-gray-500 dark:text-gray-400 group-hover:text-gray-600 dark:group-hover:text-gray-300 transition-colors">
-                      Each use deducts <span className="font-semibold text-gray-700 dark:text-gray-300 group-hover:text-purple-700 dark:group-hover:text-purple-300">2</span> Advanced Credits
+                      Each use deducts <span className="font-semibold text-gray-700 dark:text-gray-300 group-hover:text-purple-700 dark:group-hover:text-purple-300">1</span> Advanced Credits
                     </p>
                   </div>
                 )}
@@ -276,105 +290,143 @@ export default function BackgroundRemover() {
           {!uploadedImage && (
             <div className="w-full max-w-2xl mb-8">
               <div className="flex items-center gap-4 justify-center">
-              {/* Before Image */}
-              <motion.div
-                initial={{ opacity: 0, x: -20 }}
-                animate={{ opacity: 1, x: 0 }}
-                className="w-48"
-              >
-                <div className="border border-gray-200 dark:border-gray-700 rounded-lg overflow-hidden bg-white dark:bg-gray-800">
-                  <div className="aspect-square bg-gray-100 dark:bg-gray-700 flex items-center justify-center relative">
-                    {/* eslint-disable-next-line @next/next/no-img-element */}
-                    <img
-                      src="/individuals-a.png"
-                      alt="Original Image"
-                      className="max-w-full max-h-full w-auto h-auto object-contain rounded-lg"
-                    />
-                    <div className="absolute top-2 left-2 bg-gray-100 dark:bg-gray-700 rounded-md px-2 py-1">
-                      <p className="text-xs text-gray-600 dark:text-gray-400 font-medium">Original Image</p>
+                {/* Before Image */}
+                <motion.div
+                  initial={{ opacity: 0, x: -20 }}
+                  animate={{ opacity: 1, x: 0 }}
+                  className="w-48"
+                >
+                </motion.div>
+
+                {/* After Image */}
+                <motion.div
+                  initial={{ opacity: 0, x: 20 }}
+                  animate={{ opacity: 1, x: 0 }}
+                  className="w-48"
+                >
+                  <div className="border border-gray-200 dark:border-gray-700 rounded-lg overflow-hidden bg-white dark:bg-gray-800">
+                    <div className="aspect-square bg-white dark:bg-gray-800 flex items-center justify-center relative">
+                      {/* eslint-disable-next-line @next/next/no-img-element */}
+                      <img
+                        src="/JPG-Enhancer-and-Upscaler.png"
+                        alt="Upscaled"
+                        className="max-w-full max-h-full w-auto h-auto object-contain rounded-lg"
+                      />
+                     
                     </div>
                   </div>
-                </div>
-              </motion.div>
-
-              {/* Arrow */}
-              <motion.div
-                initial={{ opacity: 0 }}
-                animate={{ opacity: 1 }}
-                transition={{ delay: 0.2 }}
-                className="flex-shrink-0"
-              >
-                <div className="flex items-center gap-2 text-gray-400 dark:text-gray-500">
-                  <div className="border-t-2 border-dashed border-gray-300 dark:border-gray-600 w-6"></div>
-                  <ArrowRight className="w-5 h-5" />
-                  <div className="border-t-2 border-dashed border-gray-300 dark:border-gray-600 w-6"></div>
-                </div>
-              </motion.div>
-
-              {/* After Image */}
-              <motion.div
-                initial={{ opacity: 0, x: 20 }}
-                animate={{ opacity: 1, x: 0 }}
-                className="w-48"
-              >
-                <div className="border border-gray-200 dark:border-gray-700 rounded-lg overflow-hidden bg-white dark:bg-gray-800">
-                  <div className="aspect-square bg-white dark:bg-gray-800 flex items-center justify-center relative">
-                    {/* Checkerboard pattern for transparency */}
-                    <div
-                      className="absolute inset-0 opacity-30"
-                      style={{
-                        backgroundImage:
-                          'linear-gradient(45deg, #ccc 25%, transparent 25%), linear-gradient(-45deg, #ccc 25%, transparent 25%), linear-gradient(45deg, transparent 75%, #ccc 75%), linear-gradient(-45deg, transparent 75%, #ccc 75%)',
-                        backgroundSize: '20px 20px',
-                        backgroundPosition: '0 0, 0 10px, 10px -10px, -10px 0px',
-                      }}
-                    />
-                    {/* eslint-disable-next-line @next/next/no-img-element */}
-                    <img
-                      src="/individuals-removed.png"
-                      alt="Background Removed"
-                      className="max-w-full max-h-full w-auto h-auto object-contain rounded-lg relative z-10"
-                    />
-                    <div className="absolute top-2 right-2 bg-gray-100 dark:bg-gray-700 rounded-md px-2 py-1 z-20">
-                      <p className="text-xs text-gray-600 dark:text-gray-400 font-medium">Background Removed</p>
-                    </div>
-                  </div>
-                </div>
-              </motion.div>
+                </motion.div>
+              </div>
             </div>
-          </div>
           )}
 
-          {/* Confirm Button and Change Image Button */}
+          {/* Image Preview and Controls Section */}
+          {uploadedImage && (
+            <div className="w-full max-w-5xl mb-8">
+              <div className="flex items-center gap-6">
+                {/* Image Preview */}
+                <div className="flex-1">
+                  {/* eslint-disable-next-line @next/next/no-img-element */}
+                  <img
+                    src={uploadedImage}
+                    alt="Preview"
+                    className="w-full h-auto rounded-lg border border-gray-200 dark:border-gray-700"
+                  />
+                </div>
+
+                {/* Magnification and Confirm Controls */}
+                <div className="flex flex-col gap-4 items-start">
+                  <div className="flex flex-col gap-2">
+                    <label className="text-sm text-gray-600 dark:text-gray-400">
+                      image magnification:
+                    </label>
+                    <div className="flex gap-2">
+                      {magnificationOptions.map((option) => (
+                        <motion.button
+                          key={option}
+                          whileHover={{ scale: 1.05 }}
+                          whileTap={{ scale: 0.95 }}
+                          onClick={() => setSelectedMagnification(option)}
+                          className={`px-4 py-2 rounded-lg font-medium text-sm transition-colors ${
+                            selectedMagnification === option
+                              ? 'bg-gray-200 dark:bg-gray-700 text-gray-900 dark:text-white'
+                              : 'bg-gray-100 dark:bg-gray-800 text-gray-600 dark:text-gray-400 hover:bg-gray-200 dark:hover:bg-gray-700'
+                          }`}
+                        >
+                          {option}
+                        </motion.button>
+                      ))}
+                    </div>
+                  </div>
+
+                  {/* Confirm Button */}
+                  <motion.button
+                    whileHover={{ scale: 1.05 }}
+                    whileTap={{ scale: 0.95 }}
+                    onClick={handleConfirm}
+                    disabled={isProcessing}
+                    className="px-6 py-2.5 bg-gradient-to-r from-purple-500 to-purple-600 text-white rounded-lg font-semibold text-sm flex items-center gap-2 hover:from-purple-600 hover:to-purple-700 transition-all disabled:opacity-50 disabled:cursor-not-allowed shadow-lg"
+                  >
+                    <Sparkles className="w-4 h-4 text-white" />
+                    {isProcessing ? 'Processing...' : 'Confirm'}
+                  </motion.button>
+                </div>
+              </div>
+            </div>
+          )}
+
+          {/* Tool Controls Footer */}
           <motion.div
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: 0.3 }}
-            className="flex justify-center items-center gap-4 mt-6"
+            className="fixed bottom-0 left-64 right-0 bg-gray-100 dark:bg-gray-800 border-t border-gray-200 dark:border-gray-700 px-6 py-4"
           >
-            <motion.button
-              whileHover={{ scale: 1.1 }}
-              whileTap={{ scale: 0.9 }}
-              onClick={() => fileInputRef.current?.click()}
-              disabled={!uploadedImage}
-              className="p-2.5 rounded-lg bg-white dark:bg-gray-800 text-gray-600 dark:text-gray-400 hover:text-purple-600 dark:hover:text-purple-400 transition-colors shadow-sm disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:text-gray-600 dark:disabled:hover:text-gray-400"
-              title="Change Image"
-            >
-              <div className="relative">
-                <ImageIcon className="w-5 h-5" />
-                <Plus className="w-3 h-3 absolute -top-1 -right-1 bg-white dark:bg-gray-800 rounded-full" />
+            <div className="max-w-7xl mx-auto flex items-center justify-between gap-6">
+              {/* Left: Empty space or future controls */}
+              <div className="flex items-center gap-2"></div>
+
+              {/* Center: Magnification and Confirm */}
+              <div className="flex-1 flex items-center justify-center gap-6">
+                <div className="flex items-center gap-4">
+                  <label className="text-sm text-gray-600 dark:text-gray-400 whitespace-nowrap">
+                    image magnification:
+                  </label>
+                  <div className="flex gap-2">
+                    {magnificationOptions.map((option) => (
+                      <motion.button
+                        key={option}
+                        whileHover={{ scale: 1.05 }}
+                        whileTap={{ scale: 0.95 }}
+                        onClick={() => setSelectedMagnification(option)}
+                        disabled={!uploadedImage}
+                        className={`px-4 py-2 rounded-lg font-medium text-sm transition-colors disabled:opacity-50 disabled:cursor-not-allowed ${
+                          selectedMagnification === option
+                            ? 'bg-gray-200 dark:bg-gray-700 text-gray-900 dark:text-white'
+                            : 'bg-white dark:bg-gray-700 text-gray-600 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-600'
+                        }`}
+                      >
+                        {option}
+                      </motion.button>
+                    ))}
+                  </div>
+                </div>
+
+                {/* Confirm Button */}
+                <motion.button
+                  whileHover={{ scale: 1.05 }}
+                  whileTap={{ scale: 0.95 }}
+                  onClick={handleConfirm}
+                  disabled={!uploadedImage || isProcessing}
+                  className="px-6 py-2.5 bg-gradient-to-r from-purple-500 to-purple-600 text-white rounded-lg font-semibold text-sm flex items-center gap-2 hover:from-purple-600 hover:to-purple-700 transition-all disabled:opacity-50 disabled:cursor-not-allowed shadow-lg whitespace-nowrap"
+                >
+                  <Sparkles className="w-4 h-4 text-white" />
+                  {isProcessing ? 'Processing...' : 'Confirm'}
+                </motion.button>
               </div>
-            </motion.button>
-            <motion.button
-              whileHover={{ scale: 1.05 }}
-              whileTap={{ scale: 0.95 }}
-              onClick={handleConfirm}
-              disabled={!uploadedImage || isProcessing}
-              className="px-8 py-3 bg-gradient-to-r from-purple-500 to-purple-600 text-white rounded-lg font-semibold text-sm flex items-center gap-2 hover:from-purple-600 hover:to-purple-700 transition-all disabled:opacity-50 disabled:cursor-not-allowed shadow-lg"
-            >
-              <Sparkles className="w-4 h-4 text-white" />
-              {isProcessing ? 'Processing...' : 'Confirm'}
-            </motion.button>
+
+              {/* Right: Empty space */}
+              <div className="flex items-center gap-2"></div>
+            </div>
           </motion.div>
         </div>
       </main>
