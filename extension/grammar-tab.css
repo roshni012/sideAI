@@ -1,0 +1,30 @@
+/* Grammar Tab Styles */
+.sider-grammar-container {
+  width: 100%;
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+  padding: 20px;
+}
+
+.sider-grammar-content {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+}
+
+.sider-grammar-title {
+  font-size: 24px;
+  font-weight: 600;
+  color: #111827;
+  margin: 0 0 12px 0;
+}
+
+.sider-grammar-description {
+  font-size: 14px;
+  color: #6b7280;
+  margin: 0;
+}
+

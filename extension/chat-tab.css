@@ -1,0 +1,1153 @@
+/* Chat Tab Component CSS */
+
+/* Chat Container */
+.sider-chat-container {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+}
+
+.sider-chat-messages {
+  flex: 1;
+  overflow-y: auto;
+  padding: 16px 0;
+}
+
+/* Messages */
+.sider-message {
+  display: flex;
+  gap: 12px;
+  margin-bottom: 16px;
+  animation: fadeIn 0.3s ease-in;
+}
+
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+    transform: translateY(10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.sider-message-user {
+  flex-direction: row-reverse;
+}
+
+.sider-message-avatar {
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 18px;
+  flex-shrink: 0;
+  background: #f3f4f6;
+}
+
+.sider-message-user .sider-message-avatar {
+  background: #3b82f6;
+}
+
+.sider-message-content {
+  flex: 1;
+  max-width: calc(100% - 44px);
+}
+
+.sider-message-user .sider-message-content {
+  text-align: right;
+}
+
+.sider-message-text {
+  padding: 10px 14px;
+  border-radius: 12px;
+  font-size: 12px;
+  line-height: 1.5;
+  color: #111827;
+  background: #f3f4f6;
+  word-wrap: break-word;
+  white-space: pre-wrap;
+}
+
+.sider-message-user .sider-message-text {
+  background: #3b82f6;
+  color: #ffffff;
+}
+
+.sider-thinking .sider-message-text {
+  color: #6b7280;
+  font-style: italic;
+}
+
+/* Panel Footer */
+.sider-panel-footer {
+  padding: 16px;
+  background: #ffffff;
+  flex-shrink: 0;
+  border-top: 1px solid #e5e7eb;
+}
+
+.sider-input-wrapper {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  position: relative;
+}
+
+/* Selected Text Section */
+.sider-selected-text-section {
+  padding: 0;
+  margin-bottom: 12px;
+  background: transparent;
+  border-bottom: none;
+}
+
+.sider-selected-text-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 10px;
+}
+
+.sider-selected-text-title {
+  font-size: 13px;
+  font-weight: 600;
+  color: #111827;
+  line-height: 1.4;
+}
+
+.sider-remove-selection-btn {
+  background: #f3f4f6 !important;
+  border: none !important;
+  border-radius: 50% !important;
+  width: 24px !important;
+  height: 24px !important;
+  padding: 0 !important;
+  cursor: pointer !important;
+  display: flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  color: #6b7280 !important;
+  transition: all 0.2s !important;
+  flex-shrink: 0 !important;
+}
+
+.sider-remove-selection-btn:hover {
+  background: #e5e7eb !important;
+  color: #111827 !important;
+}
+
+.sider-remove-selection-btn:active {
+  transform: scale(0.95);
+}
+
+.sider-remove-selection-btn svg {
+  width: 14px;
+  height: 14px;
+}
+
+.sider-selected-text-display {
+  font-size: 12px;
+  line-height: 1.6;
+  color: #111827;
+  background: #ffffff !important;
+  border: 1px solid #e5e7eb !important;
+  border-radius: 12px !important;
+  padding: 14px !important;
+  max-height: 120px !important;
+  overflow-y: auto !important;
+  white-space: pre-wrap !important;
+  word-wrap: break-word !important;
+  margin-bottom: 12px !important;
+  scrollbar-width: thin;
+  scrollbar-color: #d1d5db #ffffff;
+  box-sizing: border-box;
+}
+
+.sider-selected-text-display::-webkit-scrollbar {
+  width: 6px;
+}
+
+.sider-selected-text-display::-webkit-scrollbar-track {
+  background: #ffffff;
+  border-radius: 3px;
+}
+
+.sider-selected-text-display::-webkit-scrollbar-thumb {
+  background: #d1d5db;
+  border-radius: 3px;
+}
+
+.sider-selected-text-display::-webkit-scrollbar-thumb:hover {
+  background: #9ca3af;
+}
+
+.sider-selection-actions {
+  display: flex !important;
+  flex-direction: row !important;
+  gap: 10px !important;
+  margin-bottom: 12px !important;
+  flex-wrap: nowrap !important;
+  width: 100% !important;
+}
+
+.sider-selection-actions .sider-action-btn {
+  background: #ffffff !important;
+  border: 1px solid #e5e7eb !important;
+  border-radius: 10px !important;
+  padding: 12px 16px !important;
+  font-size: 14px !important;
+  font-weight: 500 !important;
+  color: #111827 !important;
+  cursor: pointer !important;
+  display: flex !important;
+  flex-direction: row !important;
+  align-items: center !important;
+  justify-content: center !important;
+  transition: all 0.2s !important;
+  min-height: 44px !important;
+  height: 44px !important;
+  margin: 0 !important;
+  box-sizing: border-box !important;
+  gap: 6px !important;
+  flex: 1 1 0% !important;
+  min-width: 0 !important;
+}
+
+.sider-selection-actions .sider-action-btn#sider-more-actions-btn {
+  flex: 0 0 auto !important;
+  min-width: 44px !important;
+  width: 44px !important;
+  padding: 12px !important;
+  aspect-ratio: 1 !important;
+  gap: 0 !important;
+  font-size: 18px !important;
+  line-height: 1 !important;
+}
+
+.sider-selection-actions .sider-action-btn#sider-more-actions-btn span {
+  font-size: 18px !important;
+  line-height: 1 !important;
+}
+
+.sider-selection-actions .sider-action-btn span {
+  color: #111827 !important;
+  font-size: 14px !important;
+  font-weight: 500 !important;
+  line-height: 1.4 !important;
+  text-align: center !important;
+}
+
+.sider-selection-actions .sider-action-btn[data-action="translate"] {
+  flex-direction: row !important;
+  gap: 6px !important;
+}
+
+.sider-selection-actions .sider-action-btn[data-action="translate"] svg {
+  width: 12px !important;
+  height: 12px !important;
+  color: #111827 !important;
+  flex-shrink: 0 !important;
+}
+
+.sider-selection-actions .sider-action-btn:hover {
+  background: #f9fafb !important;
+  border-color: #d1d5db !important;
+}
+
+.sider-selection-actions .sider-action-btn:active {
+  transform: scale(0.98);
+}
+
+.sider-selection-divider {
+  height: 1px;
+  background: #e5e7eb;
+  margin: 12px 0;
+}
+
+/* Summarize Card */
+.sider-summarize-card {
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 12px 40px 12px 16px;
+  background: #ffffff;
+  border: 1px solid #e5e7eb;
+  border-radius: 12px;
+  margin-top: 16px;
+  margin-bottom: 16px;
+  transition: all 0.2s;
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.05);
+}
+
+.sider-summarize-card:hover {
+  border-color: #d1d5db;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+}
+
+.sider-summarize-close-btn {
+  position: absolute;
+  top: 8px;
+  right: 8px;
+  background: transparent !important;
+  border: none !important;
+  padding: 4px !important;
+  width: 24px !important;
+  height: 24px !important;
+  display: flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  cursor: pointer !important;
+  color: #9ca3af !important;
+  border-radius: 4px !important;
+  transition: all 0.2s !important;
+  z-index: 10 !important;
+  flex-shrink: 0 !important;
+}
+
+.sider-summarize-close-btn:hover {
+  background: #f3f4f6 !important;
+  color: #111827 !important;
+}
+
+.sider-summarize-close-btn:active {
+  transform: scale(0.95);
+}
+
+.sider-summarize-close-btn svg {
+  width: 16px;
+  height: 16px;
+}
+
+.sider-summarize-card-left {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex: 1;
+  min-width: 0;
+}
+
+.sider-summarize-icon {
+  width: 20px;
+  height: 20px;
+  flex-shrink: 0;
+  color: #8b5cf6;
+}
+
+.sider-summarize-icon svg {
+  width: 100%;
+  height: 100%;
+}
+
+.sider-summarize-site-name {
+  font-size: 12px;
+  font-weight: 500;
+  color: #111827;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  flex: 1;
+  min-width: 0;
+}
+
+.sider-summarize-card-right {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-shrink: 0;
+}
+
+.sider-summarize-btn {
+  color: #8b5cf6 !important;
+  border: none !important;
+  border-radius: 6px !important;
+  padding: 6px 16px !important;
+  font-size: 13px !important;
+  font-weight: 600 !important;
+  cursor: pointer !important;
+  transition: all 0.2s !important;
+  white-space: nowrap !important;
+  flex-shrink: 0 !important;
+}
+
+.sider-summarize-btn:active {
+  transform: scale(0.98);
+}
+
+.sider-summarize-btn:disabled {
+  background: #a0aec0 !important;
+  color: #ffffff !important;
+  cursor: not-allowed !important;
+}
+
+.sider-summarize-copy-btn {
+  background: #f9fafb !important;
+  border: 1px solid #e5e7eb !important;
+  border-radius: 6px !important;
+  padding: 6px !important;
+  width: 32px !important;
+  height: 32px !important;
+  display: flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  cursor: pointer !important;
+  transition: all 0.2s !important;
+  flex-shrink: 0 !important;
+  color: #6b7280 !important;
+}
+
+.sider-summarize-copy-btn:hover {
+  background: #f3f4f6 !important;
+  border-color: #d1d5db !important;
+  color: #111827 !important;
+}
+
+.sider-summarize-copy-btn:active {
+  transform: scale(0.95);
+}
+
+.sider-summarize-copy-btn svg {
+  width: 16px;
+  height: 16px;
+}
+
+/* Input Area */
+.sider-input-area {
+  position: relative;
+  border: 1px solid #d1d5db;
+  border-radius: 12px;
+  background: #ffffff;
+  padding: 12px;
+  min-height: 60px;
+  display: flex;
+  flex-direction: column;
+  flex-shrink: 0;
+  align-items: stretch;
+  height: auto;
+}
+
+.sider-input-area:focus-within {
+  border-color: #3b82f6;
+  box-shadow: 0 0 0 3px rgba(59,130,246,0.1);
+}
+
+/* Attachments */
+.sider-attachments {
+  position: absolute;
+  top: 8px;
+  left: 12px;
+  right: 12px;
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 8px;
+  pointer-events: auto;
+}
+
+.sider-attachment-chip {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 6px 28px 6px 6px;
+  border: 1px solid #e5e7eb;
+  border-radius: 12px;
+  background: #ffffff;
+  box-shadow: 0 1px 2px rgba(0,0,0,0.04);
+}
+
+.sider-attachment-thumb {
+  width: 32px;
+  height: 32px;
+  border-radius: 8px;
+  object-fit: cover;
+  border: 1px solid #e5e7eb;
+}
+
+.sider-attachment-remove {
+  position: absolute;
+  top: -6px;
+  right: -6px;
+  width: 20px;
+  height: 20px;
+  border-radius: 50%;
+  background: #e5e7eb;
+  border: none;
+  color: #374151;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 12px;
+}
+
+/* Toolbar */
+.sider-toolbar {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+  margin-bottom: 8px;
+  padding: 4px 0;
+}
+
+.sider-toolbar-btn {
+  background: transparent;
+  border: none;
+  cursor: pointer;
+  padding: 6px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #6b7280;
+  border-radius: 6px;
+  transition: all 0.2s;
+  position: relative;
+  min-width: 32px;
+  height: 32px;
+}
+
+#sider-filter-btn {
+  margin-left: auto;
+}
+
+.sider-toolbar-btn:hover {
+  background: #f3f4f6;
+  color: #111827;
+}
+
+.sider-ai-selector-btn {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 6px 10px;
+  background: #f5f5f5;
+  border: none;
+  border-radius: 8px;
+  transition: all 0.2s;
+}
+
+.sider-ai-selector-btn:hover {
+  background: #e5e5e5;
+}
+
+.sider-ai-selector-icon {
+  width: 24px;
+  height: 24px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 50%;
+  background: transparent;
+  color: white;
+  font-size: 12px;
+}
+
+.sider-ai-selector-icon img {
+  width: 18px;
+  height: 18px;
+  object-fit: contain;
+  display: block;
+}
+
+.sider-dropdown-arrow {
+  color: #111827;
+  margin-left: 0;
+  width: 12px;
+  height: 12px;
+  flex-shrink: 0;
+}
+
+.sider-notification-dot {
+  position: absolute;
+  top: 4px;
+  right: 4px;
+  width: 6px;
+  height: 6px;
+  background: #ef4444;
+  border-radius: 50%;
+  border: 1px solid white;
+}
+
+/* AI Dropdown */
+.sider-ai-dropdown {
+  position: absolute;
+  bottom: 100%;
+  left: 0;
+  right: 0;
+  margin-bottom: 8px;
+  background: #ffffff;
+  border: 1px solid #e5e7eb;
+  border-radius: 12px;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+  z-index: 1000;
+  max-height: 300px;
+  overflow-y: auto;
+  padding: 8px;
+}
+
+.sider-ai-dropdown-section {
+  margin-bottom: 8px;
+}
+
+.sider-ai-dropdown-section:last-child {
+  margin-bottom: 0;
+}
+
+.sider-ai-dropdown-title {
+  font-size: 11px;
+  font-weight: 600;
+  color: #9ca3af;
+  text-transform: uppercase;
+  padding: 8px 12px 4px;
+  letter-spacing: 0.5px;
+}
+
+.sider-ai-option {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 10px 12px;
+  cursor: pointer;
+  border-radius: 8px;
+  transition: all 0.2s;
+  font-size: 12px;
+  color: #111827;
+}
+
+.sider-ai-option:hover {
+  background: #f3f4f6;
+}
+
+.sider-ai-option-icon {
+  width: 24px;
+  height: 24px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 18px;
+}
+
+/* Chat Input */
+.sider-chat-input {
+  width: 100%;
+  padding: 0;
+  padding-bottom: 40px;
+  border: none;
+  border-radius: 0;
+  font-size: 12px;
+  font-family: inherit;
+  resize: none;
+  overflow-y: hidden !important;
+  overflow-x: hidden !important;
+  max-height: none !important;
+  color: #111827;
+  background: transparent;
+  flex: 0 1 auto;
+  min-height: 24px;
+  line-height: 1.5;
+  box-sizing: border-box;
+  white-space: pre-wrap;
+  word-break: break-word;
+  overflow-wrap: break-word;
+}
+
+.sider-chat-input:focus {
+  outline: none;
+}
+
+/* Input Buttons */
+.sider-input-buttons {
+  position: absolute;
+  bottom: 8px;
+  left: 12px;
+  right: 12px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  pointer-events: none;
+}
+
+.sider-input-buttons-left {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+  pointer-events: auto;
+}
+
+.sider-bottom-action-btn {
+  background: #f3f4f6 !important;
+  border: 1px solid #e5e7eb !important;
+  border-radius: 6px !important;
+  padding: 6px 12px !important;
+  font-size: 13px !important;
+  font-weight: 500 !important;
+  color: #111827 !important;
+  cursor: pointer !important;
+  display: flex !important;
+  align-items: center !important;
+  gap: 6px !important;
+  transition: all 0.2s !important;
+  white-space: nowrap !important;
+}
+
+.sider-bottom-action-btn:hover {
+  background: #e5e7eb !important;
+  border-color: #d1d5db !important;
+}
+
+.sider-bottom-action-btn:active {
+  transform: scale(0.98);
+}
+
+.sider-bottom-action-btn svg {
+  width: 16px;
+  height: 16px;
+  flex-shrink: 0;
+}
+
+.sider-mic-btn {
+  background: transparent !important;
+  border: none !important;
+  cursor: pointer !important;
+  padding: 8px !important;
+  align-items: center !important;
+  justify-content: center !important;
+  color: #6b7280 !important;
+  transition: all 0.2s !important;
+  border-radius: 6px !important;
+  pointer-events: auto !important;
+  margin-left: auto !important;
+}
+
+.sider-mic-btn:hover {
+  background: #f3f4f6 !important;
+  color: #111827 !important;
+}
+
+.sider-mic-btn:active {
+  transform: scale(0.95);
+}
+
+.sider-mic-btn svg {
+  width: 20px;
+  height: 20px;
+}
+
+.sider-send-btn {
+  background: transparent !important;
+  border: none !important;
+  cursor: pointer !important;
+  padding: 8px !important;
+  align-items: center !important;
+  justify-content: center !important;
+  color: #3b82f6 !important;
+  transition: all 0.2s !important;
+  border-radius: 6px !important;
+  pointer-events: auto !important;
+  margin-left: auto !important;
+}
+
+.sider-send-btn:hover {
+  background: #f3f4f6 !important;
+  color: #2563eb !important;
+}
+
+.sider-send-btn:active {
+  transform: scale(0.95);
+}
+
+.sider-send-btn svg {
+  width: 20px;
+  height: 20px;
+}
+
+/* Image Preview Section */
+.sider-input-area .sider-image-preview-section {
+  padding: 0;
+  margin-bottom: 8px;
+  background: transparent;
+  border: none;
+  border-bottom: none;
+  width: 100%;
+  border-bottom: 1px solid #e5e7eb;
+}
+
+.sider-input-area .sider-image-preview-section > div {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 8px;
+  width: 100%;
+}
+
+.sider-image-preview-close-btn:hover {
+  background: #ef4444 !important;
+  border-color: #dc2626 !important;
+  color: #ffffff !important;
+}
+
+.sider-image-preview-close-btn:active {
+  transform: scale(0.95);
+}
+
+.sider-image-action-btn {
+  text-align: center !important;
+  width: auto !important;
+  min-width: auto !important;
+}
+
+.sider-image-action-btn:hover {
+  background: #e5e7eb !important;
+  border-color: #d1d5db !important;
+}
+
+/* Chat Controls Popup */
+.sider-chat-controls-popup {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  width: 350px;
+  max-width: 90%;
+  max-height: 90vh;
+  background: #ffffff;
+  border: 1px solid #e5e7eb;
+  border-radius: 12px;
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.15);
+  z-index: 1000;
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+}
+
+.sider-chat-controls-content {
+  padding: 24px;
+  overflow-y: auto;
+  max-height: calc(90vh - 48px);
+}
+
+.sider-chat-controls-title {
+  font-size: 20px;
+  font-weight: 600;
+  color: #111827;
+  margin: 0 0 24px 0;
+  padding: 0;
+}
+
+.sider-chat-controls-section {
+  margin-bottom: 24px;
+}
+
+.sider-chat-controls-section:last-child {
+  margin-bottom: 0;
+}
+
+.sider-chat-controls-section-title {
+  font-size: 12px;
+  font-weight: 500;
+  color: #9ca3af;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  margin-bottom: 12px;
+}
+
+.sider-chat-controls-item {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 12px 0;
+  border-bottom: 1px solid #f3f4f6;
+}
+
+.sider-chat-controls-item:last-child {
+  border-bottom: none;
+}
+
+.sider-chat-controls-item-left {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  flex: 1;
+}
+
+.sider-chat-controls-icon {
+  width: 32px;
+  height: 32px;
+  border-radius: 8px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #ffffff;
+  flex-shrink: 0;
+}
+
+.sider-chat-controls-icon svg {
+  width: 16px;
+  height: 16px;
+}
+
+.sider-chat-controls-label {
+  font-size: 12px;
+  font-weight: 500;
+  color: #111827;
+  flex: 1;
+}
+
+.sider-chat-controls-edit-icon {
+  width: 14px;
+  height: 14px;
+  color: #9ca3af;
+  cursor: pointer;
+  margin-left: 4px;
+  transition: color 0.2s;
+}
+
+.sider-chat-controls-edit-icon:hover {
+  color: #6b7280;
+}
+
+.sider-chat-controls-item-right {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.sider-chat-controls-dropdown {
+  padding: 6px 32px 6px 12px;
+  border: 1px solid #e5e7eb;
+  border-radius: 6px;
+  background: #ffffff;
+  font-size: 12px;
+  color: #111827;
+  cursor: pointer;
+  appearance: none;
+  background-image: url("data:image/svg+xml,%3Csvg width='12' height='12' viewBox='0 0 24 24' fill='none' stroke='%236b7280' stroke-width='2'%3E%3Cpolyline points='6 9 12 15 18 9'%3E%3C/polyline%3E%3C/svg%3E");
+  background-repeat: no-repeat;
+  background-position: right 8px center;
+  background-size: 12px;
+  transition: all 0.2s;
+}
+
+.sider-chat-controls-dropdown:hover {
+  border-color: #d1d5db;
+}
+
+.sider-chat-controls-dropdown:focus {
+  outline: none;
+  border-color: #3b82f6;
+  box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
+}
+
+.sider-chat-controls-model-btn {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 6px 12px;
+  border-radius: 6px;
+  background: #ffffff;
+  font-size: 12px;
+  color: #111827;
+  cursor: pointer;
+  transition: all 0.2s;
+  white-space: nowrap;
+}
+
+.sider-chat-controls-model-btn:hover {
+  border-color: #d1d5db;
+  background: #f9fafb;
+}
+
+.sider-chat-controls-model-btn svg {
+  width: 12px;
+  height: 12px;
+  color: #6b7280;
+  transition: transform 0.2s;
+}
+
+.sider-chat-controls-model-btn:hover svg {
+  transform: translateY(2px);
+}
+
+.sider-chat-controls-model-text {
+  font-weight: 500;
+}
+
+/* Toggle Switch */
+.sider-chat-controls-toggle {
+  position: relative;
+  display: inline-block;
+  width: 44px;
+  height: 24px;
+  cursor: pointer;
+  flex-shrink: 0;
+}
+
+.sider-chat-controls-toggle input {
+  opacity: 0;
+  width: 0;
+  height: 0;
+}
+
+.sider-chat-controls-toggle-slider {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background-color: #d1d5db;
+  border-radius: 24px;
+  transition: 0.3s;
+}
+
+.sider-chat-controls-toggle-slider:before {
+  position: absolute;
+  content: "";
+  height: 18px;
+  width: 18px;
+  left: 3px;
+  bottom: 3px;
+  background-color: #ffffff;
+  border-radius: 50%;
+  transition: 0.3s;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.2);
+}
+
+.sider-chat-controls-toggle input:checked + .sider-chat-controls-toggle-slider {
+  background-color: #3b82f6;
+}
+
+.sider-chat-controls-toggle input:checked + .sider-chat-controls-toggle-slider:before {
+  transform: translateX(20px);
+}
+
+/* Generation Model Selection Modal */
+.sider-generation-model-modal {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  width: 400px;
+  max-width: 90%;
+  background: #ffffff;
+  border: 1px solid #e5e7eb;
+  border-radius: 12px;
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.15);
+  z-index: 1000;
+  overflow: hidden;
+}
+
+.sider-generation-model-content {
+  padding: 20px;
+}
+
+.sider-generation-model-title {
+  font-size: 18px;
+  font-weight: 600;
+  color: #111827;
+  margin: 0 0 16px 0;
+  padding: 0;
+}
+
+.sider-generation-model-options {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.sider-generation-model-option {
+  padding: 12px;
+  border: 1px solid #e5e7eb;
+  border-radius: 8px;
+  background: #ffffff;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.sider-generation-model-option:hover {
+  background: #f9fafb;
+  border-color: #d1d5db;
+}
+
+.sider-generation-model-option-selected {
+  background: #f5f3ff;
+  border-color: #8b5cf6;
+}
+
+.sider-generation-model-option-selected:hover {
+  background: #f5f3ff;
+}
+
+.sider-generation-model-option-content {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.sider-generation-model-option-main {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  flex: 1;
+}
+
+.sider-generation-model-name {
+  font-size: 12px;
+  font-weight: 600;
+  color: #111827;
+}
+
+.sider-generation-model-subtitle {
+  font-size: 12px;
+  color: #6b7280;
+}
+
+.sider-generation-model-indicator {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.sider-generation-model-cost {
+  font-size: 12px;
+  font-weight: 500;
+  color: #111827;
+}
+
+.sider-generation-model-star,
+.sider-generation-model-lightning {
+  width: 14px;
+  height: 14px;
+  flex-shrink: 0;
+}
+
+.sider-generation-model-lightning {
+  stroke: #10b981;
+}
+
+/* Scrollbar styling for chat messages */
+.sider-chat-messages::-webkit-scrollbar {
+  width: 8px;
+}
+
+.sider-chat-messages::-webkit-scrollbar-track {
+  background: #f9fafb;
+  border-left: 2px solid #ef4444;
+  margin-right: 2px;
+}
+
+.sider-chat-messages::-webkit-scrollbar-thumb {
+  background: #d1d5db;
+  border-radius: 4px;
+  border-left: 1px solid #e5e7eb;
+}
+
+.sider-chat-messages::-webkit-scrollbar-thumb:hover {
+  background: #9ca3af;
+}
+

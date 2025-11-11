@@ -735,7 +735,7 @@ html.sider-panel-active [class*="content"]:not([data-sider-adjusted]) {
 
 .sider-panel-body {
   flex: 1;
-  overflow-y: scroll;
+  overflow-y: hidden;
   overflow-x: hidden;
 
   padding: 20px;
