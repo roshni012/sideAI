@@ -1,0 +1,129 @@
+<!-- Agent Tab Component HTML -->
+<div class="sider-agent-container" id="sider-agent-container">
+  <div class="sider-agent-content">
+    <!-- Messages Container -->
+    <div class="sider-agent-messages" id="sider-agent-messages" style="display: none;"></div>
+    
+    <!-- Centered Content -->
+    <div class="sider-agent-centered-content" id="sider-agent-centered-content">
+      <!-- Research Preview Badge -->
+      <div class="sider-agent-badge">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M9 2v6"/>
+          <path d="M15 2v6"/>
+          <path d="M9 8h6l-1 12H10L9 8z"/>
+          <line x1="9" y1="2" x2="15" y2="2"/>
+        </svg>
+        <span>Research preview</span>
+      </div>
+      
+      <!-- Agent Video Logo -->
+      <div class="sider-agent-video-wrapper">
+        <video 
+          class="sider-agent-video" 
+          autoplay 
+          loop 
+          muted 
+          playsinline
+          id="sider-agent-video"
+        >
+          <source src="chrome-extension://difoiogjjojoaoomphldepapgpbgkhkb/assets/sider-agent-logo-light-L6FCXAJU.mp4" type="video/mp4">
+        </video>
+      </div>
+      
+      <!-- Title -->
+      <h1 class="sider-agent-title">Browser Agent</h1>
+      
+      <!-- Description -->
+      <p class="sider-agent-description">
+        The Agent can control your browser to perform tasks. This feature is still in the early preview stage and errors may occur. You can stop it at any time.
+      </p>
+      
+      <!-- Demo Video Link -->
+      <a href="https://youtu.be/daZ_4iWx73c?si=rpicXfTUW0yc9Scs" target="_blank" rel="noopener noreferrer" class="sider-agent-demo-link" id="sider-agent-demo-link">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <polygon points="5 3 19 12 5 21 5 3"/>
+        </svg>
+        <span>Watch Demo Video</span>
+      </a>
+      
+      <!-- Agent Selection -->
+      <div class="sider-agent-selection">
+        <button class="sider-agent-select-btn" id="sider-agent-select-btn">
+          <div class="sider-agent-orb-icon">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+              <circle cx="12" cy="12" r="10" fill="url(#orbGradient)"/>
+              <circle cx="12" cy="12" r="6" fill="rgba(255, 255, 255, 0.3)"/>
+              <defs>
+                <linearGradient id="orbGradient" x1="0%" y1="0%" x2="100%" y2="100%">
+                  <stop offset="0%" style="stop-color:#8b5cf6;stop-opacity:1" />
+                  <stop offset="50%" style="stop-color:#6366f1;stop-opacity:1" />
+                  <stop offset="100%" style="stop-color:#8b5cf6;stop-opacity:1" />
+                </linearGradient>
+              </defs>
+            </svg>
+          </div>
+          <span>Browser Agent</span>
+        </button>
+        <button class="sider-agent-add-btn" id="sider-agent-add-btn" title="Add Agent">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <line x1="12" y1="5" x2="12" y2="19"/>
+            <line x1="5" y1="12" x2="19" y2="12"/>
+          </svg>
+        </button>
+      </div>
+    </div>
+    
+    <!-- Input Area -->
+    <div class="sider-agent-input-wrapper">
+      <!-- Agent Selection (shown above input when messages exist) -->
+      <div class="sider-agent-selection sider-agent-selection-above-input" id="sider-agent-selection-above-input" style="display: none;">
+        <button class="sider-agent-select-btn" id="sider-agent-select-btn-above">
+          <div class="sider-agent-orb-icon">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+              <circle cx="12" cy="12" r="10" fill="url(#orbGradient2)"/>
+              <circle cx="12" cy="12" r="6" fill="rgba(255, 255, 255, 0.3)"/>
+              <defs>
+                <linearGradient id="orbGradient2" x1="0%" y1="0%" x2="100%" y2="100%">
+                  <stop offset="0%" style="stop-color:#8b5cf6;stop-opacity:1" />
+                  <stop offset="50%" style="stop-color:#6366f1;stop-opacity:1" />
+                  <stop offset="100%" style="stop-color:#8b5cf6;stop-opacity:1" />
+                </linearGradient>
+              </defs>
+            </svg>
+          </div>
+          <span>Browser Agent</span>
+        </button>
+        <button class="sider-agent-add-btn" id="sider-agent-add-btn-above" title="New Chat">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <line x1="12" y1="5" x2="12" y2="19"/>
+            <line x1="5" y1="12" x2="19" y2="12"/>
+          </svg>
+        </button>
+      </div>
+      
+      <div class="sider-agent-input-container">
+        <textarea 
+          id="sider-agent-input" 
+          class="sider-agent-input" 
+          placeholder="What can the Agent help with?"
+          rows="1"
+        ></textarea>
+        <button class="sider-agent-mic-btn" id="sider-agent-mic-btn" title="Voice Input" style="display: flex;">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M12 1a3 3 0 0 0-3 3v8a3 3 0 0 0 6 0V4a3 3 0 0 0-3-3z"/>
+            <path d="M19 10v2a7 7 0 0 1-14 0v-2"/>
+            <line x1="12" y1="19" x2="12" y2="23"/>
+            <line x1="8" y1="23" x2="16" y2="23"/>
+          </svg>
+        </button>
+        <button class="sider-agent-send-btn" id="sider-agent-send-btn" title="Send" style="display: none;">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <line x1="22" y1="2" x2="11" y2="13"/>
+            <polygon points="22 2 15 22 11 13 2 9 22 2"/>
+          </svg>
+        </button>
+      </div>
+    </div>
+  </div>
+</div>

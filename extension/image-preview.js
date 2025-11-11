@@ -22,13 +22,48 @@
   ];
 
   const IMAGE_TOOLS_SUBMENU = [
-    { id: 'bg-remover', label: 'Background Remover', icon: '▭' },
-    { id: 'text-remover', label: 'Text Remover', icon: '▭T' },
-    { id: 'inpaint', label: 'Inpaint', icon: '🖌️' },
-    { id: 'photo-eraser', label: 'Photo Eraser', icon: '🖌️' },
-    { id: 'bg-changer', label: 'Background Changer', icon: '▭▭' },
-    { id: 'upscaler', label: 'Image Upscaler', icon: '⬆️' },
-    { id: 'variations', label: 'Create Variations', icon: '✨' }
+    { 
+      id: 'bg-remover', 
+      label: 'Background Remover', 
+      icon: '<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="2" ry="2"/></svg>',
+      isSvg: true
+    },
+    { 
+      id: 'text-remover', 
+      label: 'Text Remover', 
+      icon: '<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="4 7 4 4 20 4 20 7"/><line x1="9" y1="20" x2="15" y2="20"/><line x1="12" y1="4" x2="12" y2="20"/></svg>',
+      isSvg: true
+    },
+    { 
+      id: 'inpaint', 
+      label: 'Inpaint', 
+      icon: '<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"/><polyline points="3.27 6.96 12 12.01 20.73 6.96"/><line x1="12" y1="22.08" x2="12" y2="12"/></svg>',
+      isSvg: true
+    },
+    { 
+      id: 'photo-eraser', 
+      label: 'Photo Eraser', 
+      icon: '<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m7 21-4.3-4.3c-1-1-1-2.5 0-3.4l9.6-9.6c1-1 2.5-1 3.4 0l5.6 5.6c1 1 1 2.5 0 3.4L13 21"/><path d="M22 21H7"/><path d="m5 11 9 9"/></svg>',
+      isSvg: true
+    },
+    { 
+      id: 'bg-changer', 
+      label: 'Background Changer', 
+      icon: '<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="12 2 2 7 12 12 22 7 12 2"/><polyline points="2 17 12 22 22 17"/><polyline points="2 12 12 17 22 12"/></svg>',
+      isSvg: true
+    },
+    { 
+      id: 'upscaler', 
+      label: 'Image Upscaler', 
+      icon: '<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M8 3H5a2 2 0 0 0-2 2v3m18 0V5a2 2 0 0 0-2-2h-3m0 18h3a2 2 0 0 0 2-2v-3M3 16v3a2 2 0 0 0 2 2h3"/></svg>',
+      isSvg: true
+    },
+    { 
+      id: 'variations', 
+      label: 'Create Variations', 
+      icon: '<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14.7 6.3a1 1 0 0 0 0 1.4l1.6 1.6a1 1 0 0 0 1.4 0l3.77-3.77a6 6 0 0 1-7.94 7.94l-6.91 6.91a2.12 2.12 0 0 1-3-3l6.91-6.91a6 6 0 0 1 7.94-7.94l-3.76 3.76z"/></svg>',
+      isSvg: true
+    }
   ];
 
 
@@ -374,25 +409,80 @@
         overlay.style.pointerEvents = 'auto';
       }
     });
+    
+    // Track mouse movement over menu to keep it open
+    menu.addEventListener('mousemove', () => {
+      isMenuHovered = true;
+      clearTimeout(menuHoverTimeout);
+      if (overlay && overlay.parentNode) {
+        overlay.style.opacity = '1';
+        overlay.style.pointerEvents = 'auto';
+      }
+    });
 
     menu.addEventListener('mouseleave', (e) => {
-      isMenuHovered = false;
       const relatedTarget = e.relatedTarget;
-      if (!currentSubMenu?.contains(relatedTarget) && 
-          !overlay.contains(relatedTarget) &&
-          !img.contains(relatedTarget)) {
+      // Don't close if moving to submenu, overlay, or image
+      if (currentSubMenu?.contains(relatedTarget) || 
+          overlay.contains(relatedTarget) ||
+          img.contains(relatedTarget)) {
+        isMenuHovered = true;
+        return;
+      }
+      
+      // Check if mouse is still over menu or submenu (with gap tolerance)
+      const checkMousePosition = () => {
+        const menuRect = currentMenu?.getBoundingClientRect();
+        const subMenuRect = currentSubMenu?.getBoundingClientRect();
+        const mouseX = e.clientX;
+        const mouseY = e.clientY;
+        const gapTolerance = 10; // Allow 10px gap between menu and submenu
+        
+        // Check if mouse is within menu bounds (with tolerance)
+        const isOverMenu = menuRect && 
+          mouseX >= menuRect.left - gapTolerance && 
+          mouseX <= menuRect.right + gapTolerance && 
+          mouseY >= menuRect.top - gapTolerance && 
+          mouseY <= menuRect.bottom + gapTolerance;
+        
+        // Check if mouse is within submenu bounds (with tolerance)
+        const isOverSubMenu = subMenuRect && 
+          mouseX >= subMenuRect.left - gapTolerance && 
+          mouseX <= subMenuRect.right + gapTolerance && 
+          mouseY >= subMenuRect.top - gapTolerance && 
+          mouseY <= subMenuRect.bottom + gapTolerance;
+        
+        // Check if mouse is in the gap between menu and submenu
+        const isInGap = menuRect && subMenuRect && (
+          (mouseX >= Math.min(menuRect.right, subMenuRect.left) - gapTolerance && 
+           mouseX <= Math.max(menuRect.right, subMenuRect.left) + gapTolerance &&
+           mouseY >= Math.min(menuRect.top, subMenuRect.top) - gapTolerance &&
+           mouseY <= Math.max(menuRect.bottom, subMenuRect.bottom) + gapTolerance)
+        );
+        
+        if (isOverMenu || isOverSubMenu || isInGap) {
+          isMenuHovered = true;
+          return;
+        }
+        
+        isMenuHovered = false;
         menuHoverTimeout = setTimeout(() => {
-          if (!overlay.contains(relatedTarget) && 
-              !currentSubMenu?.contains(relatedTarget) &&
-              !img.contains(relatedTarget)) {
+          // Double check before closing
+          if (!isMenuHovered && 
+              !currentSubMenu?.matches(':hover') && 
+              !currentMenu?.matches(':hover') &&
+              !overlay.matches(':hover')) {
             hideMenu();
             if (overlay && overlay.parentNode) {
               overlay.style.opacity = '0';
               overlay.style.pointerEvents = 'none';
             }
           }
-        }, 200);
-      }
+        }, 400);
+      };
+      
+      // Use a small delay to allow mouse to move to submenu
+      setTimeout(checkMousePosition, 100);
     });
     
     // Close menu when clicking outside
@@ -429,7 +519,7 @@
     subMenu.className = 'sider-image-submenu';
     subMenu.innerHTML = IMAGE_TOOLS_SUBMENU.map(item => `
       <div class="sider-menu-item" data-action="image-tool" data-tool="${item.id}">
-        <span class="sider-menu-icon">${item.icon}</span>
+        <span class="sider-menu-icon ${item.isSvg ? 'sider-menu-icon-svg' : ''}">${item.isSvg ? item.icon : item.icon}</span>
         <span class="sider-menu-label">${item.label}</span>
       </div>
     `).join('');
@@ -513,22 +603,93 @@
       }
     });
 
+    subMenu.addEventListener('mouseenter', () => {
+      // Keep menu and submenu open when hovering over submenu
+      if (currentMenu && currentMenu.parentNode) {
+        currentMenu.style.display = 'block';
+        currentMenu.style.visibility = 'visible';
+        currentMenu.style.opacity = '1';
+      }
+      if (overlay && overlay.parentNode) {
+        overlay.style.opacity = '1';
+        overlay.style.pointerEvents = 'auto';
+      }
+      isMenuHovered = true;
+    });
+    
+    // Track mouse movement over submenu to keep it open
+    subMenu.addEventListener('mousemove', () => {
+      isMenuHovered = true;
+      if (currentMenu && currentMenu.parentNode) {
+        currentMenu.style.display = 'block';
+        currentMenu.style.visibility = 'visible';
+        currentMenu.style.opacity = '1';
+      }
+      if (overlay && overlay.parentNode) {
+        overlay.style.opacity = '1';
+        overlay.style.pointerEvents = 'auto';
+      }
+    });
+    
     subMenu.addEventListener('mouseleave', (e) => {
       const relatedTarget = e.relatedTarget;
-      if (!currentMenu?.contains(relatedTarget) && 
-          !overlay.contains(relatedTarget) &&
-          !img.contains(relatedTarget)) {
+      
+      // Don't close if moving to menu, overlay, or image
+      if (currentMenu?.contains(relatedTarget) || 
+          overlay.contains(relatedTarget) ||
+          img.contains(relatedTarget)) {
+        return;
+      }
+      
+      // Check if mouse is still over menu or submenu (with gap tolerance)
+      const checkMousePosition = () => {
+        const menuRect = currentMenu?.getBoundingClientRect();
+        const subMenuRect = currentSubMenu?.getBoundingClientRect();
+        const mouseX = e.clientX;
+        const mouseY = e.clientY;
+        const gapTolerance = 10; // Allow 10px gap between menu and submenu
+        
+        // Check if mouse is within menu bounds (with tolerance)
+        const isOverMenu = menuRect && 
+          mouseX >= menuRect.left - gapTolerance && 
+          mouseX <= menuRect.right + gapTolerance && 
+          mouseY >= menuRect.top - gapTolerance && 
+          mouseY <= menuRect.bottom + gapTolerance;
+        
+        // Check if mouse is within submenu bounds (with tolerance)
+        const isOverSubMenu = subMenuRect && 
+          mouseX >= subMenuRect.left - gapTolerance && 
+          mouseX <= subMenuRect.right + gapTolerance && 
+          mouseY >= subMenuRect.top - gapTolerance && 
+          mouseY <= subMenuRect.bottom + gapTolerance;
+        
+        // Check if mouse is in the gap between menu and submenu
+        const isInGap = menuRect && subMenuRect && (
+          (mouseX >= Math.min(menuRect.right, subMenuRect.left) - gapTolerance && 
+           mouseX <= Math.max(menuRect.right, subMenuRect.left) + gapTolerance &&
+           mouseY >= Math.min(menuRect.top, subMenuRect.top) - gapTolerance &&
+           mouseY <= Math.max(menuRect.bottom, subMenuRect.bottom) + gapTolerance)
+        );
+        
+        if (isOverMenu || isOverSubMenu || isInGap) {
+          return;
+        }
+        
+        // Only close submenu if mouse is truly outside both
         setTimeout(() => {
-          if (!currentMenu?.contains(relatedTarget) && 
-              !overlay.contains(relatedTarget) &&
-              !img.contains(relatedTarget)) {
+          if (!currentMenu?.matches(':hover') && 
+              !currentSubMenu?.matches(':hover') &&
+              !overlay.matches(':hover')) {
             if (currentSubMenu) {
               currentSubMenu.remove();
               currentSubMenu = null;
             }
           }
-        }, 200);
-      }
+        }, 400);
+      };
+      
+      // Use a small delay to allow mouse to move to menu
+      setTimeout(checkMousePosition, 100);
     });
 
     attachSubMenuListeners(subMenu, img);
@@ -552,19 +713,61 @@
         item.addEventListener('mouseleave', (e) => {
           clearTimeout(subMenuTimeout);
           const relatedTarget = e.relatedTarget;
-          if (!currentSubMenu?.contains(relatedTarget) && 
-              !currentMenu?.contains(relatedTarget)) {
+          
+          // Don't close submenu if moving to it
+          if (currentSubMenu?.contains(relatedTarget)) {
+            return;
+          }
+          
+          // Check if mouse is still over submenu (with gap tolerance)
+          const checkMousePosition = () => {
+            const subMenuRect = currentSubMenu?.getBoundingClientRect();
+            const menuRect = currentMenu?.getBoundingClientRect();
+            const mouseX = e.clientX;
+            const mouseY = e.clientY;
+            const gapTolerance = 10; // Allow 10px gap between menu and submenu
+            
+            // Check if mouse is within submenu bounds (with tolerance)
+            const isOverSubMenu = subMenuRect && 
+              mouseX >= subMenuRect.left - gapTolerance && 
+              mouseX <= subMenuRect.right + gapTolerance && 
+              mouseY >= subMenuRect.top - gapTolerance && 
+              mouseY <= subMenuRect.bottom + gapTolerance;
+            
+            // Check if mouse is within menu bounds (with tolerance)
+            const isOverMenu = menuRect && 
+              mouseX >= menuRect.left - gapTolerance && 
+              mouseX <= menuRect.right + gapTolerance && 
+              mouseY >= menuRect.top - gapTolerance && 
+              mouseY <= menuRect.bottom + gapTolerance;
+            
+            // Check if mouse is in the gap between menu and submenu
+            const isInGap = menuRect && subMenuRect && (
+              (mouseX >= Math.min(menuRect.right, subMenuRect.left) - gapTolerance && 
+               mouseX <= Math.max(menuRect.right, subMenuRect.left) + gapTolerance &&
+               mouseY >= Math.min(menuRect.top, subMenuRect.top) - gapTolerance &&
+               mouseY <= Math.max(menuRect.bottom, subMenuRect.bottom) + gapTolerance)
+            );
+            
+            if (isOverSubMenu || isOverMenu || isInGap) {
+              return;
+            }
+            
             subMenuTimeout = setTimeout(() => {
+              // Double check before closing
               if (currentSubMenu && 
                   !currentSubMenu.matches(':hover') && 
-                  !currentSubMenu.contains(relatedTarget)) {
+                  !currentMenu?.matches(':hover')) {
                 if (currentSubMenu) {
                   currentSubMenu.remove();
                   currentSubMenu = null;
                 }
               }
-            }, 200);
-          }
+            }, 400);
+          };
+          
+          // Use a small delay to allow mouse to move to submenu
+          setTimeout(checkMousePosition, 100);
         });
       }
     });
@@ -726,6 +929,18 @@
     
     if (tool === 'bg-remover') {
       return `${baseUrl}/create/image/background-remover?${params.toString()}`;
+    } else if (tool === 'text-remover') {
+      return `${baseUrl}/create/image/text-remover?${params.toString()}`;
+    } else if (tool === 'inpaint') {
+      return `${baseUrl}/create/image/inpaint?${params.toString()}`;
+    } else if (tool === 'photo-eraser') {
+      return `${baseUrl}/create/image/photo-eraser?${params.toString()}`;
+    } else if (tool === 'bg-changer') {
+      return `${baseUrl}/create/image/background-changer?${params.toString()}`;
+    } else if (tool === 'upscaler') {
+      return `${baseUrl}/create/image/image-upscaler?${params.toString()}`;
+    } else if (tool === 'variations') {
+      return `${baseUrl}/create/image/ai-image-generator?${params.toString()}`;
     } else {
       params.set('tool', tool);
       return `${baseUrl}/image-tool?${params.toString()}`;
@@ -740,8 +955,10 @@
     const openUrl = (baseUrl) => {
       try {
         const url = buildImageToolUrl(tool, imgSrc, imgAlt, baseUrl);
+        console.log('Opening URL for tool:', tool, 'URL:', url);
         window.open(url, '_blank');
       } catch (err) {
+        console.error('Error building URL:', err);
         const url = buildImageToolUrl(tool, imgSrc, imgAlt, defaultBaseUrl);
         window.open(url, '_blank');
       }

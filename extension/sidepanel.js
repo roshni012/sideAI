@@ -2,9 +2,9 @@
   'use strict';
   
   let currentModel = 'chatgpt';
-  let fileInput = null;
-  let pendingAttachments = [];
   let currentTab = null;
+  let lastActiveGroup1Tab = 'rec-note'; // Track last active tab from Group 1
+  let activeSidebarTab = 'chat'; // Track currently active sidebar tab
   
   // Get current tab info
   async function getCurrentTab() {
@@ -49,26 +49,14 @@
       }
       
       siteNameSpan.textContent = siteName;
+      // Only show summarize card if chat tab is active
+      if (activeSidebarTab === 'chat') {
       summarizeCard.style.display = 'flex';
     }
   }
-  
-  function autoResize(textarea) {
-    if (!textarea) return;
-    
-    const currentHeight = textarea.style.height;
-    textarea.style.height = 'auto';
-    void textarea.offsetHeight;
-    const scrollHeight = textarea.scrollHeight;
-    textarea.style.height = scrollHeight + 'px';
-    textarea.style.overflowY = 'hidden';
-    textarea.style.overflowX = 'hidden';
-    
-    const inputArea = textarea.closest('.sider-input-area');
-    if (inputArea) {
-      inputArea.style.height = 'auto';
-    }
   }
+  
+  // Auto-resize is now handled by ChatTab component
   
   function toggleNavbar() {
     const sidebar = document.querySelector('.sider-panel-sidebar');
@@ -96,7 +84,13 @@
   
   function showSidebarPopup() {
     const popup = document.getElementById('sider-sidebar-popup');
-    if (popup) {
+    const collapseBtn = document.getElementById('sider-collapse-navbar-btn');
+    if (popup && collapseBtn) {
+      const btnRect = collapseBtn.getBoundingClientRect();
+      if (btnRect) {
+        popup.style.top = `${btnRect.top}px`;
+        popup.style.right = `${window.innerWidth - btnRect.right}px`;
+      }
       popup.style.display = 'block';
     }
   }
@@ -105,6 +99,318 @@
     const popup = document.getElementById('sider-sidebar-popup');
     if (popup) {
       popup.style.display = 'none';
+    }
+  }
+  
+  // Tab configuration for Group 1 tabs
+  const group1Tabs = {
+    'chat': {
+      title: 'Chat',
+      icon: `<path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/>`
+    },
+    'rec-note': {
+      title: 'REC Note',
+      icon: `<path fill="currentColor" d="M17.372 15.366a.675.675 0 0 1 1.169.676 5 5 0 0 1-1.122 1.336 5 5 0 0 1-3.231 1.176 5 5 0 0 1-3.232-1.176 5 5 0 0 1-1.122-1.336.675.675 0 0 1 1.169-.676 3.7 3.7 0 0 0 .822.978 3.66 3.66 0 0 0 2.363.86c.9 0 1.724-.323 2.363-.86.327-.275.606-.606.821-.978M12.2.917c.828 0 1.494 0 2.031.043.547.045 1.027.14 1.472.366a3.75 3.75 0 0 1 1.638 1.639c.226.444.321.924.366 1.47.044.538.043 1.204.043 2.032v3.846l-.001.406a3.667 3.667 0 0 0-7.249.781v2q0 .15.013.299c-.326-.017-.66.05-.968.209H9.54l-.077.044a1.91 1.91 0 0 0-.696 2.608q.231.398.516.757H6.8c-.828 0-1.494 0-2.031-.043-.547-.045-1.027-.14-1.471-.366a3.75 3.75 0 0 1-1.64-1.638c-.225-.445-.32-.925-.365-1.472-.044-.537-.043-1.203-.043-2.031v-5.4c0-.828 0-1.494.043-2.031.045-.547.14-1.027.366-1.471a3.75 3.75 0 0 1 1.639-1.64c.444-.225.924-.32 1.47-.365C5.307.916 5.973.917 6.8.917zm1.967 8.25A2.333 2.333 0 0 1 16.5 11.5v2a2.333 2.333 0 0 1-4.667 0v-2a2.333 2.333 0 0 1 2.334-2.333"></path><path fill="#fff" d="M7.333 9.25a.75.75 0 1 1 0 1.5H5a.75.75 0 0 1 0-1.5zm3-4a.75.75 0 0 1 0 1.5H5a.75.75 0 0 1 0-1.5z"></path>`,
+      hasBadge: true
+    },
+    'agent': {
+      title: 'Agent',
+      icon: `<circle cx="12" cy="12" r="10"/><path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"/>`
+    },
+    'write': {
+      title: 'Write',
+      icon: `<path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/><polyline points="10 9 9 9 8 9"/>`
+    },
+    'translate': {
+      title: 'Translate',
+      icon: `<rect x="3" y="3" width="18" height="18" rx="2"/><line x1="3" y1="9" x2="21" y2="9"/><line x1="9" y1="3" x2="9" y2="21"/><path d="M12 3v18M3 12h18"/>`
+    },
+    'ocr': {
+      title: 'OCR',
+      icon: `<rect x="3" y="3" width="18" height="18" rx="2"/><line x1="7" y1="7" x2="17" y2="7"/><line x1="7" y1="11" x2="17" y2="11"/><line x1="7" y1="15" x2="12" y2="15"/>`
+    },
+    'grammar': {
+      title: 'Grammar',
+      icon: `<path d="M9 11l3 3L22 4"/><path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"/>`
+    },
+    'ask': {
+      title: 'Ask',
+      icon: `<circle cx="12" cy="12" r="10"/><path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3"/><line x1="12" y1="17" x2="12.01" y2="17"/>`
+    },
+    'search': {
+      title: 'Search',
+      icon: `<circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/>`
+    },
+    'tools': {
+      title: 'Tools',
+      icon: `<path d="M14.7 6.3a1 1 0 0 0 0 1.4l1.6 1.6a1 1 0 0 0 1.4 0l3.77-3.77a6 6 0 0 1-7.94 7.94l-6.91 6.91a2.12 2.12 0 0 1-3-3l6.91-6.91a6 6 0 0 1 7.94-7.94l-3.76 3.76z"/>`
+    }
+  };
+  
+  // Update the 3rd tab icon based on last active tab
+  function updateThirdTabIcon(tabId) {
+    const thirdTabIcon = document.getElementById('sider-third-tab-icon');
+    const thirdTabBadge = document.getElementById('sider-third-tab-badge');
+    if (!thirdTabIcon) return;
+    
+    const tabConfig = group1Tabs[tabId];
+    if (!tabConfig) return;
+    
+    // Update icon
+    const svg = thirdTabIcon.querySelector('svg');
+    if (svg) {
+      if (tabId === 'rec-note') {
+        // Special handling for REC Note with xmlns
+        svg.innerHTML = tabConfig.icon;
+        svg.setAttribute('xmlns', 'http://www.w3.org/2000/svg');
+        svg.setAttribute('width', '20');
+        svg.setAttribute('height', '20');
+        svg.setAttribute('fill', 'none');
+        svg.setAttribute('viewBox', '0 0 20 20');
+      } else {
+        svg.innerHTML = tabConfig.icon;
+        svg.removeAttribute('xmlns');
+        svg.setAttribute('viewBox', '0 0 24 24');
+        svg.setAttribute('fill', 'none');
+        svg.setAttribute('stroke', 'currentColor');
+        svg.setAttribute('stroke-width', '2');
+        svg.setAttribute('stroke-linecap', 'round');
+        svg.setAttribute('stroke-linejoin', 'round');
+      }
+    }
+    
+    // Update title
+    thirdTabIcon.setAttribute('title', tabConfig.title);
+    thirdTabIcon.setAttribute('data-tab', tabId);
+    
+    // Update badge
+    if (thirdTabBadge) {
+      if (tabConfig.hasBadge) {
+        thirdTabBadge.style.display = 'block';
+      } else {
+        thirdTabBadge.style.display = 'none';
+      }
+    }
+    
+    // Update purple class
+    if (tabConfig.isPurple) {
+      thirdTabIcon.classList.add('sider-sidebar-icon-purple');
+    } else {
+      thirdTabIcon.classList.remove('sider-sidebar-icon-purple');
+    }
+    
+    // Remove active class when updating third tab icon (it will be added by updateActiveSidebarTab if needed)
+    thirdTabIcon.classList.remove('sider-sidebar-icon-active');
+  }
+  
+  // Update active state for sidebar icons
+  function updateActiveSidebarTab(tabId) {
+    // Remove active state from ALL sidebar icons (including those without data-tab)
+    const sidebarIcons = document.querySelectorAll('.sider-panel-sidebar .sider-sidebar-icon');
+    sidebarIcons.forEach(icon => {
+      icon.classList.remove('sider-sidebar-icon-active');
+    });
+    
+    // Add active state to clicked tab
+    // First try to find by data-tab attribute
+    let activeIcon = document.querySelector(`.sider-panel-sidebar .sider-sidebar-icon[data-tab="${tabId}"]`);
+    
+    // If not found, check if it's the third tab icon (which might have been just updated)
+    if (!activeIcon) {
+      const thirdTabIcon = document.getElementById('sider-third-tab-icon');
+      if (thirdTabIcon && thirdTabIcon.getAttribute('data-tab') === tabId) {
+        activeIcon = thirdTabIcon;
+      }
+    }
+    
+    if (activeIcon) {
+      activeIcon.classList.add('sider-sidebar-icon-active');
+    }
+    
+    // Update active state in popup
+    const popupItems = document.querySelectorAll('#sider-group1-tabs-popup .sider-sidebar-popup-item[data-tab]');
+    popupItems.forEach(item => {
+      item.classList.remove('sider-sidebar-popup-item-active');
+      if (item.getAttribute('data-tab') === tabId) {
+        item.classList.add('sider-sidebar-popup-item-active');
+      }
+    });
+    
+    activeSidebarTab = tabId;
+  }
+  
+  // Load tab component dynamically
+  async function loadTabComponent(tabName, containerId) {
+    const container = document.getElementById(containerId);
+    if (!container) {
+      console.error(`Container ${containerId} not found`);
+      return;
+    }
+    
+    // Hide all other tab containers
+    hideAllTabContainers();
+    
+    // Hide input footer for non-chat tabs
+    toggleInputFooter(false);
+    
+    // Hide summarize card for non-chat tabs
+    toggleSummarizeCard(false);
+    
+    // Check if HTML is already loaded
+    if (container.innerHTML.trim() === '') {
+      try {
+        // Load HTML from file
+        const url = chrome.runtime.getURL(`${tabName}-tab.html`);
+        const response = await fetch(url);
+        if (response.ok) {
+          const html = await response.text();
+          container.innerHTML = html;
+        } else {
+          // Use fallback HTML
+          const title = tabName.charAt(0).toUpperCase() + tabName.slice(1).replace(/-/g, ' ');
+          container.innerHTML = `
+            <div class="sider-${tabName}-container" id="sider-${tabName}-container">
+              <div class="sider-${tabName}-content">
+                <h2>${title}</h2>
+                <p>This is the ${title} tab. Content coming soon.</p>
+              </div>
+            </div>
+          `;
+        }
+      } catch (error) {
+        console.error(`Error loading ${tabName} tab:`, error);
+        const title = tabName.charAt(0).toUpperCase() + tabName.slice(1).replace(/-/g, ' ');
+        container.innerHTML = `
+          <div class="sider-${tabName}-container" id="sider-${tabName}-container">
+            <div class="sider-${tabName}-content">
+              <h2>${title}</h2>
+              <p>Error loading ${title} tab.</p>
+            </div>
+          </div>
+        `;
+      }
+    }
+    
+    // Show container
+    container.style.display = 'block';
+    
+    // Initialize tab component if available
+    const componentName = `Sider${capitalizeFirst(tabName)}Tab`;
+    if (window[componentName] && window[componentName].init) {
+      await window[componentName].init();
+    }
+  }
+  
+  // Hide all tab containers
+  function hideAllTabContainers() {
+    const containers = [
+      'sider-chat-tab-container',
+      'sider-agent-tab-container',
+      'sider-rec-note-tab-container',
+      'sider-write-tab-container',
+      'sider-translate-tab-container',
+      'sider-ocr-container',
+      'sider-grammar-tab-container',
+      'sider-ask-tab-container',
+      'sider-search-tab-container',
+      'sider-tools-tab-container'
+    ];
+    
+    containers.forEach(id => {
+      const container = document.getElementById(id);
+      if (container) {
+        container.style.display = 'none';
+      }
+    });
+  }
+  
+  // Show/hide input footer based on active tab
+  function toggleInputFooter(show) {
+    const footerContainer = document.getElementById('sider-chat-footer-container');
+    if (footerContainer) {
+      footerContainer.style.display = show ? 'block' : 'none';
+    }
+  }
+  
+  // Show/hide summarize card based on active tab (only show in chat)
+  function toggleSummarizeCard(show) {
+    const summarizeCard = document.getElementById('sider-summarize-card');
+    if (summarizeCard) {
+      summarizeCard.style.display = show ? 'flex' : 'none';
+    }
+  }
+  
+  // Capitalize first letter and handle hyphens
+  function capitalizeFirst(str) {
+    return str.charAt(0).toUpperCase() + str.slice(1).replace(/-([a-z])/g, (g) => g[1].toUpperCase());
+  }
+  
+  // Handle tab switching
+  async function switchToTab(tabId) {
+    // Check if it's a Group 1 tab
+    if (group1Tabs[tabId]) {
+      // If it's not chat or agent, update the 3rd position
+      if (tabId !== 'chat' && tabId !== 'agent') {
+        lastActiveGroup1Tab = tabId;
+        updateThirdTabIcon(tabId);
+      }
+      
+      // Update active state
+      updateActiveSidebarTab(tabId);
+      
+      // Hide welcome message
+      const welcome = document.querySelector('.sider-welcome');
+      if (welcome) {
+        welcome.style.display = 'none';
+      }
+      
+      // Handle specific tab actions
+      switch(tabId) {
+        case 'chat':
+          // Switch to chat view
+          toggleInputFooter(true); // Show input footer for chat
+          // Summarize card will be shown/hidden by chat tab logic or updatePageTitle
+          if (window.SiderChatTab) {
+            window.SiderChatTab.switchToChat();
+          }
+          break;
+        case 'ocr':
+          toggleInputFooter(false); // Hide input footer for OCR
+          openOCR();
+          break;
+        case 'agent':
+          toggleInputFooter(false); // Hide input footer for other tabs
+          await loadTabComponent('agent', 'sider-agent-tab-container');
+          break;
+        case 'rec-note':
+          toggleInputFooter(false);
+          await loadTabComponent('rec-note', 'sider-rec-note-tab-container');
+          break;
+        case 'write':
+          toggleInputFooter(false);
+          await loadTabComponent('write', 'sider-write-tab-container');
+          break;
+        case 'translate':
+          toggleInputFooter(false);
+          await loadTabComponent('translate', 'sider-translate-tab-container');
+          break;
+        case 'grammar':
+          toggleInputFooter(false);
+          await loadTabComponent('grammar', 'sider-grammar-tab-container');
+          break;
+        case 'ask':
+          toggleInputFooter(false);
+          await loadTabComponent('ask', 'sider-ask-tab-container');
+          break;
+        case 'search':
+          toggleInputFooter(false);
+          await loadTabComponent('search', 'sider-search-tab-container');
+          break;
+        case 'tools':
+          toggleInputFooter(false);
+          await loadTabComponent('tools', 'sider-tools-tab-container');
+          break;
+      }
     }
   }
   
@@ -166,20 +472,9 @@
       }
     }
     
-    const chatContainer = document.getElementById('sider-chat-container');
-    const welcome = document.querySelector('.sider-welcome');
-    
-    switch(action) {
-      case 'fullscreen':
-        if (chatContainer) {
-          chatContainer.style.display = 'flex';
-        }
-        if (welcome) {
-          welcome.style.display = 'none';
-        }
-        break;
-      default:
-        // Unknown action
+    // Handle fullscreen action through ChatTab
+    if (action === 'fullscreen' && window.SiderChatTab) {
+      window.SiderChatTab.handleAction(action);
     }
   }
   
@@ -215,6 +510,9 @@
       aiIconImg.alt = model;
     }
   }
+  
+  // Make updateAISelectorIcon globally accessible
+  window.updateAISelectorIcon = updateAISelectorIcon;
   
   async function startScreenshotMode() {
     // Refresh current tab to ensure we have the latest tab info
@@ -279,337 +577,423 @@
     }
   }
   
-  function renderAttachments() {
-    const container = document.getElementById('sider-attachments');
-    if (!container) return;
-    container.innerHTML = '';
-    pendingAttachments.forEach((att, idx) => {
-      if (att.type === 'image') {
-        const chip = document.createElement('div');
-        chip.className = 'sider-attachment-chip';
-        chip.innerHTML = `
-          <img class="sider-attachment-thumb" src="${att.dataUrl}" alt="attachment" />
-          <div style="display:flex;flex-direction:column;gap:2px;">
-            <span style="font-size:12px;color:#374151;max-width:140px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${att.name}</span>
-            <span style="font-size:11px;color:#6b7280;">${att.width || ''}×${att.height || ''}</span>
-          </div>
-          <button class="sider-attachment-remove" title="Remove">✕</button>
-        `;
-        chip.querySelector('.sider-attachment-remove').addEventListener('click', () => {
-          pendingAttachments.splice(idx, 1);
-          renderAttachments();
-        });
-        container.appendChild(chip);
-      }
-    });
-    updateInputPaddingForAttachments();
-  }
+  // Make startScreenshotMode globally accessible
+  window.startScreenshotMode = startScreenshotMode;
   
-  function updateInputPaddingForAttachments() {
-    const input = document.getElementById('sider-chat-input');
-    const container = document.getElementById('sider-attachments');
-    if (!input || !container) return;
-    const basePadding = 12;
-    const needed = container.childElementCount > 0 ? container.clientHeight + basePadding : basePadding;
-    input.style.paddingTop = `${needed}px`;
-  }
+  // Chat-related functions moved to chat-tab.js component
   
-  function handleFileAttachments(files) {
-    files.forEach(file => {
-      const reader = new FileReader();
-      reader.onload = (e) => {
-        const dataUrl = e.target.result;
-        const attachment = {
-          type: file.type.startsWith('image/') ? 'image' : 'file',
-          name: file.name,
-          size: file.size,
-          dataUrl
-        };
-        
-        if (file.type.startsWith('image/')) {
-          const img = new Image();
-          img.onload = () => {
-            attachment.width = img.width;
-            attachment.height = img.height;
-            pendingAttachments.push(attachment);
-            renderAttachments();
-          };
-          img.src = dataUrl;
-        } else {
-          pendingAttachments.push(attachment);
-          renderAttachments();
-        }
-      };
-      reader.readAsDataURL(file);
-    });
-  }
+  // OCR Functions
+  let ocrImageScale = 1;
+  let ocrExtractedText = '';
   
-  async function readCurrentPage() {
-    if (!currentTab || !currentTab.id) return;
-    
-    // Request page content from content script
-    chrome.tabs.sendMessage(currentTab.id, {
-      type: 'READ_PAGE'
-    }, (response) => {
-      if (chrome.runtime.lastError) {
-        console.error('Error reading page:', chrome.runtime.lastError);
-        return;
-      }
-      
-      if (response && response.content) {
-        const input = document.getElementById('sider-chat-input');
-        if (input) {
-          const pageText = `📖 Read this page: ${response.content.title}\nURL: ${response.content.url}\n\n${response.content.text.substring(0, 500)}...`;
-          input.value = pageText + (input.value ? '\n\n' + input.value : '');
-          autoResize(input);
-          if (window.toggleMicSendButton) window.toggleMicSendButton();
-        }
-        
-        addMessage('user', `📖 Reading page: ${response.content.title}`);
-        
-        const summaryPrompt = `Please summarize this page: ${response.content.title}\n\nContent preview: ${response.content.text.substring(0, 1000)}`;
-        setTimeout(() => {
-          const input = document.getElementById('sider-chat-input');
-          if (input) {
-            input.value = summaryPrompt;
-            sendMessage();
-          }
-        }, 500);
-      }
-    });
-  }
-  
-  async function sendMessage() {
-    // Check authentication before sending message
-    const isAuthenticated = await requireAuth();
-    if (!isAuthenticated) {
-      return;
-    }
-    
-    const input = document.getElementById('sider-chat-input');
-    const messagesContainer = document.getElementById('sider-chat-messages');
-    const chatContainer = document.getElementById('sider-chat-container');
+  function openOCR() {
+    const ocrContainer = document.getElementById('sider-ocr-container');
     const welcome = document.querySelector('.sider-welcome');
+    const chatContainer = document.getElementById('sider-chat-container');
+    const summarizeCard = document.getElementById('sider-summarize-card');
+    const panelFooter = document.querySelector('.sider-panel-footer');
+    const panelBody = document.getElementById('sider-panel-body');
     
-    if (!input || !input.value.trim()) return;
-    
-    const message = input.value.trim();
-    const model = currentModel;
-    
-    input.value = '';
-    autoResize(input);
-    if (window.toggleMicSendButton) window.toggleMicSendButton();
-    
-    if (chatContainer) {
-      chatContainer.style.display = 'flex';
+    if (ocrContainer) {
+      ocrContainer.style.display = 'flex';
     }
     if (welcome) {
       welcome.style.display = 'none';
     }
-    
-    const imagePreviewSection = document.getElementById('sider-image-preview-section');
-    const imageThumb = document.getElementById('sider-image-preview-thumb');
-    let hasImagePreview = false;
-    
-    if (imagePreviewSection && imagePreviewSection.style.display !== 'none' && imageThumb && imageThumb.src) {
-      hasImagePreview = true;
-    }
-    
-    if (pendingAttachments.length > 0) {
-      const attachedHint = pendingAttachments
-        .map(att => att.type === 'image' ? `📎 [image] ${att.name}` : `📎 ${att.name}`)
-        .join('\n');
-      addMessage('user', `${attachedHint}\n\n${message}`);
-      pendingAttachments = [];
-      renderAttachments();
-      updateInputPaddingForAttachments();
-    } else if (hasImagePreview) {
-      const imageAlt = imageThumb.alt || 'Screenshot';
-      addMessage('user', `${message}\n\n📎 [image] ${imageAlt}`);
-    } else {
-      addMessage('user', message);
-    }
-    
-    if (hasImagePreview && imagePreviewSection) {
-      imagePreviewSection.style.display = 'none';
-      if (imageThumb) {
-        imageThumb.src = '';
-        imageThumb.alt = '';
-      }
-    }
-    
-    const thinkingMsg = addMessage('assistant', 'Thinking...', true);
-    
-    try {
-      chrome.runtime.sendMessage({
-        type: 'CHAT_REQUEST',
-        message: message,
-        model: model
-      }, (response) => {
-        if (response && response.error) {
-          updateMessage(thinkingMsg, 'assistant', `Error: ${response.error}`);
-        } else if (response && response.text) {
-          updateMessage(thinkingMsg, 'assistant', response.text);
-        } else {
-          updateMessage(thinkingMsg, 'assistant', 'No response received');
-        }
-      });
-    } catch (error) {
-      updateMessage(thinkingMsg, 'assistant', `Error: ${error.message}`);
-    }
-  }
-  
-  function createNewChat() {
-    const messagesContainer = document.getElementById('sider-chat-messages');
-    if (messagesContainer) {
-      messagesContainer.innerHTML = '';
-    }
-    
-    const chatInput = document.getElementById('sider-chat-input');
-    if (chatInput) {
-      chatInput.value = '';
-      autoResize(chatInput);
-      if (window.toggleMicSendButton) window.toggleMicSendButton();
-    }
-    
-    const selectedTextSection = document.getElementById('sider-selected-text-section');
-    const imagePreviewSection = document.getElementById('sider-image-preview-section');
-    if (selectedTextSection) {
-      selectedTextSection.style.display = 'none';
-    }
-    if (imagePreviewSection) {
-      imagePreviewSection.style.display = 'none';
-    }
-    
-    const chatContainer = document.getElementById('sider-chat-container');
-    const welcome = document.querySelector('.sider-welcome');
-    const summarizeCard = document.getElementById('sider-summarize-card');
-    
     if (chatContainer) {
       chatContainer.style.display = 'none';
     }
-    if (welcome) {
-      welcome.style.display = 'block';
+    // Hide summarize card for OCR
+    toggleSummarizeCard(false);
+    
+    if (panelFooter) {
+      panelFooter.style.display = 'none';
     }
-    if (summarizeCard) {
-      setTimeout(() => {
-        updatePageTitle();
-      }, 100);
+    if (panelBody) {
+      panelBody.classList.add('sider-ocr-active');
     }
     
-    const aiDropdown = document.getElementById('sider-ai-dropdown');
-    if (aiDropdown) {
-      aiDropdown.style.display = 'none';
-    }
-    
-    if (fileInput) {
-      fileInput.value = '';
-    }
-    
-    if (messagesContainer) {
-      messagesContainer.scrollTop = 0;
-    }
+    // Reset OCR state
+    resetOCR();
   }
   
-  function addMessage(role, text, isThinking = false) {
-    const messagesContainer = document.getElementById('sider-chat-messages');
-    if (!messagesContainer) return null;
+  function resetOCR() {
+    const uploadArea = document.getElementById('sider-ocr-upload-area');
+    const imageWrapper = document.getElementById('sider-ocr-image-wrapper');
+    const result = document.getElementById('sider-ocr-result');
+    const divider = document.getElementById('sider-ocr-divider');
+    const divider2 = document.getElementById('sider-ocr-divider-2');
+    const ocrImage = document.getElementById('sider-ocr-image');
+    const ocrFileInput = document.getElementById('sider-ocr-file-input');
+    const screenshotBtn = document.getElementById('sider-ocr-screenshot');
+    const resultContent = document.getElementById('sider-ocr-result-content');
     
-    const messageDiv = document.createElement('div');
-    messageDiv.className = `sider-message sider-message-${role}`;
-    
-    if (isThinking) {
-      messageDiv.classList.add('sider-thinking');
+    if (uploadArea) uploadArea.style.display = 'block';
+    if (imageWrapper) imageWrapper.style.display = 'none';
+    if (result) result.style.display = 'none';
+    if (divider) divider.style.display = 'none';
+    if (divider2) divider2.style.display = 'block';
+    if (ocrImage) {
+      ocrImage.src = '';
+      ocrImage.style.transform = 'scale(1)';
     }
+    if (ocrFileInput) ocrFileInput.value = '';
+    if (screenshotBtn) screenshotBtn.style.display = 'block';
+    if (resultContent) resultContent.textContent = '';
     
-    messageDiv.innerHTML = `
-      <div class="sider-message-avatar">
-        ${role === 'user' ? '👤' : '🤖'}
-      </div>
-      <div class="sider-message-content">
-        <div class="sider-message-text">${text}</div>
-      </div>
-    `;
-    
-    messagesContainer.appendChild(messageDiv);
-    messagesContainer.scrollTop = messagesContainer.scrollHeight;
-    
-    return messageDiv;
+    ocrImageScale = 1;
+    ocrExtractedText = '';
   }
   
-  function updateMessage(messageDiv, role, text) {
-    if (!messageDiv) return;
+  function handleOCRFileUpload(file) {
+    if (!file) return;
     
-    messageDiv.classList.remove('sider-thinking');
-    const textElement = messageDiv.querySelector('.sider-message-text');
-    if (textElement) {
-      textElement.textContent = text;
-    }
-    
-    const messagesContainer = document.getElementById('sider-chat-messages');
-    if (messagesContainer) {
-      messagesContainer.scrollTop = messagesContainer.scrollHeight;
-    }
-  }
-  
-  async function handleSummarizeClick() {
-    // Check authentication before summarizing
-    const isAuthenticated = await requireAuth();
-    if (!isAuthenticated) {
+    // Check file size (5MB limit)
+    if (file.size > 5 * 1024 * 1024) {
+      alert('File size exceeds 5MB limit. Please choose a smaller file.');
       return;
     }
     
-    if (!currentTab || !currentTab.id) return;
+    const reader = new FileReader();
+    reader.onload = (e) => {
+      const dataUrl = e.target.result;
+      displayOCRImage(dataUrl);
+      
+      // Process OCR
+      processOCR(dataUrl);
+    };
     
-    const chatContainer = document.getElementById('sider-chat-container');
-    const welcome = document.querySelector('.sider-welcome');
-    const messagesContainer = document.getElementById('sider-chat-messages');
-    const summarizeCard = document.getElementById('sider-summarize-card');
-    
-    if (!chatContainer || !messagesContainer) return;
-    
-    chatContainer.style.display = 'flex';
-    if (welcome) {
-      welcome.style.display = 'none';
+    if (file.type.startsWith('image/')) {
+      reader.readAsDataURL(file);
+    } else if (file.type === 'application/pdf') {
+      // Handle PDF - for now, show message
+      alert('PDF OCR support coming soon. Please upload an image file.');
+    } else {
+      alert('Unsupported file type. Please upload an image or PDF.');
     }
-    if (summarizeCard) {
-      summarizeCard.style.display = 'none';
+  }
+  
+  function displayOCRImage(dataUrl) {
+    const uploadArea = document.getElementById('sider-ocr-upload-area');
+    const imageWrapper = document.getElementById('sider-ocr-image-wrapper');
+    const ocrImage = document.getElementById('sider-ocr-image');
+    const divider = document.getElementById('sider-ocr-divider');
+    const divider2 = document.getElementById('sider-ocr-divider-2');
+    const screenshotBtn = document.getElementById('sider-ocr-screenshot');
+    const result = document.getElementById('sider-ocr-result');
+    
+    if (ocrImage) {
+      ocrImage.src = dataUrl;
+      ocrImageScale = 1;
+      ocrImage.style.transform = `scale(${ocrImageScale})`;
+      ocrImage.style.transformOrigin = 'center center';
     }
     
-    const pageTitle = currentTab.title || 'Page';
-    const pageUrl = currentTab.url || '';
+    if (uploadArea) uploadArea.style.display = 'none';
+    if (imageWrapper) imageWrapper.style.display = 'block';
+    if (divider) divider.style.display = 'none';
+    if (divider2) divider2.style.display = 'none';
+    if (screenshotBtn) screenshotBtn.style.display = 'none';
     
-    chrome.tabs.sendMessage(currentTab.id, {
-      action: 'summarize'
-    }, (response) => {
-      if (chrome.runtime.lastError) {
-        console.error('Error getting page summary:', chrome.runtime.lastError);
-        return;
-      }
+    // Result section will be shown by processOCR when text is extracted
+    // Only show result if image is available
+    if (result && imageWrapper && imageWrapper.style.display !== 'none') {
+      // Result will be shown after OCR processing
+    } else if (result) {
+      result.style.display = 'none';
+    }
+  }
+  
+  async function processOCR(imageDataUrl) {
+    const result = document.getElementById('sider-ocr-result');
+    const resultContent = document.getElementById('sider-ocr-result-content');
+    const imageWrapper = document.getElementById('sider-ocr-image-wrapper');
+    
+    if (!result || !resultContent) return;
+    
+    // Only show result if image is available
+    if (!imageWrapper || imageWrapper.style.display === 'none') {
+      result.style.display = 'none';
+      return;
+    }
+    
+    // Show loading state
+    resultContent.textContent = 'Processing OCR...';
+    result.style.display = 'block';
+    
+    try {
+      // Call OCR API or service
+      // For now, using a placeholder - you'll need to integrate with an actual OCR service
+      // Examples: Tesseract.js (client-side), Google Cloud Vision API, AWS Textract, etc.
       
-      const summarizePrompt = response && response.summary 
-        ? response.summary 
-        : `Summarize this page: ${pageTitle}\n\nURL: ${pageUrl}`;
+      // Simulate OCR processing (replace with actual OCR call)
+      const extractedText = await performOCR(imageDataUrl);
       
-      addMessage('user', `📄 Summarize: ${pageTitle}`);
+      ocrExtractedText = extractedText;
+      resultContent.textContent = extractedText || 'No text detected in the image.';
       
-      const thinkingMsg = addMessage('assistant', 'Thinking...', true);
-      
-      chrome.runtime.sendMessage({
-        type: 'CHAT_REQUEST',
-        message: summarizePrompt,
-        model: currentModel || 'chatgpt'
-      }, (response) => {
-        if (response && response.error) {
-          updateMessage(thinkingMsg, 'assistant', `Error: ${response.error}`);
-        } else if (response && response.text) {
-          updateMessage(thinkingMsg, 'assistant', response.text);
-        } else {
-          updateMessage(thinkingMsg, 'assistant', 'Unable to generate summary. Please try again.');
-        }
-      });
+    } catch (error) {
+      console.error('OCR processing error:', error);
+      resultContent.textContent = 'Error processing image. Please try again.';
+    }
+  }
+  
+  async function performOCR(imageDataUrl) {
+    // Placeholder OCR function
+    // Replace this with actual OCR implementation
+    // Options:
+    // 1. Tesseract.js (client-side, free)
+    // 2. Google Cloud Vision API
+    // 3. AWS Textract
+    // 4. Azure Computer Vision
+    // 5. Your own backend OCR service
+    
+    // For now, return a placeholder message
+    return new Promise((resolve) => {
+      setTimeout(() => {
+        // Simulate OCR result
+        resolve('OCR text extraction would appear here.\n\nTo implement actual OCR, integrate with:\n- Tesseract.js (client-side)\n- Google Cloud Vision API\n- AWS Textract\n- Azure Computer Vision\n- Or your own OCR service');
+      }, 1000);
     });
   }
+  
+  function setupOCREventListeners() {
+    const ocrFileInput = document.getElementById('sider-ocr-file-input');
+    const ocrUploadZone = document.getElementById('sider-ocr-upload-zone');
+    const ocrDeleteBtn = document.getElementById('sider-ocr-delete');
+    const ocrUploadNewBtn = document.getElementById('sider-ocr-upload-new');
+    const ocrScreenshotActionBtn = document.getElementById('sider-ocr-screenshot-action');
+    const ocrZoomInBtn = document.getElementById('sider-ocr-zoom-in');
+    const ocrZoomOutBtn = document.getElementById('sider-ocr-zoom-out');
+    const ocrZoomTargetBtn = document.getElementById('sider-ocr-zoom-target');
+    const ocrCopyBtn = document.getElementById('sider-ocr-copy');
+    const ocrPasteBtn = document.getElementById('sider-ocr-paste');
+    const ocrRefreshBtn = document.getElementById('sider-ocr-refresh');
+    const ocrEditBtn = document.getElementById('sider-ocr-edit');
+    const ocrSpeakerBtn = document.getElementById('sider-ocr-speaker');
+    const ocrChatBtn = document.getElementById('sider-ocr-chat');
+    const ocrScreenshotBtn = document.getElementById('sider-ocr-screenshot');
+    
+    // File input
+    if (ocrFileInput) {
+      ocrFileInput.addEventListener('change', (e) => {
+        const file = e.target.files[0];
+        if (file) {
+          handleOCRFileUpload(file);
+        }
+      });
+    }
+    
+    // Upload zone click
+    if (ocrUploadZone) {
+      ocrUploadZone.addEventListener('click', () => {
+        if (ocrFileInput) {
+          ocrFileInput.click();
+        }
+      });
+      
+      // Drag and drop
+      ocrUploadZone.addEventListener('dragover', (e) => {
+        e.preventDefault();
+        ocrUploadZone.classList.add('dragover');
+      });
+      
+      ocrUploadZone.addEventListener('dragleave', () => {
+        ocrUploadZone.classList.remove('dragover');
+      });
+      
+      ocrUploadZone.addEventListener('drop', (e) => {
+        e.preventDefault();
+        ocrUploadZone.classList.remove('dragover');
+        const file = e.dataTransfer.files[0];
+        if (file) {
+          handleOCRFileUpload(file);
+        }
+      });
+    }
+    
+    // Delete button
+    if (ocrDeleteBtn) {
+      ocrDeleteBtn.addEventListener('click', () => {
+        resetOCR();
+      });
+    }
+    
+    // Upload new button
+    if (ocrUploadNewBtn) {
+      ocrUploadNewBtn.addEventListener('click', () => {
+        if (ocrFileInput) {
+          ocrFileInput.click();
+        }
+      });
+    }
+    
+    // Screenshot button
+    if (ocrScreenshotActionBtn) {
+      ocrScreenshotActionBtn.addEventListener('click', () => {
+        startScreenshotMode();
+      });
+    }
+    
+    // Zoom controls
+    if (ocrZoomInBtn) {
+      ocrZoomInBtn.addEventListener('click', () => {
+        ocrImageScale = Math.min(ocrImageScale + 0.1, 3);
+        const ocrImage = document.getElementById('sider-ocr-image');
+        if (ocrImage) {
+          ocrImage.style.transform = `scale(${ocrImageScale})`;
+          ocrImage.style.transformOrigin = 'center center';
+        }
+      });
+    }
+    
+    if (ocrZoomOutBtn) {
+      ocrZoomOutBtn.addEventListener('click', () => {
+        ocrImageScale = Math.max(ocrImageScale - 0.1, 0.5);
+        const ocrImage = document.getElementById('sider-ocr-image');
+        if (ocrImage) {
+          ocrImage.style.transform = `scale(${ocrImageScale})`;
+          ocrImage.style.transformOrigin = 'center center';
+        }
+      });
+    }
+    
+    if (ocrZoomTargetBtn) {
+      ocrZoomTargetBtn.addEventListener('click', () => {
+        ocrImageScale = 1;
+        const ocrImage = document.getElementById('sider-ocr-image');
+        if (ocrImage) {
+          ocrImage.style.transform = `scale(${ocrImageScale})`;
+          ocrImage.style.transformOrigin = 'center center';
+        }
+      });
+    }
+    
+    // Copy button
+    if (ocrCopyBtn) {
+      ocrCopyBtn.addEventListener('click', async () => {
+        if (ocrExtractedText) {
+          try {
+            await navigator.clipboard.writeText(ocrExtractedText);
+            const originalTitle = ocrCopyBtn.getAttribute('title');
+            ocrCopyBtn.setAttribute('title', 'Copied!');
+            setTimeout(() => {
+              ocrCopyBtn.setAttribute('title', originalTitle || 'Copy');
+            }, 2000);
+          } catch (err) {
+            console.error('Failed to copy:', err);
+            alert('Failed to copy text. Please try again.');
+          }
+        }
+      });
+    }
+    
+    // Paste button
+    if (ocrPasteBtn) {
+      ocrPasteBtn.addEventListener('click', async () => {
+        try {
+          const text = await navigator.clipboard.readText();
+          const resultContent = document.getElementById('sider-ocr-result-content');
+          if (resultContent) {
+            resultContent.textContent = text;
+            ocrExtractedText = text;
+          }
+        } catch (err) {
+          console.error('Failed to paste:', err);
+          alert('Failed to paste text. Please try again.');
+        }
+      });
+    }
+    
+    // Refresh button
+    if (ocrRefreshBtn) {
+      ocrRefreshBtn.addEventListener('click', () => {
+        const ocrImage = document.getElementById('sider-ocr-image');
+        if (ocrImage && ocrImage.src) {
+          processOCR(ocrImage.src);
+        }
+      });
+    }
+    
+    // Edit button
+    if (ocrEditBtn) {
+      ocrEditBtn.addEventListener('click', () => {
+        const resultContent = document.getElementById('sider-ocr-result-content');
+        if (resultContent) {
+          resultContent.contentEditable = resultContent.contentEditable === 'true' ? 'false' : 'true';
+          if (resultContent.contentEditable === 'true') {
+            resultContent.focus();
+            ocrEditBtn.style.background = '#8b5cf6';
+            ocrEditBtn.style.color = '#ffffff';
+          } else {
+            ocrExtractedText = resultContent.textContent;
+            ocrEditBtn.style.background = '';
+            ocrEditBtn.style.color = '';
+          }
+        }
+      });
+    }
+    
+    // Speaker button (read aloud)
+    if (ocrSpeakerBtn) {
+      ocrSpeakerBtn.addEventListener('click', () => {
+        if (ocrExtractedText && 'speechSynthesis' in window) {
+          const utterance = new SpeechSynthesisUtterance(ocrExtractedText);
+          speechSynthesis.speak(utterance);
+        } else {
+          alert('Text-to-speech is not supported in this browser.');
+        }
+      });
+    }
+    
+    // Chat button
+    if (ocrChatBtn) {
+      ocrChatBtn.addEventListener('click', () => {
+        if (ocrExtractedText) {
+          // Switch to chat tab first
+          switchToTab('chat');
+          
+          // Wait for tab switch to complete, then set input value
+          setTimeout(() => {
+          const input = document.getElementById('sider-chat-input');
+          if (input) {
+            input.value = `Extract and analyze this text from the image:\n\n${ocrExtractedText}`;
+              
+              // Auto-resize and update UI
+              if (window.SiderChatTab) {
+                window.SiderChatTab.autoResize(input);
+              }
+              if (window.toggleMicSendButton) {
+                window.toggleMicSendButton();
+              }
+              
+              // Focus the input and scroll into view
+              input.focus();
+              input.scrollIntoView({ behavior: 'smooth', block: 'end' });
+              
+              // Ensure input is visible by scrolling to bottom
+              const inputArea = input.closest('.sider-input-area');
+              if (inputArea) {
+                inputArea.scrollTop = inputArea.scrollHeight;
+              }
+            }
+          }, 100);
+            
+            // Optionally auto-send
+            // sendMessage();
+        }
+      });
+    }
+    
+    // Screenshot button
+    if (ocrScreenshotBtn) {
+      ocrScreenshotBtn.addEventListener('click', () => {
+        startScreenshotMode();
+      });
+    }
+  }
+  
+  // Chat message functions moved to chat-tab.js component
   
   function toggleProfileDropdown() {
     const profileDropdown = document.getElementById('sider-profile-dropdown');
@@ -676,533 +1060,62 @@
     }
   }
   
-  function handleImageAction(action, src, alt) {
-    const input = document.getElementById('sider-chat-input');
-    if (!input) return;
-    
-    switch (action) {
-      case 'extract-text':
-        input.value = 'Extract all text from this image';
-        autoResize(input);
-        if (window.toggleMicSendButton) window.toggleMicSendButton();
-        break;
-      case 'math-solver':
-        input.value = 'Solve the math problems in this image';
-        autoResize(input);
-        if (window.toggleMicSendButton) window.toggleMicSendButton();
-        break;
-      case 'translate-image':
-        input.value = 'Translate all text in this image to English';
-        autoResize(input);
-        if (window.toggleMicSendButton) window.toggleMicSendButton();
-        break;
-    }
-    input.focus();
-  }
+  // Chat image and text selection functions moved to chat-tab.js component
   
-  function setupImagePreviewCloseButton() {
-    const closeBtn = document.getElementById('sider-image-preview-close');
-    const imagePreviewSection = document.getElementById('sider-image-preview-section');
-    const imageThumb = document.getElementById('sider-image-preview-thumb');
-    
-    if (closeBtn && imagePreviewSection && imageThumb) {
-      const newCloseBtn = closeBtn.cloneNode(true);
-      closeBtn.parentNode.replaceChild(newCloseBtn, closeBtn);
-      
-      newCloseBtn.onclick = (e) => {
-        e.stopPropagation();
-        e.preventDefault();
-        imagePreviewSection.style.display = 'none';
-        imageThumb.src = '';
-        imageThumb.alt = '';
-      };
-    }
-  }
-  
-  function showImagePreview(src, alt = 'Image') {
-    const imagePreviewSection = document.getElementById('sider-image-preview-section');
-    const selectedTextSection = document.getElementById('sider-selected-text-section');
-    const input = document.getElementById('sider-chat-input');
-    
-    if (selectedTextSection) {
-      selectedTextSection.style.display = 'none';
-    }
-    
-    if (imagePreviewSection) {
-      const imagesContainer = imagePreviewSection.querySelector('div:first-child');
-      if (!imagesContainer) return;
-      const imageWrapper = document.createElement('div');
-      imageWrapper.style.position = 'relative';
-      imageWrapper.style.flexShrink = '0';
-      imageWrapper.className = 'sider-image-preview-item';
-      imageWrapper.setAttribute('data-image-src', src);
-      imageWrapper.setAttribute('data-image-alt', alt);
-      
-      const imageThumb = document.createElement('img');
-      imageThumb.src = src;
-      imageThumb.alt = alt || 'Image';
-      imageThumb.style.width = '60px';
-      imageThumb.style.height = '60px';
-      imageThumb.style.objectFit = 'cover';
-      imageThumb.style.borderRadius = '8px';
-      imageThumb.style.border = '1px solid #e5e7eb';
-      imageThumb.style.display = 'block';
-      
-      const closeBtn = document.createElement('button');
-      closeBtn.className = 'sider-image-preview-close-btn';
-      closeBtn.title = 'Remove image';
-      closeBtn.style.cssText = 'position: absolute; top: -8px; right: -8px; width: 24px; height: 24px; border-radius: 50%; background: #ffffff; border: 1px solid #d1d5db; box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1); cursor: pointer; display: flex; align-items: center; justify-content: center; padding: 0; font-size: 14px; color: #6b7280; transition: all 0.2s; z-index: 10;';
-      closeBtn.innerHTML = `
-        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-          <line x1="18" y1="6" x2="6" y2="18"></line>
-          <line x1="6" y1="6" x2="18" y2="18"></line>
-        </svg>
-      `;
-      
-      closeBtn.onclick = (e) => {
-        e.stopPropagation();
-        e.preventDefault();
-        imageWrapper.remove();
-        const remainingImages = imagesContainer.querySelectorAll('.sider-image-preview-item');
-        if (remainingImages.length === 0) {
-          imagePreviewSection.style.display = 'none';
-        }
-      };
-      
-      imageWrapper.appendChild(imageThumb);
-      imageWrapper.appendChild(closeBtn);
-      
-      let imagesRow = imagesContainer.querySelector('.sider-images-row');
-      if (!imagesRow) {
-        imagesRow = document.createElement('div');
-        imagesRow.style.cssText = 'display: flex; flex-direction: row; gap: 8px; align-items: flex-start; flex-wrap: wrap;';
-        imagesRow.className = 'sider-images-row';
-        const actionButtonsDiv = imagesContainer.querySelector('div:last-child');
-        if (actionButtonsDiv && actionButtonsDiv.querySelector('.sider-image-action-btn')) {
-          imagesContainer.insertBefore(imagesRow, actionButtonsDiv);
-        } else {
-          imagesContainer.insertBefore(imagesRow, imagesContainer.firstChild);
-        }
-      }
-      
-      imagesRow.appendChild(imageWrapper);
-      imagePreviewSection.style.display = 'block';
-      
-      if (input) {
-        input.value = '';
-        input.placeholder = 'Ask anything, @models, / prompts';
-        autoResize(input);
-        if (window.toggleMicSendButton) window.toggleMicSendButton();
-      }
-      
-      const imageActionBtns = imagePreviewSection.querySelectorAll('.sider-image-action-btn');
-      imageActionBtns.forEach(btn => {
-        btn.onclick = (e) => {
-          e.stopPropagation();
-          const action = btn.getAttribute('data-action');
-          const allImages = Array.from(imagesContainer.querySelectorAll('.sider-image-preview-item')).map(item => ({
-            src: item.getAttribute('data-image-src'),
-            alt: item.getAttribute('data-image-alt')
-          }));
-          handleImageAction(action, allImages.length === 1 ? allImages[0].src : allImages, allImages.length === 1 ? allImages[0].alt : 'Images');
-        };
-      });
-    }
-  }
-  
-  // Listen for screenshot and chat with image from content script
+  // Listen for screenshot - handle OCR only (chat is handled by ChatTab component)
   chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
     if (request.type === 'SCREENSHOT_CAPTURED' && request.dataUrl) {
-      showImagePreview(request.dataUrl, `screenshot-${Date.now()}.png`);
-    } else if (request.type === 'CHAT_WITH_IMAGE') {
-      if (request.dataUrl) {
-        // Image is already a data URL
-        showImagePreview(request.dataUrl, request.alt || 'Image');
-      } else if (request.imageUrl) {
-        // Image is a URL, need to convert to data URL
-        convertImageUrlToDataUrl(request.imageUrl).then(dataUrl => {
-          showImagePreview(dataUrl, request.alt || 'Image');
-        }).catch(err => {
-          console.error('Error loading image:', err);
-          // Fallback: try to show the URL directly (may not work due to CORS)
-          showImagePreview(request.imageUrl, request.alt || 'Image');
-        });
+      // Check if OCR is open
+      const ocrContainer = document.getElementById('sider-ocr-container');
+      if (ocrContainer && ocrContainer.style.display !== 'none') {
+        // Handle screenshot in OCR
+        displayOCRImage(request.dataUrl);
+        processOCR(request.dataUrl);
       }
+      // Chat screenshots are now handled by ChatTab component's message listener
     }
     return false;
   });
-  
-  // Helper function to convert image URL to data URL
-  function convertImageUrlToDataUrl(url) {
-    return new Promise((resolve, reject) => {
-      const img = new Image();
-      img.crossOrigin = 'anonymous';
-      img.onload = function() {
-        try {
-          const canvas = document.createElement('canvas');
-          canvas.width = img.width;
-          canvas.height = img.height;
-          const ctx = canvas.getContext('2d');
-          ctx.drawImage(img, 0, 0);
-          resolve(canvas.toDataURL('image/png'));
-        } catch (e) {
-          reject(e);
-        }
-      };
-      img.onerror = () => {
-        // Try using fetch as fallback
-        fetch(url)
-          .then(response => response.blob())
-          .then(blob => {
-            const reader = new FileReader();
-            reader.onloadend = () => resolve(reader.result);
-            reader.onerror = reject;
-            reader.readAsDataURL(blob);
-          })
-          .catch(reject);
-      };
-      img.src = url;
-    });
-  }
-  
-  // Listen for text action from toolbar
-  chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
-    if (request.type === 'TEXT_ACTION') {
-      const input = document.getElementById('sider-chat-input');
-      if (!input) return false;
-      
-      if (request.action === 'analyze') {
-        // Show selected text section and set up for analysis
-        const selectedTextSection = document.getElementById('sider-selected-text-section');
-        const selectedTextDisplay = document.getElementById('sider-selected-text-display');
-        if (selectedTextSection && selectedTextDisplay) {
-          selectedTextDisplay.textContent = request.text;
-          selectedTextSection.style.display = 'block';
-        }
-        input.value = `Analyze this text: "${request.text}"`;
-        autoResize(input);
-        if (window.toggleMicSendButton) window.toggleMicSendButton();
-        setTimeout(() => sendMessage(), 200);
-      } else if (request.action === 'prompt' && request.prompt) {
-        // Show selected text section and set up with prompt
-        const selectedTextSection = document.getElementById('sider-selected-text-section');
-        const selectedTextDisplay = document.getElementById('sider-selected-text-display');
-        if (selectedTextSection && selectedTextDisplay) {
-          selectedTextDisplay.textContent = request.text;
-          selectedTextSection.style.display = 'block';
-        }
-        input.value = `${request.prompt}: "${request.text}"`;
-        autoResize(input);
-        if (window.toggleMicSendButton) window.toggleMicSendButton();
-        setTimeout(() => sendMessage(), 200);
-      } else if (request.action === 'add-note') {
-        // Handle add to notes action
-        const selectedTextSection = document.getElementById('sider-selected-text-section');
-        const selectedTextDisplay = document.getElementById('sider-selected-text-display');
-        if (selectedTextSection && selectedTextDisplay) {
-          selectedTextDisplay.textContent = request.text;
-          selectedTextSection.style.display = 'block';
-        }
-        input.value = `Add to notes: "${request.text}"`;
-        autoResize(input);
-        if (window.toggleMicSendButton) window.toggleMicSendButton();
-      }
-      return false;
-    }
-    
-    if (request.type === 'TEXT_SELECTED' && request.text) {
-      const selectedTextSection = document.getElementById('sider-selected-text-section');
-      const selectedTextDisplay = document.getElementById('sider-selected-text-display');
-      const removeSelectionBtn = document.getElementById('sider-remove-selection-btn');
-      const input = document.getElementById('sider-chat-input');
-      const actionButtons = document.querySelectorAll('.sider-action-btn');
-      const moreActionsBtn = document.getElementById('sider-more-actions-btn');
-      
-      if (selectedTextSection && selectedTextDisplay && input) {
-        selectedTextDisplay.textContent = request.text;
-        selectedTextSection.style.display = 'block';
-        
-        if (removeSelectionBtn) {
-          removeSelectionBtn.onclick = () => {
-            selectedTextSection.style.display = 'none';
-            input.value = '';
-            autoResize(input);
-            if (window.toggleMicSendButton) window.toggleMicSendButton();
-          };
-        }
-        
-        actionButtons.forEach(btn => {
-          if (btn.id !== 'sider-more-actions-btn') {
-            btn.onclick = (e) => {
-              e.stopPropagation();
-              const action = btn.getAttribute('data-action');
-              if (action && request.text) {
-                handleSelectionAction(action, request.text);
-              }
-            };
-          }
-        });
-        
-        if (moreActionsBtn) {
-          moreActionsBtn.onclick = (e) => {
-            e.stopPropagation();
-            showMoreSelectionActions(request.text);
-          };
-        }
-      }
-    }
-    return false;
-  });
-  
-  function handleSelectionAction(action, text) {
-    if (!text) return;
-    
-    const input = document.getElementById('sider-chat-input');
-    
-    switch (action) {
-      case 'explain':
-        if (input) {
-          input.value = `Explain this text: "${text}"`;
-          autoResize(input);
-          if (window.toggleMicSendButton) window.toggleMicSendButton();
-          setTimeout(() => sendMessage(), 200);
-        }
-        break;
-      case 'translate':
-        if (input) {
-          input.value = `Translate to English: "${text}"`;
-          autoResize(input);
-          if (window.toggleMicSendButton) window.toggleMicSendButton();
-          setTimeout(() => sendMessage(), 200);
-        }
-        break;
-      case 'summarize':
-        if (input) {
-          input.value = `Summarize this text: "${text}"`;
-          autoResize(input);
-          if (window.toggleMicSendButton) window.toggleMicSendButton();
-          setTimeout(() => sendMessage(), 200);
-        }
-        break;
-    }
-  }
-  
-  function showMoreSelectionActions(text) {
-    const menu = document.createElement('div');
-    menu.className = 'sider-more-actions-menu';
-    menu.style.cssText = `
-      position: fixed;
-      background: #ffffff;
-      border: 1px solid #e5e7eb;
-      border-radius: 8px;
-      box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
-      padding: 8px;
-      z-index: 1000;
-      min-width: 180px;
-    `;
-    
-    const actions = [
-      { label: 'Copy', action: 'copy' },
-      { label: 'Highlight', action: 'highlight' },
-      { label: 'Read aloud', action: 'readaloud' },
-      { label: 'Answer this question', action: 'answer' },
-      { label: 'Explain codes', action: 'explaincodes' }
-    ];
-    
-    actions.forEach(item => {
-      const btn = document.createElement('button');
-      btn.style.cssText = `
-        width: 100%;
-        text-align: left;
-        padding: 10px 12px;
-        background: transparent;
-        border: none;
-        cursor: pointer;
-        font-size: 14px;
-        color: #111827;
-        border-radius: 6px;
-      `;
-      btn.textContent = item.label;
-      btn.onmouseover = () => btn.style.background = '#f3f4f6';
-      btn.onmouseout = () => btn.style.background = 'transparent';
-      btn.onclick = () => {
-        handleSelectionAction(item.action, text);
-        if (menu.parentNode) {
-          document.body.removeChild(menu);
-        }
-      };
-      menu.appendChild(btn);
-    });
-    
-    const moreBtn = document.getElementById('sider-more-actions-btn');
-    if (moreBtn) {
-      const rect = moreBtn.getBoundingClientRect();
-      menu.style.top = `${rect.bottom + 4}px`;
-      menu.style.left = `${rect.left}px`;
-      document.body.appendChild(menu);
-      
-      const removeMenu = (e) => {
-        if (!menu.contains(e.target) && e.target !== moreBtn) {
-          if (menu.parentNode) {
-            document.body.removeChild(menu);
-          }
-          document.removeEventListener('click', removeMenu);
-        }
-      };
-      setTimeout(() => document.addEventListener('click', removeMenu), 0);
-    }
-  }
   
   function initializePanel() {
     // Get current tab
     getCurrentTab().then(tab => {
       currentTab = tab;
+      if (window.SiderChatTab) {
+        window.SiderChatTab.updateCurrentTab(tab);
+      }
       updatePageTitle();
     });
     
-    // Set icon sources
-    const aiIconImg = document.getElementById('sider-ai-icon-img');
-    if (aiIconImg) {
-      aiIconImg.src = chrome.runtime.getURL('icons/fusion.png');
+    // Show input footer by default since chat is the default tab
+    toggleInputFooter(true);
+    
+    // Icon sources are now set up in chat-tab.js after HTML is loaded
+    const ocrScreenshotActionIcon = document.getElementById('sider-ocr-screenshot-action-icon');
+    if (ocrScreenshotActionIcon) {
+      ocrScreenshotActionIcon.src = chrome.runtime.getURL('icons/cut.png');
     }
-    const screenshotIcon = document.getElementById('sider-screenshot-icon');
-    if (screenshotIcon) {
-      screenshotIcon.src = chrome.runtime.getURL('icons/cut.png');
+    const ocrScreenshotIcon = document.getElementById('sider-ocr-screenshot-icon');
+    if (ocrScreenshotIcon) {
+      ocrScreenshotIcon.src = chrome.runtime.getURL('icons/cut.png');
     }
     
-    const chatInput = document.getElementById('sider-chat-input');
-    const aiSelectorBtn = document.getElementById('sider-ai-selector-btn');
-    const aiDropdown = document.getElementById('sider-ai-dropdown');
-    const screenshotBtn = document.getElementById('sider-screenshot-btn');
-    const attachBtn = document.getElementById('sider-attach-btn');
-    const readPageBtn = document.getElementById('sider-read-page-btn');
-    const newChatBtn = document.getElementById('sider-new-chat-btn');
-    const micBtn = document.getElementById('sider-mic-btn');
-    fileInput = document.getElementById('sider-file-input');
-    
-    // New Chat button
-    newChatBtn?.addEventListener('click', () => {
-      createNewChat();
-    });
-    
-    // Bottom action buttons
-    const bottomActionBtns = document.querySelectorAll('.sider-bottom-action-btn');
-    bottomActionBtns.forEach(btn => {
-      btn.addEventListener('click', (e) => {
-        e.stopPropagation();
-        const action = btn.getAttribute('data-action');
-        const input = document.getElementById('sider-chat-input');
-        if (action === 'think' && input) {
-          input.value = input.value ? input.value + ' [Think step by step]' : '[Think step by step]';
-          autoResize(input);
-          if (window.toggleMicSendButton) window.toggleMicSendButton();
-        } else if (action === 'deep-research') {
-          if (input) {
-            input.value = input.value ? input.value + ' [Deep Research]' : '[Deep Research]';
-            autoResize(input);
-            if (window.toggleMicSendButton) window.toggleMicSendButton();
-          }
-        }
+    // Initialize ChatTab component
+    if (window.SiderChatTab) {
+      window.SiderChatTab.init({
+        currentModel: currentModel,
+        currentTab: currentTab,
+        requireAuth: requireAuth,
+        getCurrentTab: getCurrentTab,
+        updatePageTitle: updatePageTitle
       });
-    });
-    
-    // Microphone button
-    micBtn?.addEventListener('click', (e) => {
-      e.stopPropagation();
-      // Voice input feature not implemented
-    });
-    
-    // Send button
-    const sendBtn = document.getElementById('sider-send-btn');
-    sendBtn?.addEventListener('click', (e) => {
-      e.stopPropagation();
-      e.preventDefault();
-      sendMessage();
-    });
-    
-    // Toggle mic/send button
-    window.toggleMicSendButton = function() {
-      const input = document.getElementById('sider-chat-input');
-      const micButton = document.getElementById('sider-mic-btn');
-      const sendButton = document.getElementById('sider-send-btn');
-      
-      if (!input || !micButton || !sendButton) {
-        setTimeout(() => {
-          if (window.toggleMicSendButton) window.toggleMicSendButton();
-        }, 100);
-        return;
-      }
-      
-      const hasText = input.value && input.value.trim().length > 0;
-      
-      if (hasText) {
-        micButton.style.setProperty('display', 'none', 'important');
-        sendButton.style.setProperty('display', 'flex', 'important');
-      } else {
-        micButton.style.setProperty('display', 'flex', 'important');
-        sendButton.style.setProperty('display', 'none', 'important');
-      }
-    };
-    
-    const toggleMicSendButton = window.toggleMicSendButton;
-    
-    chatInput?.addEventListener('input', (e) => {
-      autoResize(e.target);
-      toggleMicSendButton();
-    });
-    
-    chatInput?.addEventListener('keydown', (e) => {
-      if (e.key === 'Enter' && !e.shiftKey) {
-        e.preventDefault();
-        sendMessage();
-      } else {
-        autoResize(e.target);
-        setTimeout(() => {
-          toggleMicSendButton();
-        }, 0);
-      }
-    });
-    
-    chatInput?.addEventListener('paste', (e) => {
-      setTimeout(() => {
-        autoResize(e.target);
-        toggleMicSendButton();
-      }, 0);
-    });
-    
-    if (chatInput) {
-      toggleMicSendButton();
-      setTimeout(() => {
-        autoResize(chatInput);
-        toggleMicSendButton();
-      }, 100);
-    } else {
-      toggleMicSendButton();
     }
     
-    // AI Model Selector
-    aiSelectorBtn?.addEventListener('click', (e) => {
-      e.stopPropagation();
-      if (window.SiderAIModules) {
-        window.SiderAIModules.open();
-      } else {
-        const isVisible = aiDropdown.style.display !== 'none';
-        aiDropdown.style.display = isVisible ? 'none' : 'block';
-      }
-    });
+    // Screenshot button is now handled by ChatTab component
+    // The event listeners are set up in chat-tab.js after HTML is loaded
     
-    // AI dropdown options
-    const aiOptions = aiDropdown?.querySelectorAll('.sider-ai-option');
-    aiOptions?.forEach(option => {
-      option.addEventListener('click', (e) => {
-        e.stopPropagation();
-        const model = option.getAttribute('data-model');
-        currentModel = model;
-        updateAISelectorIcon(model);
-        aiDropdown.style.display = 'none';
-        chrome.storage.sync.set({ sider_selected_model: model });
-      });
-    });
+    // AI Model Selector is now handled by ChatTab component
+    // The event listeners are set up in chat-tab.js after HTML is loaded
     
     // Initialize AI Modules if available
     if (window.SiderAIModules) {
@@ -1210,9 +1123,14 @@
         (model) => {
           currentModel = model;
           updateAISelectorIcon(model);
+          if (window.SiderChatTab) {
+            window.SiderChatTab.updateModel(model);
+          }
         },
         (model, text) => {
-          addMessage('assistant', `[${model}] ${text}`);
+          if (window.SiderChatTab) {
+            window.SiderChatTab.addMessage('assistant', `[${model}] ${text}`);
+          }
         }
       );
     }
@@ -1222,6 +1140,9 @@
       if (result.sider_selected_model) {
         currentModel = result.sider_selected_model;
         updateAISelectorIcon(currentModel);
+        if (window.SiderChatTab) {
+          window.SiderChatTab.updateModel(currentModel);
+        }
       }
     });
     
@@ -1263,46 +1184,10 @@
       }
     }
     
-    // File attachment
-    attachBtn?.addEventListener('click', () => {
-      fileInput?.click();
-    });
+    // File attachment and read page are now handled by ChatTab component
+    // Screenshot button is now handled by ChatTab component
     
-    fileInput?.addEventListener('change', (e) => {
-      const files = Array.from(e.target.files);
-      handleFileAttachments(files);
-    });
-    
-    // Read page
-    readPageBtn?.addEventListener('click', () => {
-      readCurrentPage();
-    });
-    
-    // Screenshot button
-    screenshotBtn?.addEventListener('click', (e) => {
-      e.stopPropagation();
-      startScreenshotMode();
-    });
-    
-    // Chat control button
-    const filterBtn = document.getElementById('sider-filter-btn');
-    const chatControlsPopup = document.getElementById('sider-chat-controls-popup');
-    
-    filterBtn?.addEventListener('click', (e) => {
-      e.stopPropagation();
-      if (chatControlsPopup) {
-        const isVisible = chatControlsPopup.style.display !== 'none';
-        chatControlsPopup.style.display = isVisible ? 'none' : 'block';
-      }
-    });
-    
-    document.addEventListener('click', (e) => {
-      if (chatControlsPopup && chatControlsPopup.style.display !== 'none') {
-        if (!chatControlsPopup.contains(e.target) && !filterBtn?.contains(e.target)) {
-          chatControlsPopup.style.display = 'none';
-        }
-      }
-    });
+    // Chat control button is now handled in chat-tab.js after HTML is loaded
     
     // Generation Model Selection Modal
     const imageModelBtn = document.getElementById('sider-image-model-btn');
@@ -1351,15 +1236,100 @@
       }
     });
     
+    // Custom Instructions Modal
+    const customInstructionsEditIcon = document.querySelector('.sider-chat-controls-edit-icon');
+    const customInstructionsModal = document.getElementById('sider-custom-instructions-modal');
+    const customInstructionsTextarea = document.getElementById('sider-custom-instructions-textarea');
+    const customInstructionsClose = document.getElementById('sider-custom-instructions-close');
+    const customInstructionsCancel = document.getElementById('sider-custom-instructions-cancel');
+    const customInstructionsSave = document.getElementById('sider-custom-instructions-save');
+    
+    // Load saved custom instructions
+    chrome.storage.sync.get(['sider_custom_instructions'], (result) => {
+      if (customInstructionsTextarea && result.sider_custom_instructions) {
+        customInstructionsTextarea.value = result.sider_custom_instructions;
+      }
+    });
+    
+    // Open modal when edit icon is clicked
+    customInstructionsEditIcon?.addEventListener('click', (e) => {
+      e.stopPropagation();
+      if (customInstructionsModal) {
+        customInstructionsModal.style.display = 'flex';
+        // Focus textarea when modal opens
+        setTimeout(() => {
+          if (customInstructionsTextarea) {
+            customInstructionsTextarea.focus();
+          }
+        }, 100);
+      }
+    });
+    
+    // Close modal functions
+    const closeCustomInstructionsModal = () => {
+      if (customInstructionsModal) {
+        customInstructionsModal.style.display = 'none';
+      }
+    };
+    
+    customInstructionsClose?.addEventListener('click', closeCustomInstructionsModal);
+    customInstructionsCancel?.addEventListener('click', closeCustomInstructionsModal);
+    
+    // Save custom instructions
+    customInstructionsSave?.addEventListener('click', () => {
+      if (customInstructionsTextarea) {
+        const instructions = customInstructionsTextarea.value.trim();
+        chrome.storage.sync.set({ sider_custom_instructions: instructions }, () => {
+          closeCustomInstructionsModal();
+        });
+      }
+    });
+    
+    // Close modal when clicking outside
+    document.addEventListener('click', (e) => {
+      if (customInstructionsModal && customInstructionsModal.style.display !== 'none') {
+        if (!customInstructionsModal.contains(e.target) && !customInstructionsEditIcon?.contains(e.target)) {
+          closeCustomInstructionsModal();
+        }
+      }
+    });
+    
+    // Close modal on Escape key
+    document.addEventListener('keydown', (e) => {
+      if (e.key === 'Escape' && customInstructionsModal && customInstructionsModal.style.display !== 'none') {
+        closeCustomInstructionsModal();
+      }
+    });
+    
     if (generationModelOptions && generationModelOptions.length > 0) {
       generationModelOptions[0].classList.add('sider-generation-model-option-selected');
     }
     
-    // Collapse Nav Bar button
+    // Collapse Nav Bar button - show popup with all Group 1 tabs
     const collapseNavbarBtn = document.getElementById('sider-collapse-navbar-btn');
     collapseNavbarBtn?.addEventListener('click', (e) => {
       e.stopPropagation();
-      toggleNavbar();
+      const popup = document.getElementById('sider-sidebar-popup');
+      if (popup) {
+        const isVisible = popup.style.display !== 'none';
+        if (isVisible) {
+          popup.style.display = 'none';
+        } else {
+          showSidebarPopup();
+        }
+      }
+    });
+    
+    // Sidebar icon click handlers
+    const sidebarIcons = document.querySelectorAll('.sider-panel-sidebar .sider-sidebar-icon[data-tab]');
+    sidebarIcons.forEach(icon => {
+      icon.addEventListener('click', (e) => {
+        e.stopPropagation();
+        const tabId = icon.getAttribute('data-tab');
+        if (tabId) {
+          switchToTab(tabId);
+        }
+      });
     });
     
     // Full page chat button
@@ -1414,14 +1384,16 @@
         hideSidebarPopup();
       });
       
-      // Popup items click handlers
-      const popupItems = sidebarPopup.querySelectorAll('.sider-sidebar-popup-item');
+      // Popup items click handlers - Group 1 tabs
+      const popupItems = sidebarPopup.querySelectorAll('#sider-group1-tabs-popup .sider-sidebar-popup-item[data-tab]');
       popupItems.forEach(item => {
         item.addEventListener('click', (e) => {
           e.stopPropagation();
-          const action = item.getAttribute('data-action');
-          handleSidebarAction(action);
+          const tabId = item.getAttribute('data-tab');
+          if (tabId) {
+            switchToTab(tabId);
           hideSidebarPopup();
+          }
         });
       });
     }
@@ -1437,9 +1409,27 @@
     if (moreOptionsIcon && moreOptionsPopup) {
       let moreOptionsTimeout;
       
+      // Function to filter out tabs already visible in sidebar
+      const filterMoreOptionsPopup = () => {
+        const allItems = moreOptionsPopup.querySelectorAll('.sider-more-options-item');
+        const visibleTabs = ['chat', 'agent', lastActiveGroup1Tab]; // Tabs always visible in sidebar
+        
+        allItems.forEach(item => {
+          const action = item.getAttribute('data-action');
+          if (visibleTabs.includes(action)) {
+            item.style.display = 'none';
+          } else {
+            item.style.display = 'flex';
+          }
+        });
+      };
+      
       const showMoreOptionsPopup = () => {
         clearTimeout(moreOptionsTimeout);
         if (moreOptionsIcon && moreOptionsPopup) {
+          // Filter out tabs already visible in sidebar
+          filterMoreOptionsPopup();
+          
           const iconRect = moreOptionsIcon.getBoundingClientRect();
           if (iconRect) {
             moreOptionsPopup.style.display = 'block';
@@ -1459,6 +1449,17 @@
           }
         }, 200);
       };
+      
+      // Click handler to toggle popup
+      moreOptionsIcon.addEventListener('click', (e) => {
+        e.stopPropagation();
+        const isVisible = moreOptionsPopup.style.display !== 'none';
+        if (isVisible) {
+          moreOptionsPopup.style.display = 'none';
+        } else {
+          showMoreOptionsPopup();
+        }
+      });
       
       moreOptionsIcon.addEventListener('mouseenter', () => {
         showMoreOptionsPopup();
@@ -1480,10 +1481,61 @@
       });
       
       const moreOptionsItems = moreOptionsPopup.querySelectorAll('.sider-more-options-item');
+      const selectedOptionIcon = document.getElementById('sider-selected-option-icon');
+      
+      // Map actions to their SVG icons
+      const actionIconMap = {
+        'chat': `<path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/>`,
+        'rec-note': `<path fill="currentColor" d="M17.372 15.366a.675.675 0 0 1 1.169.676 5 5 0 0 1-1.122 1.336 5 5 0 0 1-3.231 1.176 5 5 0 0 1-3.232-1.176 5 5 0 0 1-1.122-1.336.675.675 0 0 1 1.169-.676 3.7 3.7 0 0 0 .822.978 3.66 3.66 0 0 0 2.363.86c.9 0 1.724-.323 2.363-.86.327-.275.606-.606.821-.978M12.2.917c.828 0 1.494 0 2.031.043.547.045 1.027.14 1.472.366a3.75 3.75 0 0 1 1.638 1.639c.226.444.321.924.366 1.47.044.538.043 1.204.043 2.032v3.846l-.001.406a3.667 3.667 0 0 0-7.249.781v2q0 .15.013.299c-.326-.017-.66.05-.968.209H9.54l-.077.044a1.91 1.91 0 0 0-.696 2.608q.231.398.516.757H6.8c-.828 0-1.494 0-2.031-.043-.547-.045-1.027-.14-1.471-.366a3.75 3.75 0 0 1-1.64-1.638c-.225-.445-.32-.925-.365-1.472-.044-.537-.043-1.203-.043-2.031v-5.4c0-.828 0-1.494.043-2.031.045-.547.14-1.027.366-1.471a3.75 3.75 0 0 1 1.639-1.64c.444-.225.924-.32 1.47-.365C5.307.916 5.973.917 6.8.917zm1.967 8.25A2.333 2.333 0 0 1 16.5 11.5v2a2.333 2.333 0 0 1-4.667 0v-2a2.333 2.333 0 0 1 2.334-2.333"></path><path fill="#fff" d="M7.333 9.25a.75.75 0 1 1 0 1.5H5a.75.75 0 0 1 0-1.5zm3-4a.75.75 0 0 1 0 1.5H5a.75.75 0 0 1 0-1.5z"></path>`,
+        'agent': `<circle cx="12" cy="12" r="10"/><path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"/>`,
+        'write': `<path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/><polyline points="10 9 9 9 8 9"/>`,
+        'translate': `<rect x="3" y="3" width="18" height="18" rx="2"/><line x1="3" y1="9" x2="21" y2="9"/><line x1="9" y1="3" x2="9" y2="21"/><path d="M12 3v18M3 12h18"/>`,
+        'ocr': `<rect x="3" y="3" width="18" height="18" rx="2"/><line x1="7" y1="7" x2="17" y2="7"/><line x1="7" y1="11" x2="17" y2="11"/><line x1="7" y1="15" x2="12" y2="15"/>`,
+        'grammar': `<path d="M9 11l3 3L22 4"/><path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"/>`,
+        'ask': `<circle cx="12" cy="12" r="10"/><path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3"/><line x1="12" y1="17" x2="12.01" y2="17"/>`,
+        'search': `<circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/>`,
+        'tools': `<path d="M14.7 6.3a1 1 0 0 0 0 1.4l1.6 1.6a1 1 0 0 0 1.4 0l3.77-3.77a6 6 0 0 1-7.94 7.94l-6.91 6.91a2.12 2.12 0 0 1-3-3l6.91-6.91a6 6 0 0 1 7.94-7.94l-3.76 3.76z"/>`
+      };
+      
+      // Map actions to their labels
+      const actionLabelMap = {
+        'chat': 'Chat',
+        'rec-note': 'REC Note',
+        'agent': 'Agent',
+        'write': 'Write',
+        'translate': 'Translate',
+        'ocr': 'OCR',
+        'grammar': 'Grammar',
+        'ask': 'Ask',
+        'search': 'Search',
+        'tools': 'Tools'
+      };
+      
       moreOptionsItems.forEach(item => {
         item.addEventListener('click', (e) => {
           e.stopPropagation();
           const action = item.getAttribute('data-action');
+          const iconSvg = item.querySelector('.sider-more-options-icon svg');
+          
+          if (selectedOptionIcon && iconSvg && actionIconMap[action]) {
+            // Update the selected option icon
+            const selectedIconSvg = selectedOptionIcon.querySelector('svg');
+            if (selectedIconSvg) {
+              selectedIconSvg.innerHTML = actionIconMap[action];
+            }
+            
+            // Update title
+            selectedOptionIcon.setAttribute('title', actionLabelMap[action] || action);
+            
+            // Show the selected option icon
+            selectedOptionIcon.style.display = 'flex';
+          }
+          
+          // Handle Group 1 tabs
+          if (group1Tabs[action]) {
+            switchToTab(action);
+          }
+          
           console.log('More Options action:', action);
           moreOptionsPopup.style.display = 'none';
         });
@@ -1506,7 +1558,9 @@
     if (summarizeBtn) {
       summarizeBtn.addEventListener('click', (e) => {
         e.stopPropagation();
-        handleSummarizeClick();
+        if (window.SiderChatTab) {
+          window.SiderChatTab.handleSummarizeClick();
+        }
       });
     }
     
@@ -1549,6 +1603,24 @@
           aiDropdown.style.display = 'none';
         }
       }
+      
+      // Close sidebar popup when clicking outside
+      const sidebarPopup = document.getElementById('sider-sidebar-popup');
+      const collapseNavbarBtn = document.getElementById('sider-collapse-navbar-btn');
+      if (sidebarPopup && sidebarPopup.style.display !== 'none') {
+        if (!sidebarPopup.contains(e.target) && !collapseNavbarBtn?.contains(e.target)) {
+          hideSidebarPopup();
+        }
+      }
+      
+      // Close more options popup when clicking outside
+      const moreOptionsPopup = document.getElementById('sider-more-options-popup');
+      const moreOptionsIcon = document.getElementById('sider-more-options-icon');
+      if (moreOptionsPopup && moreOptionsPopup.style.display !== 'none') {
+        if (!moreOptionsPopup.contains(e.target) && !moreOptionsIcon?.contains(e.target)) {
+          moreOptionsPopup.style.display = 'none';
+        }
+      }
     });
     
     chrome.tabs.onActivated.addListener(async (activeInfo) => {
@@ -1556,6 +1628,9 @@
         const [tab] = await chrome.tabs.query({ active: true, currentWindow: true });
         if (tab) {
           currentTab = tab;
+          if (window.SiderChatTab) {
+            window.SiderChatTab.updateCurrentTab(tab);
+          }
           updatePageTitle();
         }
       } catch (e) {
@@ -1569,6 +1644,9 @@
         if (activeTab && tabId === activeTab.id) {
           if (changeInfo.status === 'complete' || changeInfo.title) {
             currentTab = tab;
+            if (window.SiderChatTab) {
+              window.SiderChatTab.updateCurrentTab(tab);
+            }
             updatePageTitle();
           }
         }
@@ -1576,6 +1654,12 @@
         console.error('Error updating tab on update:', e);
       }
     });
+    
+    // Initialize 3rd tab icon with last active tab
+    updateThirdTabIcon(lastActiveGroup1Tab);
+    
+    // Set initial active state
+    updateActiveSidebarTab(activeSidebarTab);
   }
   
   // Authentication functions
@@ -1796,6 +1880,7 @@
   if (document.readyState === 'loading') {
     document.addEventListener('DOMContentLoaded', async () => {
       initializePanel();
+      setupOCREventListeners();
       // Update UI immediately with cached data
       updateProfileDropdown(false);
       updateWelcomeMessage(false);
@@ -1825,6 +1910,7 @@
     });
   } else {
     initializePanel();
+    setupOCREventListeners();
     // Update UI immediately with cached data
     updateProfileDropdown(false);
     updateWelcomeMessage(false);
