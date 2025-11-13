@@ -6,8 +6,8 @@
 
 .sider-modal {
   position: relative;
-  width: 320px;
-  max-height: 500px;
+  width: 230px;
+  max-height: 440px;
   background: #ffffff;
   border: 1px solid #e5e7eb;
   border-radius: 12px;
@@ -186,7 +186,7 @@
 }
 
 .sider-more-options-modal {
-  width: 320px;
+  width: 255px;
   max-height: 450px;
 }
 

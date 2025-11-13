@@ -27,7 +27,15 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
   } else if (request.type === 'CAPTURE_SCREENSHOT') {
     captureScreenshot(request.bounds, sender.tab?.id, sendResponse);
     return true; // Indicates we will send a response asynchronously
-  } else if (request.type === 'SCREENSHOT_CAPTURED' || request.type === 'TEXT_SELECTED' || request.type === 'CHAT_WITH_IMAGE' || request.type === 'TEXT_ACTION') {
+  } else if (request.type === 'CHAT_WITH_IMAGE') {
+    // Handle chat with image: ensure side panel is open and switch to chat tab
+    handleChatWithImage(request, sender.tab?.id);
+    return false;
+  } else if (request.type === 'TEXT_SELECTED' || request.type === 'TEXT_ACTION') {
+    // Handle text selection: ensure side panel is open and switch to chat tab
+    handleTextSelection(request, sender.tab?.id);
+    return false;
+  } else if (request.type === 'SCREENSHOT_CAPTURED') {
     // Forward messages from content script to side panel
     // The side panel will receive these messages via chrome.runtime.onMessage
     // No need to forward explicitly as chrome.runtime.sendMessage broadcasts to all listeners
@@ -35,6 +43,90 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
   }
   return false;
 });
+
+async function handleChatWithImage(request, tabId) {
+  try {
+    // Ensure side panel is open
+    if (tabId) {
+      await chrome.sidePanel.open({ tabId: tabId });
+    }
+    
+    // Wait a bit for side panel to load, then send message to switch to chat tab
+    setTimeout(() => {
+      // Send message to sidepanel to switch to chat tab
+      chrome.runtime.sendMessage({
+        type: 'SWITCH_TO_CHAT_TAB'
+      }).catch(() => {
+        // Side panel might not be loaded yet, try again
+        setTimeout(() => {
+          chrome.runtime.sendMessage({
+            type: 'SWITCH_TO_CHAT_TAB'
+          });
+        }, 500);
+      });
+      
+      // Send the image message after switching to chat tab
+      setTimeout(() => {
+        chrome.runtime.sendMessage({
+          type: 'CHAT_WITH_IMAGE',
+          dataUrl: request.dataUrl,
+          imageUrl: request.imageUrl,
+          alt: request.alt
+        });
+      }, 300);
+    }, 200);
+  } catch (error) {
+    console.error('Error handling chat with image:', error);
+    // Fallback: just send the message directly
+    chrome.runtime.sendMessage({
+      type: 'CHAT_WITH_IMAGE',
+      dataUrl: request.dataUrl,
+      imageUrl: request.imageUrl,
+      alt: request.alt
+    });
+  }
+}
+
+async function handleTextSelection(request, tabId) {
+  try {
+    // Ensure side panel is open
+    if (tabId) {
+      await chrome.sidePanel.open({ tabId: tabId });
+    }
+    
+    // Wait a bit for side panel to load, then send message to switch to chat tab
+    setTimeout(() => {
+      // Send message to sidepanel to switch to chat tab
+      chrome.runtime.sendMessage({
+        type: 'SWITCH_TO_CHAT_TAB'
+      }).catch(() => {
+        // Side panel might not be loaded yet, try again
+        setTimeout(() => {
+          chrome.runtime.sendMessage({
+            type: 'SWITCH_TO_CHAT_TAB'
+          });
+        }, 500);
+      });
+      
+      // Send the text selection message after switching to chat tab
+      setTimeout(() => {
+        chrome.runtime.sendMessage({
+          type: request.type,
+          text: request.text,
+          action: request.action
+        });
+      }, 300);
+    }, 200);
+  } catch (error) {
+    console.error('Error handling text selection:', error);
+    // Fallback: just send the message directly
+    chrome.runtime.sendMessage({
+      type: request.type,
+      text: request.text,
+      action: request.action
+    });
+  }
+}
 
 async function captureScreenshot(bounds, tabId, sendResponse) {
   try {

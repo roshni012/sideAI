@@ -1,8 +1,325 @@
 <!-- Translate Tab Component HTML -->
 <div class="sider-translate-container" id="sider-translate-container">
   <div class="sider-translate-content">
-    <h2 class="sider-translate-title">Translate</h2>
-    <p class="sider-translate-description">Translation functionality coming soon.</p>
+    <div class="sider-translate-header">
+      <h2 class="sider-translate-title">Translate</h2>
+    </div>
+    <div class="sider-translate-header-controls">
+      <div class="sider-translate-mode-wrapper">
+        <button class="sider-translate-mode-btn" id="sider-translate-mode-btn">
+          <div class="sider-translate-mode-icons" id="sider-translate-mode-icons"></div>
+          <svg class="sider-chevron-down" id="sider-mode-chevron" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <path d="M6 9l6 6 6-6"/>
+          </svg>
+        </button>
+        <div class="sider-translate-mode-popup" id="sider-translate-mode-popup" style="display: none;">
+          <div class="sider-translate-mode-section">
+            <div class="sider-translate-mode-category">Basic</div>
+            <div class="sider-translate-mode-list">
+              <label class="sider-translate-mode-item">
+                <input type="checkbox" name="mode" value="sider-fusion" checked>
+                <span class="sider-translate-mode-icon">
+                  <img src="" alt="Sider Fusion" data-icon="fusion.png" />
+                </span>
+                <span class="sider-translate-mode-name">Sider Fusion</span>
+              </label>
+              <label class="sider-translate-mode-item">
+                <input type="checkbox" name="mode" value="gpt-5-mini">
+                <span class="sider-translate-mode-icon">
+                  <img src="" alt="GPT-5 mini" data-icon="gpt_5mini.png" />
+                </span>
+                <span class="sider-translate-mode-name">GPT-5 mini</span>
+              </label>
+              <label class="sider-translate-mode-item">
+                <input type="checkbox" name="mode" value="claude-haiku-4.5">
+                <span class="sider-translate-mode-icon">
+                  <img src="" alt="Claude Haiku 4.5" data-icon="claude.png" />
+                </span>
+                <span class="sider-translate-mode-name">Claude Haiku 4.5</span>
+              </label>
+              <label class="sider-translate-mode-item">
+                <input type="checkbox" name="mode" value="claude-3.5-haiku">
+                <span class="sider-translate-mode-icon">
+                  <img src="" alt="Claude 3.5 Haiku" data-icon="claude.png" />
+                </span>
+                <span class="sider-translate-mode-name">Claude 3.5 Haiku</span>
+              </label>
+              <label class="sider-translate-mode-item">
+                <input type="checkbox" name="mode" value="gemini-2.5-flash">
+                <span class="sider-translate-mode-icon">
+                  <img src="" alt="Gemini 2.5 Flash" data-icon="gemini.png" />
+                </span>
+                <span class="sider-translate-mode-name">Gemini 2.5 Flash</span>
+              </label>
+              <label class="sider-translate-mode-item">
+                <input type="checkbox" name="mode" value="kimi-k2">
+                <span class="sider-translate-mode-icon">
+                  <img src="" alt="Kimi K2" data-icon="kimi.png" />
+                </span>
+                <span class="sider-translate-mode-name">Kimi K2</span>
+              </label>
+              <label class="sider-translate-mode-item">
+                <input type="checkbox" name="mode" value="deepseek-v3">
+                <span class="sider-translate-mode-icon">
+                  <img src="" alt="DeepSeek V3" data-icon="deepseek.png" />
+                </span>
+                <span class="sider-translate-mode-name">DeepSeek V3</span>
+              </label>
+            </div>
+          </div>
+          <div class="sider-translate-mode-section">
+            <div class="sider-translate-mode-category">Advanced</div>
+            <div class="sider-translate-mode-list">
+              <label class="sider-translate-mode-item">
+                <input type="checkbox" name="mode" value="gpt-5">
+                <span class="sider-translate-mode-icon">
+                  <img src="" alt="GPT-5" data-icon="chatgpt.png" />
+                </span>
+                <span class="sider-translate-mode-name">GPT-5</span>
+              </label>
+              <label class="sider-translate-mode-item">
+                <input type="checkbox" name="mode" value="gpt-4.1">
+                <span class="sider-translate-mode-icon">
+                  <img src="" alt="GPT-4.1" data-icon="chatgpt.png" />
+                </span>
+                <span class="sider-translate-mode-name">GPT-4.1</span>
+              </label>
+              <label class="sider-translate-mode-item">
+                <input type="checkbox" name="mode" value="deepseek-v3.1">
+                <span class="sider-translate-mode-icon">
+                  <img src="" alt="DeepSeek v3.1" data-icon="deepseek.png" />
+                </span>
+                <span class="sider-translate-mode-name">DeepSeek v3.1</span>
+              </label>
+              <label class="sider-translate-mode-item">
+                <input type="checkbox" name="mode" value="claude-haiku-4.5-think">
+                <span class="sider-translate-mode-icon">
+                  <img src="" alt="Claude Haiku 4.5 Think" data-icon="claude.png" />
+                </span>
+                <span class="sider-translate-mode-name">Claude Haiku 4.5 Think</span>
+              </label>
+              <label class="sider-translate-mode-item">
+                <input type="checkbox" name="mode" value="claude-sonnet-4.5">
+                <span class="sider-translate-mode-icon">
+                  <img src="" alt="Claude Sonnet 4.5" data-icon="claude.png" />
+                </span>
+                <span class="sider-translate-mode-name">Claude Sonnet 4.5</span>
+              </label>
+              <label class="sider-translate-mode-item">
+                <input type="checkbox" name="mode" value="claude-3.7-sonnet">
+                <span class="sider-translate-mode-icon">
+                  <img src="" alt="Claude 3.7 Sonnet" data-icon="claude.png" />
+                </span>
+                <span class="sider-translate-mode-name">Claude 3.7 Sonnet</span>
+              </label>
+              <label class="sider-translate-mode-item">
+                <input type="checkbox" name="mode" value="claude-sonnet-4">
+                <span class="sider-translate-mode-icon">
+                  <img src="" alt="Claude Sonnet 4" data-icon="claude.png" />
+                </span>
+                <span class="sider-translate-mode-name">Claude Sonnet 4</span>
+              </label>
+              <label class="sider-translate-mode-item">
+                <input type="checkbox" name="mode" value="gemini-2.5-pro">
+                <span class="sider-translate-mode-icon">
+                  <img src="" alt="Gemini 2.5 Pro" data-icon="gemini.png" />
+                </span>
+                <span class="sider-translate-mode-name">Gemini 2.5 Pro</span>
+              </label>
+              <label class="sider-translate-mode-item">
+                <input type="checkbox" name="mode" value="gemini-2.5-flash-think">
+                <span class="sider-translate-mode-icon">
+                  <img src="" alt="Gemini 2.5 Flash Think" data-icon="gemini.png" />
+                </span>
+                <span class="sider-translate-mode-name">Gemini 2.5 Flash Think</span>
+              </label>
+              <label class="sider-translate-mode-item">
+                <input type="checkbox" name="mode" value="grok-4">
+                <span class="sider-translate-mode-icon">
+                  <img src="" alt="Grok 4" data-icon="grok.png" />
+                </span>
+                <span class="sider-translate-mode-name">Grok 4</span>
+              </label>
+            </div>
+          </div>
+        </div>
+      </div>
+      <div class="sider-translate-preferences-wrapper">
+        <button class="sider-translate-preferences-btn" id="sider-translate-preferences-btn">
+          Default preferences
+          <svg class="sider-chevron-down" id="sider-preferences-chevron" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <path d="M6 9l6 6 6-6"/>
+          </svg>
+        </button>
+        <div class="sider-translate-preferences-popup" id="sider-translate-preferences-popup" style="display: none;">
+          <div class="sider-translate-preferences-header">
+            <h3 class="sider-translate-preferences-title">Translation preferences</h3>
+          </div>
+          <div class="sider-translate-preferences-content">
+            <div class="sider-translate-preference-group">
+              <label class="sider-translate-preference-label">Length</label>
+              <div class="sider-translate-preference-options">
+                <button class="sider-translate-preference-btn active" data-preference="length" data-value="standard">Standard</button>
+                <button class="sider-translate-preference-btn" data-preference="length" data-value="concise">Concise</button>
+                <button class="sider-translate-preference-btn" data-preference="length" data-value="expanded">Expanded</button>
+              </div>
+            </div>
+            
+            <div class="sider-translate-preference-group">
+              <label class="sider-translate-preference-label">Tone</label>
+              <div class="sider-translate-preference-options">
+                <button class="sider-translate-preference-btn active" data-preference="tone" data-value="neutral">Neutral</button>
+                <button class="sider-translate-preference-btn" data-preference="tone" data-value="casual">Casual</button>
+                <button class="sider-translate-preference-btn" data-preference="tone" data-value="formal">Formal</button>
+                <button class="sider-translate-preference-btn" data-preference="tone" data-value="authoritative">Authoritative</button>
+                <button class="sider-translate-preference-btn" data-preference="tone" data-value="empathetic">Empathetic</button>
+              </div>
+            </div>
+            
+            <div class="sider-translate-preference-group">
+              <label class="sider-translate-preference-label">Style</label>
+              <div class="sider-translate-preference-options">
+                <button class="sider-translate-preference-btn active" data-preference="style" data-value="dynamic">Dynamic Equivalence</button>
+                <button class="sider-translate-preference-btn" data-preference="style" data-value="literal">Literal</button>
+                <button class="sider-translate-preference-btn" data-preference="style" data-value="creative">Creative Adaptation</button>
+              </div>
+            </div>
+            
+            <div class="sider-translate-preference-group">
+              <label class="sider-translate-preference-label">Complexity</label>
+              <div class="sider-translate-preference-options">
+                <button class="sider-translate-preference-btn active" data-preference="complexity" data-value="standard">Standard</button>
+                <button class="sider-translate-preference-btn" data-preference="complexity" data-value="layman">Layman</button>
+                <button class="sider-translate-preference-btn" data-preference="complexity" data-value="expert">Expert</button>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="sider-translate-input-box">
+      <div class="sider-translate-language-selectors">
+        <select class="sider-translate-language-select" id="sider-translate-source-lang">
+          <option value="auto">Auto Det...</option>
+          <option value="en">English</option>
+          <option value="es">Spanish</option>
+          <option value="fr">French</option>
+          <option value="de">German</option>
+          <option value="it">Italian</option>
+          <option value="pt">Portuguese</option>
+          <option value="ru">Russian</option>
+          <option value="ja">Japanese</option>
+          <option value="ko">Korean</option>
+          <option value="zh">Chinese</option>
+        </select>
+        <button class="sider-translate-swap-btn" id="sider-translate-swap-btn" title="Swap languages">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <path d="M8 3L4 7l4 4M4 7h16M16 21l4-4-4-4M20 17H4"/>
+          </svg>
+        </button>
+        <select class="sider-translate-language-select" id="sider-translate-target-lang">
+          <option value="en">English</option>
+          <option value="es" selected>Spanish</option>
+          <option value="fr">French</option>
+          <option value="de">German</option>
+          <option value="it">Italian</option>
+          <option value="pt">Portuguese</option>
+          <option value="ru">Russian</option>
+          <option value="ja">Japanese</option>
+          <option value="ko">Korean</option>
+          <option value="zh">Chinese</option>
+        </select>
+      </div>
+
+      <div class="sider-translate-text-area-wrapper">
+        <textarea 
+          class="sider-translate-text-input" 
+          id="sider-translate-text-input"
+          placeholder="Type or paste text here..."
+          rows="8"
+        ></textarea>
+      </div>
+
+      <div class="sider-translate-input-actions">
+        <div class="sider-translate-input-icons">
+          <button class="sider-translate-icon-btn" id="sider-translate-mic-btn" title="Voice input">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <path d="M12 1a3 3 0 0 0-3 3v8a3 3 0 0 0 6 0V4a3 3 0 0 0-3-3z"/>
+              <path d="M19 10v2a7 7 0 0 1-14 0v-2M12 19v4M8 23h8"/>
+            </svg>
+          </button>
+          <button class="sider-translate-icon-btn" id="sider-translate-clear-btn" title="Clear text" style="display: none;">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <path d="M3 6h18M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/>
+            </svg>
+          </button>
+          <button class="sider-translate-icon-btn" id="sider-translate-speaker-btn" title="Listen" style="display: none;">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <path d="M11 5L6 9H2v6h4l5 4V5zM19.07 4.93a10 10 0 0 1 0 14.14M15.54 8.46a5 5 0 0 1 0 7.07"/>
+            </svg>
+          </button>
+          <button class="sider-translate-icon-btn" id="sider-translate-dictionary-btn" title="See dictionary" style="display: none;">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"/>
+              <path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"/>
+              <path d="M8 7h8M8 11h8M8 15h4"/>
+            </svg>
+          </button>
+        </div>
+        <button class="sider-translate-submit-btn" id="sider-translate-submit-btn">
+          Translate
+        </button>
+      </div>
+    </div>
+
+    <div class="sider-translate-also-section">
+      <p class="sider-translate-also-title">You can also translate:</p>
+      <div class="sider-translate-also-buttons">
+        <button class="sider-translate-also-btn" id="sider-translate-pdf-btn">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/>
+            <path d="M14 2v6h6M16 13H8M16 17H8M10 9H8"/>
+          </svg>
+          PDF
+        </button>
+        <button class="sider-translate-also-btn" id="sider-translate-long-btn">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <line x1="3" y1="6" x2="21" y2="6"/>
+            <line x1="3" y1="12" x2="21" y2="12"/>
+            <line x1="3" y1="18" x2="21" y2="18"/>
+          </svg>
+          Long text
+        </button>
+        <button class="sider-translate-also-btn" id="sider-translate-image-also-btn">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <rect x="3" y="3" width="18" height="18" rx="2" ry="2"/>
+            <circle cx="8.5" cy="8.5" r="1.5"/>
+            <path d="M21 15l-5-5L5 21"/>
+          </svg>
+          Image
+        </button>
+      </div>
+    </div>
+
+    <div class="sider-translate-result-box" id="sider-translate-result-box" style="display: none;">
+      <div class="sider-translate-result-header">
+        <span class="sider-translate-result-lang" id="sider-translate-result-lang"></span>
+      </div>
+      <div class="sider-translate-result-content" id="sider-translate-result-content"></div>
+      <div class="sider-translate-result-actions">
+        <button class="sider-translate-icon-btn" id="sider-translate-copy-btn" title="Copy">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <rect x="9" y="9" width="13" height="13" rx="2" ry="2"/>
+            <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/>
+          </svg>
+        </button>
+        <button class="sider-translate-icon-btn" id="sider-translate-result-speaker-btn" title="Listen">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <path d="M11 5L6 9H2v6h4l5 4V5zM19.07 4.93a10 10 0 0 1 0 14.14M15.54 8.46a5 5 0 0 1 0 7.07"/>
+          </svg>
+        </button>
+      </div>
+    </div>
   </div>
 </div>
-

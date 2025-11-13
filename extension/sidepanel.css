@@ -374,6 +374,7 @@ body {
   background: #ffffff;
   color: #8b5cf6;
   flex-shrink: 0;
+  position: relative;
 }
 
 .sider-profile-dropdown-icon svg {
@@ -381,11 +382,105 @@ body {
   height: 24px;
 }
 
+.sider-profile-icon-letter {
+  width: 100%;
+  height: 100%;
+  display: none;
+  align-items: center;
+  justify-content: center;
+  font-size: 18px;
+  font-weight: 600;
+  color: #8b5cf6;
+  border-radius: 50%;
+}
+
+.sider-sidebar-icon .sider-profile-icon-letter {
+  width: 100%;
+  height: 100%;
+  display: none;
+  align-items: center;
+  justify-content: center;
+  font-size: 16px;
+  font-weight: 600;
+  color: #8b5cf6;
+  background: #f5f3ff;
+  border-radius: 50%;
+  position: absolute;
+  top: 0;
+  left: 0;
+}
+
+#sider-profile-icon .sider-profile-icon-letter {
+  width: 100%;
+  height: 100%;
+  display: none;
+  align-items: center;
+  justify-content: center;
+  font-size: 16px;
+  font-weight: 600;
+  color: #8b5cf6;
+  background: #f5f3ff;
+  border-radius: 50%;
+  position: absolute;
+  top: 0;
+  left: 0;
+}
+
 .sider-profile-dropdown-text {
   flex: 1;
   font-size: 12px;
   color: #111827;
   line-height: 1.4;
+}
+
+.sider-profile-user-info {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.sider-profile-user-name {
+  font-size: 14px;
+  font-weight: 600;
+  color: #111827;
+  line-height: 1.4;
+}
+
+.sider-profile-user-status {
+  font-size: 12px;
+  color: #6b7280;
+  line-height: 1.4;
+}
+
+.sider-profile-user-email {
+  font-size: 11px;
+  color: #9ca3af;
+  line-height: 1.4;
+}
+
+.sider-profile-rewards-banner {
+  display: none;
+  align-items: center;
+  gap: 8px;
+  padding: 12px 16px;
+  background: linear-gradient(135deg, #8b5cf6 0%, #a855f7 100%);
+  color: #ffffff;
+  font-size: 12px;
+  font-weight: 500;
+  margin: 0;
+}
+
+.sider-profile-rewards-banner svg {
+  width: 18px;
+  height: 18px;
+  flex-shrink: 0;
+}
+
+.sider-profile-rewards-banner .sider-sparkles {
+  width: 16px;
+  height: 16px;
+  opacity: 0.8;
+  margin-left: auto;
 }
 
 .sider-profile-login-btn {
@@ -961,12 +1056,13 @@ body {
 
 .sider-panel-body {
   flex: 1;
-  overflow-y: hidden;
+  overflow-y: auto;
   overflow-x: hidden;
   padding: 20px;
   position: relative;
   scrollbar-width: thin;
   scrollbar-color: #d1d5db #f9fafb;
+  min-height: 0;
 }
 
 .sider-panel-body.sider-ocr-active {
@@ -1118,10 +1214,20 @@ body {
   font-size: 18px;
   flex-shrink: 0;
   background: #f3f4f6;
+  color: #ffffff;
+  font-weight: 600;
+}
+
+.sider-message-avatar img {
+  width: 20px;
+  height: 20px;
+  object-fit: contain;
+  display: block;
 }
 
 .sider-message-user .sider-message-avatar {
   background: #3b82f6;
+  color: #ffffff;
 }
 
 .sider-message-content {
@@ -2320,6 +2426,115 @@ body {
   height: 20px;
 }
 
+/* Persistent Footer - Shows on all tabs */
+.sider-persistent-footer {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 12px 16px;
+  background: #ffffff;
+  border-top: 1px solid #e5e7eb;
+  flex-shrink: 0;
+  min-height: 56px;
+  box-shadow: 0 -2px 8px rgba(0, 0, 0, 0.05);
+}
+
+.sider-footer-left {
+  display: flex;
+  align-items: center;
+  flex: 1;
+}
+
+.sider-footer-sparkle-wrapper {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 24px;
+  height: 24px;
+  flex-shrink: 0;
+}
+
+.sider-footer-sparkle-icon {
+  width: 18px;
+  height: 18px;
+  color: #8b5cf6;
+  flex-shrink: 0;
+}
+
+.sider-footer-credits {
+  font-size: 14px;
+  font-weight: 600;
+  color: #111827;
+  min-width: 20px;
+  text-align: center;
+  margin-right: 4px;
+}
+
+.sider-footer-upgrade {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 6px 12px;
+  background: #f5f3ff;
+  border-radius: 8px;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.sider-footer-upgrade:hover {
+  background: #ede9fe;
+  transform: translateY(-1px);
+}
+
+.sider-footer-upgrade-text {
+  font-size: 12px;
+  font-weight: 600;
+  color: #8b5cf6;
+  white-space: nowrap;
+}
+
+.sider-footer-rocket-icon {
+  width: 14px;
+  height: 14px;
+  color: #8b5cf6;
+  flex-shrink: 0;
+}
+
+.sider-footer-right {
+  display: flex;
+  align-items: center;
+  flex-shrink: 0;
+}
+
+.sider-footer-icon-btn {
+  width: 32px;
+  height: 32px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: transparent;
+  border: none;
+  border-radius: 6px;
+  cursor: pointer;
+  color: #6b7280;
+  transition: all 0.2s;
+  padding: 0;
+}
+
+.sider-footer-icon-btn:hover {
+  background: #f3f4f6;
+  color: #111827;
+}
+
+.sider-footer-icon-btn:active {
+  transform: scale(0.95);
+}
+
+.sider-footer-icon-btn svg {
+  width: 18px;
+  height: 18px;
+}
+
 /* Responsive */
 @media (max-width: 400px) {
   .sider-action-buttons {
@@ -2385,5 +2600,48 @@ body {
   .sider-ocr-result-content {
     max-height: 50px;
     font-size: 12px;
+  }
+  
+  .sider-persistent-footer {
+    padding: 10px 12px;
+    min-height: 48px;
+  }
+  
+  .sider-footer-sparkle-wrapper {
+    width: 20px;
+    height: 20px;
+  }
+  
+  .sider-footer-sparkle-icon {
+    width: 16px;
+    height: 16px;
+  }
+  
+  .sider-footer-credits {
+    font-size: 12px;
+  }
+  
+  .sider-footer-upgrade {
+    padding: 5px 10px;
+    gap: 4px;
+  }
+  
+  .sider-footer-rocket-icon {
+    width: 12px;
+    height: 12px;
+  }
+  
+  .sider-footer-upgrade-text {
+    font-size: 11px;
+  }
+  
+  .sider-footer-icon-btn {
+    width: 28px;
+    height: 28px;
+  }
+  
+  .sider-footer-icon-btn svg {
+    width: 16px;
+    height: 16px;
   }
 }

@@ -136,7 +136,7 @@
   font-size: 12px;
   font-weight: 500;
   color: #6b7280;
-  margin-bottom: 24px;
+  margin-bottom: 0px;
 }
 
 .sider-agent-badge svg {
@@ -376,7 +376,7 @@
 @media (max-width: 768px) {
   
   .sider-agent-title {
-    font-size: 28px;
+    font-size: 20px;
   }
   
   .sider-agent-video-wrapper {

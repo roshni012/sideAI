@@ -3,10 +3,14 @@
   
   // Chat Tab Component
   const ChatTab = {
-    currentModel: 'chatgpt',
+    currentModel: 'gpt-4o-mini',
+    currentConversationId: null,
     pendingAttachments: [],
     currentTab: null,
     messageListenerSetup: false,
+    conversationsCache: null,
+    isLoadingConversations: false,
+    historyModalEventsSetup: false,
     
     // Load HTML content from chat-tab.html
     loadHTML: async function() {
@@ -24,6 +28,7 @@
         const welcomeSection = doc.querySelector('.sider-welcome');
         const chatContainer = doc.querySelector('.sider-chat-container');
         const footerContainer = doc.querySelector('.sider-panel-footer');
+        const historyModal = doc.querySelector('.sider-chat-history-modal');
         
         const chatTabContainer = document.getElementById('sider-chat-tab-container');
         const chatFooterContainer = document.getElementById('sider-chat-footer-container');
@@ -46,6 +51,18 @@
         
         if (footerContainer && chatFooterContainer) {
           chatFooterContainer.innerHTML = footerContainer.outerHTML;
+        }
+        
+        // Add history modal to the main panel body (so it overlays everything)
+        if (historyModal) {
+          const panelBody = document.getElementById('sider-panel-body');
+          if (panelBody) {
+            // Check if modal already exists
+            const existingModal = document.getElementById('sider-chat-history-modal');
+            if (!existingModal) {
+              panelBody.appendChild(historyModal.cloneNode(true));
+            }
+          }
         }
       } catch (error) {
         console.error('Error loading chat-tab.html:', error);
@@ -439,7 +456,7 @@
       if (!input || !input.value.trim()) return;
       
       const message = input.value.trim();
-      const model = this.currentModel;
+      const model = this.currentModel || 'gpt-4o-mini';
       
       input.value = '';
       this.autoResize(input);
@@ -486,6 +503,86 @@
       const thinkingMsg = this.addMessage('assistant', 'Thinking...', true);
       
       try {
+        // If no conversation ID exists, create a new conversation first
+        if (!this.currentConversationId) {
+          if (window.SiderChatService) {
+            console.log('🔄 Creating new conversation...');
+            const conversationResult = await window.SiderChatService.createConversation(
+              message.substring(0, 50) || 'New Conversation',
+              'gpt-4o-mini' // Always use gpt-4o-mini for conversation creation
+            );
+            
+            if (conversationResult.success && conversationResult.data) {
+              // Store conversation ID - check multiple possible field names
+              this.currentConversationId = conversationResult.data.id || 
+                                           conversationResult.data.conversation_id || 
+                                           conversationResult.data.cid ||
+                                           conversationResult.data._id;
+              console.log('✅ Conversation created:', this.currentConversationId);
+            } else {
+              this.updateMessage(thinkingMsg, 'assistant', `Error creating conversation: ${conversationResult.error || 'Unknown error'}`);
+              return;
+            }
+          } else {
+            this.updateMessage(thinkingMsg, 'assistant', 'Error: Chat service not available');
+            return;
+          }
+        }
+        
+        // Send message using chat completions API if available
+        if (window.SiderChatService && this.currentConversationId) {
+          console.log('🔄 Calling chat completions API...');
+          const completionsResult = await window.SiderChatService.chatCompletions(
+            this.currentConversationId,
+            message,
+            model
+          );
+          
+          if (completionsResult.success && completionsResult.data) {
+            // Extract response text from the completions response
+            // The response structure may vary, so we check multiple possible fields
+            let responseText = '';
+            if (completionsResult.data.choices && completionsResult.data.choices[0]) {
+              responseText = completionsResult.data.choices[0].message?.content || 
+                           completionsResult.data.choices[0].text || 
+                           completionsResult.data.choices[0].content || '';
+            } else if (completionsResult.data.content) {
+              responseText = completionsResult.data.content;
+            } else if (completionsResult.data.message) {
+              responseText = completionsResult.data.message;
+            } else if (completionsResult.data.text) {
+              responseText = completionsResult.data.text;
+            } else if (typeof completionsResult.data === 'string') {
+              responseText = completionsResult.data;
+            } else {
+              responseText = JSON.stringify(completionsResult.data);
+            }
+            
+            if (responseText) {
+              this.updateMessage(thinkingMsg, 'assistant', responseText);
+            } else {
+              this.updateMessage(thinkingMsg, 'assistant', 'Response received but no content found');
+            }
+
+            // Call GET conversation API after successful chatCompletions
+            if (this.currentConversationId && window.SiderChatService) {
+              try {
+                const conversationResult = await window.SiderChatService.getConversation(this.currentConversationId);
+                if (conversationResult.success && conversationResult.data) {
+                  console.log('✅ Conversation data fetched:', conversationResult.data);
+                  // You can use conversationResult.data here to update UI if needed
+                } else {
+                  console.warn('⚠️ Failed to fetch conversation:', conversationResult.error);
+                }
+              } catch (error) {
+                console.error('Error fetching conversation:', error);
+              }
+            }
+          } else {
+            this.updateMessage(thinkingMsg, 'assistant', `Error: ${completionsResult.error || 'Failed to get chat completion'}`);
+          }
+        } else {
+          // Fallback to old method
         chrome.runtime.sendMessage({
           type: 'CHAT_REQUEST',
           message: message,
@@ -499,13 +596,18 @@
             this.updateMessage(thinkingMsg, 'assistant', 'No response received');
           }
         });
+        }
       } catch (error) {
+        console.error('Send message error:', error);
         this.updateMessage(thinkingMsg, 'assistant', `Error: ${error.message}`);
       }
     },
     
     // Create new chat
     createNewChat: function() {
+      // Reset conversation ID for new chat
+      this.currentConversationId = null;
+      
       const messagesContainer = document.getElementById('sider-chat-messages');
       if (messagesContainer) {
         messagesContainer.innerHTML = '';
@@ -577,9 +679,66 @@
         messageDiv.classList.add('sider-thinking');
       }
       
+      // Get avatar content based on role
+      let avatarContent = '';
+      if (role === 'user') {
+        // Get username first letter - try localStorage first for immediate display
+        let userName = 'U';
+        try {
+          const userData = localStorage.getItem('user');
+          if (userData) {
+            const user = JSON.parse(userData);
+            userName = user.username || user.name || user.email?.split('@')[0] || 'U';
+          }
+        } catch (e) {
+          // Fallback to chrome.storage
+        }
+        const firstLetter = userName.charAt(0).toUpperCase();
+        avatarContent = firstLetter;
+        
+        // Update from chrome.storage if available (async)
+        chrome.storage.local.get(['sider_user_name', 'sider_user_email'], (result) => {
+          const updatedUserName = result.sider_user_name || result.sider_user_email?.split('@')[0] || 'U';
+          const updatedFirstLetter = updatedUserName.charAt(0).toUpperCase();
+          const avatarEl = messageDiv.querySelector('.sider-message-avatar');
+          if (avatarEl && avatarEl.textContent !== updatedFirstLetter) {
+            avatarEl.textContent = updatedFirstLetter;
+          }
+        });
+      } else {
+        // Get model icon for assistant
+        const iconMap = {
+          'gpt-4o-mini': chrome.runtime.getURL('icons/chatgpt.png'),
+          'Sider Fusion': chrome.runtime.getURL('icons/fusion.png'),
+          'GPT-5 mini': chrome.runtime.getURL('icons/gpt_5mini.png'),
+          'Cloude Haiku 4.5': chrome.runtime.getURL('icons/claude.png'),
+          'Gemini 2.5 Flash': chrome.runtime.getURL('icons/gemini.png'),
+          'GPT-5': chrome.runtime.getURL('icons/chatgpt.png'),
+          'GPT-4.0': chrome.runtime.getURL('icons/chatgpt.png'),
+          'DeepSeek V3.1': chrome.runtime.getURL('icons/deepseek.png'),
+          'Cloude Sonnet 4.5': chrome.runtime.getURL('icons/claude.png'),
+          'Gemini 2.5 Pro': chrome.runtime.getURL('icons/gemini.png'),
+          'Grok 4': chrome.runtime.getURL('icons/grok.png'),
+          'claude-3.5-haiku': chrome.runtime.getURL('icons/claude.png'),
+          'kimi-k2': chrome.runtime.getURL('icons/kimi.png'),
+          'deepseek-v3': chrome.runtime.getURL('icons/deepseek.png'),
+          'claude-3.7-sonnet': chrome.runtime.getURL('icons/claude.png'),
+          'claude-sonnet-4': chrome.runtime.getURL('icons/claude.png'),
+          'claude-opus-4.1': chrome.runtime.getURL('icons/claude.png'),
+          'chatgpt': chrome.runtime.getURL('icons/fusion.png'),
+          'gpt4': chrome.runtime.getURL('icons/chatgpt.png'),
+          'gemini': chrome.runtime.getURL('icons/gemini.png'),
+          'claude': chrome.runtime.getURL('icons/claude.png'),
+          'groq': chrome.runtime.getURL('icons/grok.png')
+        };
+        const model = this.currentModel || 'gpt-4o-mini';
+        const iconUrl = iconMap[model] || iconMap['gpt-4o-mini'] || chrome.runtime.getURL('icons/chatgpt.png');
+        avatarContent = `<img src="${iconUrl}" alt="${model}" style="width: 20px; height: 20px; object-fit: contain;" />`;
+      }
+      
       messageDiv.innerHTML = `
         <div class="sider-message-avatar">
-          ${role === 'user' ? '👤' : '🤖'}
+          ${avatarContent}
         </div>
         <div class="sider-message-content">
           <div class="sider-message-text">${text}</div>
@@ -972,6 +1131,18 @@
         this.createNewChat();
       });
       
+      // History button
+      const historyBtn = document.getElementById('sider-history-btn');
+      if (historyBtn) {
+        historyBtn.addEventListener('click', (e) => {
+          e.stopPropagation();
+          console.log('History button clicked');
+          this.openChatHistory();
+        });
+      } else {
+        console.warn('History button not found');
+      }
+      
       // Bottom action buttons
       const bottomActionBtns = document.querySelectorAll('.sider-bottom-action-btn');
       bottomActionBtns.forEach(btn => {
@@ -1246,100 +1417,130 @@
             this.showImagePreview(request.dataUrl, `screenshot-${Date.now()}.png`);
           }
         } else if (request.type === 'CHAT_WITH_IMAGE') {
-          if (request.dataUrl) {
-            // Image is already a data URL
-            this.showImagePreview(request.dataUrl, request.alt || 'Image');
-          } else if (request.imageUrl) {
-            // Image is a URL, need to convert to data URL
-            this.convertImageUrlToDataUrl(request.imageUrl).then(dataUrl => {
-              this.showImagePreview(dataUrl, request.alt || 'Image');
-            }).catch(err => {
-              console.error('Error loading image:', err);
-              // Fallback: try to show the URL directly (may not work due to CORS)
-              this.showImagePreview(request.imageUrl, request.alt || 'Image');
-            });
+          // Ensure we're on the chat tab
+          if (window.switchToTab && typeof window.switchToTab === 'function') {
+            window.switchToTab('chat');
+          } else if (window.SiderChatTab && window.SiderChatTab.switchToChat) {
+            window.SiderChatTab.switchToChat();
           }
-        } else if (request.type === 'TEXT_ACTION') {
-          const input = document.getElementById('sider-chat-input');
-          if (!input) return false;
           
-          if (request.action === 'analyze') {
-            // Show selected text section and set up for analysis
-            const selectedTextSection = document.getElementById('sider-selected-text-section');
-            const selectedTextDisplay = document.getElementById('sider-selected-text-display');
-            if (selectedTextSection && selectedTextDisplay) {
-              selectedTextDisplay.textContent = request.text;
-              selectedTextSection.style.display = 'block';
+          // Wait a bit for tab to switch, then show image
+          setTimeout(() => {
+            if (request.dataUrl) {
+              // Image is already a data URL
+              this.showImagePreview(request.dataUrl, request.alt || 'Image');
+            } else if (request.imageUrl) {
+              // Image is a URL, need to convert to data URL
+              this.convertImageUrlToDataUrl(request.imageUrl).then(dataUrl => {
+                this.showImagePreview(dataUrl, request.alt || 'Image');
+              }).catch(err => {
+                console.error('Error loading image:', err);
+                // Fallback: try to show the URL directly (may not work due to CORS)
+                this.showImagePreview(request.imageUrl, request.alt || 'Image');
+              });
             }
-            input.value = `Analyze this text: "${request.text}"`;
-            this.autoResize(input);
-            if (window.toggleMicSendButton) window.toggleMicSendButton();
-            setTimeout(() => this.sendMessage(), 200);
-          } else if (request.action === 'prompt' && request.prompt) {
-            // Show selected text section and set up with prompt
-            const selectedTextSection = document.getElementById('sider-selected-text-section');
-            const selectedTextDisplay = document.getElementById('sider-selected-text-display');
-            if (selectedTextSection && selectedTextDisplay) {
-              selectedTextDisplay.textContent = request.text;
-              selectedTextSection.style.display = 'block';
-            }
-            input.value = `${request.prompt}: "${request.text}"`;
-            this.autoResize(input);
-            if (window.toggleMicSendButton) window.toggleMicSendButton();
-            setTimeout(() => this.sendMessage(), 200);
-          } else if (request.action === 'add-note') {
-            // Handle add to notes action
-            const selectedTextSection = document.getElementById('sider-selected-text-section');
-            const selectedTextDisplay = document.getElementById('sider-selected-text-display');
-            if (selectedTextSection && selectedTextDisplay) {
-              selectedTextDisplay.textContent = request.text;
-              selectedTextSection.style.display = 'block';
-            }
-            input.value = `Add to notes: "${request.text}"`;
-            this.autoResize(input);
-            if (window.toggleMicSendButton) window.toggleMicSendButton();
+          }, 200);
+        } else if (request.type === 'TEXT_ACTION') {
+          // Ensure we're on the chat tab
+          if (window.switchToTab && typeof window.switchToTab === 'function') {
+            window.switchToTab('chat');
+          } else if (window.SiderChatTab && window.SiderChatTab.switchToChat) {
+            window.SiderChatTab.switchToChat();
           }
+          
+          // Wait a bit for tab to switch, then handle action
+          setTimeout(() => {
+            const input = document.getElementById('sider-chat-input');
+            if (!input) return false;
+            
+            if (request.action === 'analyze') {
+              // Show selected text section and set up for analysis
+              const selectedTextSection = document.getElementById('sider-selected-text-section');
+              const selectedTextDisplay = document.getElementById('sider-selected-text-display');
+              if (selectedTextSection && selectedTextDisplay) {
+                selectedTextDisplay.textContent = request.text;
+                selectedTextSection.style.display = 'block';
+              }
+              input.value = `Analyze this text: "${request.text}"`;
+              this.autoResize(input);
+              if (window.toggleMicSendButton) window.toggleMicSendButton();
+              setTimeout(() => this.sendMessage(), 200);
+            } else if (request.action === 'prompt' && request.prompt) {
+              // Show selected text section and set up with prompt
+              const selectedTextSection = document.getElementById('sider-selected-text-section');
+              const selectedTextDisplay = document.getElementById('sider-selected-text-display');
+              if (selectedTextSection && selectedTextDisplay) {
+                selectedTextDisplay.textContent = request.text;
+                selectedTextSection.style.display = 'block';
+              }
+              input.value = `${request.prompt}: "${request.text}"`;
+              this.autoResize(input);
+              if (window.toggleMicSendButton) window.toggleMicSendButton();
+              setTimeout(() => this.sendMessage(), 200);
+            } else if (request.action === 'add-note') {
+              // Handle add to notes action
+              const selectedTextSection = document.getElementById('sider-selected-text-section');
+              const selectedTextDisplay = document.getElementById('sider-selected-text-display');
+              if (selectedTextSection && selectedTextDisplay) {
+                selectedTextDisplay.textContent = request.text;
+                selectedTextSection.style.display = 'block';
+              }
+              input.value = `Add to notes: "${request.text}"`;
+              this.autoResize(input);
+              if (window.toggleMicSendButton) window.toggleMicSendButton();
+            }
+          }, 200);
           return false;
         } else if (request.type === 'TEXT_SELECTED' && request.text) {
-          const selectedTextSection = document.getElementById('sider-selected-text-section');
-          const selectedTextDisplay = document.getElementById('sider-selected-text-display');
-          const removeSelectionBtn = document.getElementById('sider-remove-selection-btn');
-          const input = document.getElementById('sider-chat-input');
-          const actionButtons = document.querySelectorAll('.sider-action-btn');
-          const moreActionsBtn = document.getElementById('sider-more-actions-btn');
+          // Ensure we're on the chat tab
+          if (window.switchToTab && typeof window.switchToTab === 'function') {
+            window.switchToTab('chat');
+          } else if (window.SiderChatTab && window.SiderChatTab.switchToChat) {
+            window.SiderChatTab.switchToChat();
+          }
           
-          if (selectedTextSection && selectedTextDisplay && input) {
-            selectedTextDisplay.textContent = request.text;
-            selectedTextSection.style.display = 'block';
+          // Wait a bit for tab to switch, then show selected text
+          setTimeout(() => {
+            const selectedTextSection = document.getElementById('sider-selected-text-section');
+            const selectedTextDisplay = document.getElementById('sider-selected-text-display');
+            const removeSelectionBtn = document.getElementById('sider-remove-selection-btn');
+            const input = document.getElementById('sider-chat-input');
+            const actionButtons = document.querySelectorAll('.sider-action-btn');
+            const moreActionsBtn = document.getElementById('sider-more-actions-btn');
             
-            if (removeSelectionBtn) {
-              removeSelectionBtn.onclick = () => {
-                selectedTextSection.style.display = 'none';
-                input.value = '';
-                this.autoResize(input);
-                if (window.toggleMicSendButton) window.toggleMicSendButton();
-              };
-            }
-            
-            actionButtons.forEach(btn => {
-              if (btn.id !== 'sider-more-actions-btn') {
-                btn.onclick = (e) => {
-                  e.stopPropagation();
-                  const action = btn.getAttribute('data-action');
-                  if (action && request.text) {
-                    this.handleSelectionAction(action, request.text);
-                  }
+            if (selectedTextSection && selectedTextDisplay && input) {
+              selectedTextDisplay.textContent = request.text;
+              selectedTextSection.style.display = 'block';
+              
+              if (removeSelectionBtn) {
+                removeSelectionBtn.onclick = () => {
+                  selectedTextSection.style.display = 'none';
+                  input.value = '';
+                  this.autoResize(input);
+                  if (window.toggleMicSendButton) window.toggleMicSendButton();
                 };
               }
-            });
-            
-            if (moreActionsBtn) {
-              moreActionsBtn.onclick = (e) => {
-                e.stopPropagation();
-                this.showMoreSelectionActions(request.text);
-              };
+              
+              actionButtons.forEach(btn => {
+                if (btn.id !== 'sider-more-actions-btn') {
+                  btn.onclick = (e) => {
+                    e.stopPropagation();
+                    const action = btn.getAttribute('data-action');
+                    if (action && request.text) {
+                      this.handleSelectionAction(action, request.text);
+                    }
+                  };
+                }
+              });
+              
+              if (moreActionsBtn) {
+                moreActionsBtn.onclick = (e) => {
+                  e.stopPropagation();
+                  this.showMoreSelectionActions(request.text);
+                };
+              }
             }
-          }
+          }, 200);
         }
         return false;
       });
@@ -1403,6 +1604,774 @@
     // Update current tab
     updateCurrentTab: function(tab) {
       this.currentTab = tab;
+    },
+    
+    // Open chat history modal
+    openChatHistory: function() {
+      console.log('openChatHistory called');
+      let modal = document.getElementById('sider-chat-history-modal');
+      
+      // If modal doesn't exist, create it
+      if (!modal) {
+        console.log('Modal not found, creating it...');
+        this.createHistoryModal();
+        modal = document.getElementById('sider-chat-history-modal');
+        if (!modal) {
+          console.error('Failed to create modal');
+          return;
+        }
+      }
+      
+      console.log('Modal found, displaying...');
+      modal.style.display = 'flex';
+      
+      // Setup event listeners only once
+      if (!this.historyModalEventsSetup) {
+        this.setupHistoryModalEvents();
+        this.historyModalEventsSetup = true;
+      }
+      
+      // Clear cache and load fresh chat history every time
+      this.conversationsCache = null;
+      this.loadChatHistory('all', '', true);
+    },
+    
+    // Setup history modal event listeners (only once)
+    setupHistoryModalEvents: function() {
+      const modal = document.getElementById('sider-chat-history-modal');
+      if (!modal) return;
+      
+      // Close button
+      const closeBtn = document.getElementById('sider-chat-history-close');
+      if (closeBtn && !closeBtn.hasAttribute('data-listener-attached')) {
+        closeBtn.setAttribute('data-listener-attached', 'true');
+        closeBtn.onclick = (e) => {
+          e.stopPropagation();
+          this.closeChatHistory();
+        };
+      }
+      
+      // Close on outside click
+      if (!modal.hasAttribute('data-listener-attached')) {
+        modal.setAttribute('data-listener-attached', 'true');
+        modal.onclick = (e) => {
+          if (e.target === modal) {
+            this.closeChatHistory();
+          }
+        };
+      }
+      
+      // Tab switching - use cached data, no API call
+      const tabs = document.querySelectorAll('.sider-chat-history-tab');
+      tabs.forEach(tab => {
+        if (!tab.hasAttribute('data-listener-attached')) {
+          tab.setAttribute('data-listener-attached', 'true');
+          tab.onclick = (e) => {
+            e.stopPropagation();
+            tabs.forEach(t => t.classList.remove('active'));
+            tab.classList.add('active');
+            const tabType = tab.getAttribute('data-tab');
+            // Use cached data for filtering, no API call needed
+            const listContainer = document.getElementById('sider-chat-history-list');
+            const countElement = document.getElementById('sider-chat-history-count');
+            if (listContainer && this.conversationsCache) {
+              this.renderFilteredConversations(listContainer, countElement, this.conversationsCache, tabType, '');
+            } else {
+              this.loadChatHistory(tabType);
+            }
+          };
+        }
+      });
+      
+      // Search functionality - use cached data for filtering
+      const searchInput = document.getElementById('sider-chat-history-search-input');
+      if (searchInput && !searchInput.hasAttribute('data-listener-attached')) {
+        searchInput.setAttribute('data-listener-attached', 'true');
+        let searchTimeout;
+        searchInput.oninput = (e) => {
+          clearTimeout(searchTimeout);
+          searchTimeout = setTimeout(() => {
+            const query = e.target.value;
+            // Use cached data for filtering, no API call needed
+            if (this.conversationsCache) {
+              const listContainer = document.getElementById('sider-chat-history-list');
+              const countElement = document.getElementById('sider-chat-history-count');
+              const activeTab = document.querySelector('.sider-chat-history-tab.active');
+              const tabType = activeTab ? activeTab.getAttribute('data-tab') : 'all';
+              this.renderFilteredConversations(listContainer, countElement, this.conversationsCache, tabType, query);
+            } else {
+              // Only call API if we don't have cache yet
+              this.loadChatHistory(null, query);
+            }
+          }, 300);
+        };
+      }
+    },
+    
+    // Create history modal if it doesn't exist
+    createHistoryModal: function() {
+      const panelBody = document.getElementById('sider-panel-body');
+      if (!panelBody) {
+        console.error('Panel body not found');
+        return;
+      }
+      
+      const modalHTML = `
+        <div class="sider-chat-history-modal" id="sider-chat-history-modal" style="display: none;">
+          <div class="sider-chat-history-modal-content">
+            <div class="sider-chat-history-header">
+              <h2 class="sider-chat-history-title">Chat history <span class="sider-chat-history-count" id="sider-chat-history-count">(0)</span></h2>
+              <button class="sider-chat-history-close" id="sider-chat-history-close" title="Close">
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                  <line x1="18" y1="6" x2="6" y2="18"/>
+                  <line x1="6" y1="6" x2="18" y2="18"/>
+                </svg>
+              </button>
+            </div>
+            <div class="sider-chat-history-tabs">
+              <button class="sider-chat-history-tab active" data-tab="all">All</button>
+              <button class="sider-chat-history-tab" data-tab="starred">Starred</button>
+            </div>
+            <div class="sider-chat-history-search-wrapper">
+              <div class="sider-chat-history-search">
+                <svg class="sider-chat-history-search-icon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                  <circle cx="11" cy="11" r="8"/>
+                  <path d="m21 21-4.35-4.35"/>
+                </svg>
+                <input type="text" class="sider-chat-history-search-input" id="sider-chat-history-search-input" placeholder="Search" />
+              </div>
+              <button class="sider-chat-history-delete-all" id="sider-chat-history-delete-all" title="Delete All">
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                  <polyline points="3 6 5 6 21 6"/>
+                  <path d="m19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/>
+                </svg>
+                <span>All</span>
+              </button>
+            </div>
+            <div class="sider-chat-history-list" id="sider-chat-history-list">
+              <!-- Conversations will be dynamically loaded here -->
+            </div>
+          </div>
+        </div>
+      `;
+      
+      const tempDiv = document.createElement('div');
+      tempDiv.innerHTML = modalHTML;
+      const modal = tempDiv.firstElementChild;
+      panelBody.appendChild(modal);
+      console.log('Modal created and added to DOM');
+    },
+    
+    // Close chat history modal
+    closeChatHistory: function() {
+      const modal = document.getElementById('sider-chat-history-modal');
+      if (modal) {
+        modal.style.display = 'none';
+      }
+    },
+    
+    // Load chat history
+    loadChatHistory: async function(tabType = 'all', searchQuery = '', forceRefresh = false) {
+      const listContainer = document.getElementById('sider-chat-history-list');
+      const countElement = document.getElementById('sider-chat-history-count');
+      if (!listContainer) return;
+      
+      // If force refresh is requested, clear cache
+      if (forceRefresh) {
+        this.conversationsCache = null;
+      }
+      
+      // If we have cached data and no search query and not forcing refresh, use cache
+      if (this.conversationsCache && !searchQuery && tabType === 'all' && !forceRefresh) {
+        this.renderFilteredConversations(listContainer, countElement, this.conversationsCache, tabType, searchQuery);
+        return;
+      }
+      
+      // Show loading state
+      listContainer.innerHTML = '<div style="padding: 40px; text-align: center; color: #6b7280;">Loading...</div>';
+      
+      try {
+        // Fetch from API if cache is empty, search is active, or force refresh
+        let conversations = this.conversationsCache;
+        if (!conversations || searchQuery || forceRefresh) {
+          // Prevent multiple simultaneous API calls
+          if (this.isLoadingConversations) {
+            console.log('Already loading conversations, skipping...');
+            return;
+          }
+          
+          this.isLoadingConversations = true;
+          conversations = await this.fetchConversations();
+          this.isLoadingConversations = false;
+          
+          // Cache the results (only if not searching)
+          if (!searchQuery) {
+            this.conversationsCache = conversations;
+          }
+        }
+        
+        // Render filtered conversations
+        this.renderFilteredConversations(listContainer, countElement, conversations, tabType, searchQuery);
+        
+      } catch (error) {
+        console.error('Error loading chat history:', error);
+        this.isLoadingConversations = false;
+        listContainer.innerHTML = '<div style="padding: 40px; text-align: center; color: #ef4444;">Error loading chat history</div>';
+      }
+    },
+    
+    // Render filtered conversations (separated for reuse)
+    renderFilteredConversations: function(listContainer, countElement, conversations, tabType, searchQuery) {
+      // Filter by tab type
+      let filteredConversations = conversations;
+      if (tabType === 'starred') {
+        filteredConversations = conversations.filter(conv => conv.starred);
+      }
+      
+      // Filter by search query
+      if (searchQuery) {
+        const query = searchQuery.toLowerCase();
+        filteredConversations = filteredConversations.filter(conv => 
+          conv.title.toLowerCase().includes(query) ||
+          conv.preview.toLowerCase().includes(query)
+        );
+      }
+      
+      // Group conversations by time
+      const grouped = this.groupConversationsByTime(filteredConversations);
+      
+      // Update count
+      if (countElement) {
+        countElement.textContent = `(${filteredConversations.length})`;
+      }
+      
+      // Render conversations
+      this.renderChatHistory(listContainer, grouped);
+    },
+    
+    // Fetch conversations from API
+    fetchConversations: async function() {
+      try {
+        if (!window.SiderChatService || !window.SiderChatService.listConversations) {
+          console.error('ChatService not available');
+          return [];
+        }
+
+        const result = await window.SiderChatService.listConversations();
+        
+        if (!result.success) {
+          console.error('Failed to fetch conversations:', result.error);
+          return [];
+        }
+
+        // Transform API response to match UI format
+        const conversations = result.data.map(conv => {
+          // Extract preview from last message or use title
+          let preview = conv.title || 'New Conversation';
+          if (conv.messages && conv.messages.length > 0) {
+            const lastMessage = conv.messages[conv.messages.length - 1];
+            if (lastMessage.content) {
+              preview = typeof lastMessage.content === 'string' 
+                ? lastMessage.content 
+                : lastMessage.content.text || preview;
+              // Truncate preview
+              if (preview.length > 60) {
+                preview = preview.substring(0, 60) + '...';
+              }
+            }
+          }
+
+          // Parse timestamp
+          let timestamp = new Date();
+          if (conv.created_at) {
+            timestamp = new Date(conv.created_at);
+          } else if (conv.updated_at) {
+            timestamp = new Date(conv.updated_at);
+          } else if (conv.createdAt) {
+            timestamp = new Date(conv.createdAt);
+          } else if (conv.updatedAt) {
+            timestamp = new Date(conv.updatedAt);
+          }
+
+          return {
+            id: conv.id || conv._id || conv.conversation_id || conv.cid || String(Math.random()),
+            title: conv.title || 'New Conversation',
+            preview: preview,
+            timestamp: timestamp,
+            starred: conv.starred || conv.is_starred || false
+          };
+        });
+
+        // Sort by timestamp (newest first)
+        conversations.sort((a, b) => b.timestamp - a.timestamp);
+
+        return conversations;
+      } catch (error) {
+        console.error('Error fetching conversations:', error);
+        return [];
+      }
+    },
+    
+    // Group conversations by time
+    groupConversationsByTime: function(conversations) {
+      const now = new Date();
+      const today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+      const weekAgo = new Date(today.getTime() - 7 * 24 * 60 * 60 * 1000);
+      const monthAgo = new Date(today.getTime() - 30 * 24 * 60 * 60 * 1000);
+      
+      const groups = {
+        'This Week': [],
+        'This Month': [],
+        'Earlier': []
+      };
+      
+      conversations.forEach(conv => {
+        const convDate = new Date(conv.timestamp);
+        if (convDate >= weekAgo) {
+          groups['This Week'].push(conv);
+        } else if (convDate >= monthAgo) {
+          groups['This Month'].push(conv);
+        } else {
+          groups['Earlier'].push(conv);
+        }
+      });
+      
+      return groups;
+    },
+    
+    // Render chat history
+    renderChatHistory: function(container, grouped) {
+      container.innerHTML = '';
+      
+      const groupOrder = ['This Week', 'This Month', 'Earlier'];
+      
+      groupOrder.forEach(groupName => {
+        const conversations = grouped[groupName];
+        if (conversations.length === 0) return;
+        
+        const groupDiv = document.createElement('div');
+        groupDiv.className = 'sider-chat-history-group';
+        
+        const titleDiv = document.createElement('div');
+        titleDiv.className = 'sider-chat-history-group-title';
+        titleDiv.textContent = groupName;
+        groupDiv.appendChild(titleDiv);
+        
+        conversations.forEach(conv => {
+          const itemDiv = document.createElement('div');
+          itemDiv.className = 'sider-chat-history-item';
+          itemDiv.setAttribute('data-conversation-id', conv.id);
+          
+          itemDiv.innerHTML = `
+            <div class="sider-chat-history-item-content">
+              <div class="sider-chat-history-item-title">${this.escapeHtml(conv.title)}</div>
+              <div class="sider-chat-history-item-preview">${this.escapeHtml(conv.preview)}</div>
+            </div>
+            <div class="sider-chat-history-item-actions">
+              <button class="sider-chat-history-item-more" title="More options" data-conversation-id="${conv.id}">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                  <circle cx="12" cy="12" r="1"/>
+                  <circle cx="12" cy="5" r="1"/>
+                  <circle cx="12" cy="19" r="1"/>
+                </svg>
+              </button>
+              <button class="sider-chat-history-item-star ${conv.starred ? 'starred' : ''}" title="${conv.starred ? 'Unstar' : 'Star'}" data-conversation-id="${conv.id}">
+                <svg viewBox="0 0 24 24" fill="${conv.starred ? 'currentColor' : 'none'}" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                  <path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"/>
+                </svg>
+              </button>
+            </div>
+            <div class="sider-chat-history-item-menu" id="sider-chat-history-menu-${conv.id}" style="display: none;">
+              <button class="sider-chat-history-menu-item" data-action="export" data-conversation-id="${conv.id}">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                  <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/>
+                  <polyline points="7 10 12 15 17 10"/>
+                  <line x1="12" y1="15" x2="12" y2="3"/>
+                </svg>
+                <span>Export</span>
+              </button>
+              <button class="sider-chat-history-menu-item" data-action="edit-title" data-conversation-id="${conv.id}">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                  <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/>
+                  <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/>
+                </svg>
+                <span>Edit title</span>
+              </button>
+              <button class="sider-chat-history-menu-item" data-action="delete" data-conversation-id="${conv.id}">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                  <polyline points="3 6 5 6 21 6"/>
+                  <path d="m19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/>
+                </svg>
+                <span>Delete</span>
+              </button>
+            </div>
+          `;
+          
+          // Click handler to load conversation
+          itemDiv.onclick = (e) => {
+            if (!e.target.closest('.sider-chat-history-item-actions') && 
+                !e.target.closest('.sider-chat-history-item-menu')) {
+              this.loadConversation(conv.id);
+            }
+          };
+          
+          // More button handler
+          const moreBtn = itemDiv.querySelector('.sider-chat-history-item-more');
+          if (moreBtn) {
+            moreBtn.onclick = (e) => {
+              e.stopPropagation();
+              this.toggleMoreMenu(conv.id, moreBtn);
+            };
+          }
+          
+          // Star handler
+          const starBtn = itemDiv.querySelector('.sider-chat-history-item-star');
+          if (starBtn) {
+            starBtn.onclick = (e) => {
+              e.stopPropagation();
+              this.toggleStar(conv.id, starBtn);
+            };
+          }
+          
+          // Menu item handlers
+          const menuItems = itemDiv.querySelectorAll('.sider-chat-history-menu-item');
+          menuItems.forEach(menuItem => {
+            menuItem.onclick = (e) => {
+              e.stopPropagation();
+              const action = menuItem.getAttribute('data-action');
+              const conversationId = menuItem.getAttribute('data-conversation-id');
+              this.handleMenuAction(action, conversationId);
+            };
+          });
+          
+          groupDiv.appendChild(itemDiv);
+        });
+        
+        container.appendChild(groupDiv);
+      });
+      
+      if (container.innerHTML === '') {
+        container.innerHTML = '<div style="padding: 40px; text-align: center; color: #6b7280;">No conversations found</div>';
+      }
+    },
+    
+    // Load conversation
+    loadConversation: async function(conversationId) {
+      console.log('Loading conversation:', conversationId);
+      
+      // Close history modal
+      this.closeChatHistory();
+      
+      // Switch to chat tab
+      if (window.switchToTab) {
+        window.switchToTab('chat');
+      }
+      
+      // Show loading state
+      const messagesContainer = document.getElementById('sider-chat-messages');
+      if (messagesContainer) {
+        messagesContainer.innerHTML = '<div style="padding: 40px; text-align: center; color: #6b7280;">Loading conversation...</div>';
+      }
+      
+      try {
+        // Fetch conversation from API
+        if (!window.SiderChatService || !window.SiderChatService.getConversation) {
+          console.error('ChatService not available');
+          if (messagesContainer) {
+            messagesContainer.innerHTML = '<div style="padding: 40px; text-align: center; color: #ef4444;">Error: Chat service not available</div>';
+          }
+          return;
+        }
+        
+        const result = await window.SiderChatService.getConversation(conversationId);
+        
+        if (!result.success || !result.data) {
+          console.error('Failed to load conversation:', result.error);
+          if (messagesContainer) {
+            messagesContainer.innerHTML = `<div style="padding: 40px; text-align: center; color: #ef4444;">Error: ${result.error || 'Failed to load conversation'}</div>`;
+          }
+          return;
+        }
+        
+        const conversation = result.data;
+        
+        // Set current conversation ID
+        this.currentConversationId = conversation.id || conversationId;
+        
+        // Update model if available
+        if (conversation.model) {
+          this.currentModel = conversation.model;
+        }
+        
+        // Clear existing messages
+        if (messagesContainer) {
+          messagesContainer.innerHTML = '';
+        }
+        
+        // Hide welcome screen and show chat container
+        const chatContainer = document.getElementById('sider-chat-container');
+        const welcome = document.querySelector('.sider-welcome');
+        const summarizeCard = document.getElementById('sider-summarize-card');
+        
+        if (chatContainer) {
+          chatContainer.style.display = 'block';
+        }
+        if (welcome) {
+          welcome.style.display = 'none';
+        }
+        if (summarizeCard) {
+          summarizeCard.style.display = 'none';
+        }
+        
+        // Load and display messages
+        if (conversation.messages && Array.isArray(conversation.messages) && conversation.messages.length > 0) {
+          for (const message of conversation.messages) {
+            // Determine role (user or assistant)
+            const role = message.role === 'user' ? 'user' : 'assistant';
+            
+            // Extract content
+            let content = '';
+            if (typeof message.content === 'string') {
+              content = message.content;
+            } else if (message.content && typeof message.content === 'object') {
+              // Handle multi-content format
+              if (Array.isArray(message.content)) {
+                content = message.content.map(item => {
+                  if (typeof item === 'string') return item;
+                  if (item.type === 'text' && item.text) return item.text;
+                  if (item.text) return item.text;
+                  return '';
+                }).filter(text => text).join('\n');
+              } else if (message.content.text) {
+                content = message.content.text;
+              } else if (message.content.content) {
+                content = message.content.content;
+              }
+            } else if (message.text) {
+              content = message.text;
+            }
+            
+            if (content) {
+              // Escape HTML to prevent XSS and ensure proper display
+              const escapedContent = this.escapeHtml(content);
+              this.addMessage(role, escapedContent);
+            }
+          }
+          
+          // Scroll to bottom after loading all messages
+          if (messagesContainer) {
+            setTimeout(() => {
+              messagesContainer.scrollTop = messagesContainer.scrollHeight;
+            }, 100);
+          }
+        } else {
+          // No messages, show empty state
+          if (messagesContainer) {
+            messagesContainer.innerHTML = '<div style="padding: 40px; text-align: center; color: #6b7280;">No messages in this conversation</div>';
+          }
+        }
+        
+        console.log('✅ Conversation loaded successfully:', conversationId);
+        
+      } catch (error) {
+        console.error('Error loading conversation:', error);
+        if (messagesContainer) {
+          messagesContainer.innerHTML = `<div style="padding: 40px; text-align: center; color: #ef4444;">Error loading conversation: ${error.message}</div>`;
+        }
+      }
+    },
+    
+    // Toggle star
+    toggleStar: function(conversationId, starBtn) {
+      const isStarred = starBtn.classList.contains('starred');
+      starBtn.classList.toggle('starred');
+      
+      // Update star icon
+      const svg = starBtn.querySelector('svg');
+      if (svg) {
+        svg.setAttribute('fill', isStarred ? 'none' : 'currentColor');
+      }
+      
+      // TODO: Call API to update star status
+      console.log(`${isStarred ? 'Unstarred' : 'Starred'} conversation:`, conversationId);
+    },
+    
+    // Toggle more menu
+    toggleMoreMenu: function(conversationId, moreBtn) {
+      // Close all other menus first
+      const allMenus = document.querySelectorAll('.sider-chat-history-item-menu');
+      allMenus.forEach(menu => {
+        if (menu.id !== `sider-chat-history-menu-${conversationId}`) {
+          menu.style.display = 'none';
+        }
+      });
+      
+      // Toggle current menu
+      const menu = document.getElementById(`sider-chat-history-menu-${conversationId}`);
+      if (menu) {
+        const isVisible = menu.style.display === 'block';
+        menu.style.display = isVisible ? 'none' : 'block';
+        
+        // Position menu relative to button (menu is already positioned via CSS, just ensure it's visible)
+        if (!isVisible) {
+          // Menu is positioned via CSS relative to the item
+          // No need to calculate position manually
+        }
+      }
+      
+      // Close menu when clicking outside
+      if (menu && menu.style.display === 'block') {
+        setTimeout(() => {
+          const closeMenuHandler = (e) => {
+            if (!menu.contains(e.target) && !moreBtn.contains(e.target)) {
+              menu.style.display = 'none';
+              document.removeEventListener('click', closeMenuHandler);
+            }
+          };
+          document.addEventListener('click', closeMenuHandler);
+        }, 0);
+      }
+    },
+    
+    // Handle menu action
+    handleMenuAction: async function(action, conversationId) {
+      // Close the menu
+      const menu = document.getElementById(`sider-chat-history-menu-${conversationId}`);
+      if (menu) {
+        menu.style.display = 'none';
+      }
+      
+      switch (action) {
+        case 'delete':
+          await this.deleteConversation(conversationId);
+          break;
+        case 'export':
+          console.log('Export conversation:', conversationId);
+          // TODO: Implement export functionality
+          break;
+        case 'edit-title':
+          console.log('Edit title for conversation:', conversationId);
+          // TODO: Implement edit title functionality
+          break;
+        default:
+          console.log('Unknown action:', action);
+      }
+    },
+    
+    // Delete conversation
+    deleteConversation: async function(conversationId) {
+      if (!conversationId) {
+        console.error('No conversation ID provided');
+        return;
+      }
+      
+      // Confirm deletion
+      if (!confirm('Are you sure you want to delete this conversation?')) {
+        return;
+      }
+      
+      try {
+        if (!window.SiderChatService || !window.SiderChatService.deleteConversation) {
+          console.error('ChatService not available');
+          alert('Error: Chat service not available');
+          return;
+        }
+        
+        const result = await window.SiderChatService.deleteConversation(conversationId);
+        
+        if (result.success) {
+          console.log('✅ Conversation deleted successfully:', conversationId);
+          
+          // If the deleted conversation is currently open, clear it
+          if (this.currentConversationId === conversationId) {
+            this.currentConversationId = null;
+            const messagesContainer = document.getElementById('sider-chat-messages');
+            if (messagesContainer) {
+              messagesContainer.innerHTML = '';
+            }
+            
+            // Show welcome screen
+            const chatContainer = document.getElementById('sider-chat-container');
+            const welcome = document.querySelector('.sider-welcome');
+            if (chatContainer) {
+              chatContainer.style.display = 'none';
+            }
+            if (welcome) {
+              welcome.style.display = 'block';
+            }
+          }
+          
+          // Remove from cache
+          if (this.conversationsCache && Array.isArray(this.conversationsCache)) {
+            this.conversationsCache = this.conversationsCache.filter(conv => conv.id !== conversationId);
+          }
+          
+          // Refresh the history list
+          const listContainer = document.getElementById('sider-chat-history-list');
+          const countElement = document.getElementById('sider-chat-history-count');
+          const activeTab = document.querySelector('.sider-chat-history-tab.active');
+          const tabType = activeTab ? activeTab.getAttribute('data-tab') || 'all' : 'all';
+          const searchInput = document.getElementById('sider-chat-history-search-input');
+          const searchQuery = searchInput ? searchInput.value.trim() : '';
+          
+          if (listContainer && countElement) {
+            this.renderFilteredConversations(listContainer, countElement, this.conversationsCache, tabType, searchQuery);
+          }
+          
+          // Show success message
+          this.showNotification('Conversation deleted successfully', 'success');
+        } else {
+          console.error('Failed to delete conversation:', result.error);
+          alert(`Error: ${result.error || 'Failed to delete conversation'}`);
+        }
+      } catch (error) {
+        console.error('Error deleting conversation:', error);
+        alert(`Error: ${error.message || 'Failed to delete conversation'}`);
+      }
+    },
+    
+    // Show notification
+    showNotification: function(message, type = 'info') {
+      // Try to show notification within history modal if it's open
+      const historyModal = document.getElementById('sider-chat-history-modal');
+      let container = document.body;
+      let isInModal = false;
+      
+      if (historyModal && historyModal.style.display !== 'none') {
+        container = historyModal;
+        isInModal = true;
+      }
+      
+      const notification = document.createElement('div');
+      notification.style.cssText = `
+        position: ${isInModal ? 'absolute' : 'fixed'};
+        ${isInModal ? 'top: 50%; left: 50%; transform: translate(-50%, -50%);' : 'top: 20px; right: 20px;'}
+        background: ${type === 'success' ? '#10b981' : type === 'error' ? '#ef4444' : '#3b82f6'};
+        color: white;
+        padding: 12px 24px;
+        border-radius: 8px;
+        font-size: 10px;
+        font-weight: 500;
+        z-index: ${isInModal ? '10001' : '10000'};
+        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+        animation: slideIn 0.3s ease-out;
+        pointer-events: none;
+      `;
+      notification.textContent = message;
+      container.appendChild(notification);
+      
+      setTimeout(() => {
+        notification.style.opacity = '0';
+        notification.style.transition = 'opacity 0.3s';
+        setTimeout(() => notification.remove(), 300);
+      }, 3000);
+    },
+    
+    // Escape HTML
+    escapeHtml: function(text) {
+      const div = document.createElement('div');
+      div.textContent = text;
+      return div.innerHTML;
     }
   };
   

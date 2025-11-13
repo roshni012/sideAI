@@ -1,30 +1,403 @@
 /* Ask Tab Styles */
+#sider-ask-tab-container {
+  width: 100%;
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
+
 .sider-ask-container {
   width: 100%;
   height: 100%;
   display: flex;
   flex-direction: column;
-  padding: 20px;
+  background: #ffffff;
+  overflow-y: auto;
+  overflow-x: hidden;
+  box-sizing: border-box;
+}
+
+.sider-ask-container::-webkit-scrollbar {
+  width: 6px;
+}
+
+.sider-ask-container::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.sider-ask-container::-webkit-scrollbar-thumb {
+  background: #d1d5db;
+  border-radius: 3px;
+}
+
+.sider-ask-container::-webkit-scrollbar-thumb:hover {
+  background: #9ca3af;
 }
 
 .sider-ask-content {
-  flex: 1;
+  max-width: 800px;
+  width: 100%;
+  margin: 0 auto;
   display: flex;
   flex-direction: column;
+  gap: 14px;
+  box-sizing: border-box;
+}
+
+.sider-ask-header {
+  margin-bottom: 0;
+}
+
+.sider-ask-header-controls {
+  display: flex;
+  gap: 38px;
   align-items: center;
-  justify-content: center;
+  margin-top: 12px;
+  margin-bottom: 0;
+  flex-wrap: nowrap;
 }
 
 .sider-ask-title {
-  font-size: 24px;
-  font-weight: 600;
+  font-size: 32px;
+  font-weight: 700;
   color: #111827;
-  margin: 0 0 12px 0;
+  margin: 0;
+  line-height: 1.2;
 }
 
-.sider-ask-description {
-  font-size: 14px;
-  color: #6b7280;
+.sider-ask-model-wrapper {
+  position: relative;
+}
+
+.sider-ask-model-btn {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 8px 10px;
+  background: #ffffff;
+  border: 1px solid #e5e7eb;
+  border-radius: 20px;
+  font-size: 12px;
+  color: #374151;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.sider-ask-model-btn.icon-only {
+  padding: 8px 10px;
+  gap: 6px;
+  min-width: 36px;
+  justify-content: center;
+}
+
+.sider-ask-model-btn.icon-only .sider-ask-model-text {
+  display: none;
+}
+
+.sider-ask-model-btn.icon-only .sider-dropdown-arrow {
+  display: block;
+}
+
+.sider-ask-model-btn.icon-only .sider-ask-model-icon {
   margin: 0;
 }
 
+.sider-ask-model-btn:hover {
+  background: #f9fafb;
+  border-color: #d1d5db;
+}
+
+.sider-ask-model-icon {
+  width: 20px;
+  height: 20px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+
+.sider-ask-model-icon img {
+  width: 20px;
+  height: 20px;
+  object-fit: contain;
+  display: block;
+}
+
+.sider-ask-model-text {
+  font-size: 12px;
+  font-weight: 500;
+  color: inherit;
+}
+
+.sider-dropdown-arrow {
+  width: 12px;
+  height: 12px;
+  stroke: currentColor;
+  flex-shrink: 0;
+}
+
+.sider-ask-custom-prompt-wrapper {
+  position: relative;
+}
+
+.sider-ask-custom-prompt-btn {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 8px 12px;
+  background: #ffffff;
+  border: 1px solid #e5e7eb;
+  border-radius: 20px;
+  font-size: 12px;
+  color: #374151;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.sider-ask-custom-prompt-btn:hover {
+  background: #f9fafb;
+  border-color: #d1d5db;
+}
+
+.sider-ask-custom-prompt-btn.active {
+  background: #f5f3ff;
+  border-color: #8b5cf6;
+  color: #8b5cf6;
+}
+
+.sider-ask-sparkle-icon {
+  width: 14px;
+  height: 14px;
+  color: #8b5cf6;
+  flex-shrink: 0;
+}
+
+.sider-ask-prompt-icon {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  width: 18px;
+  height: 18px;
+}
+
+.sider-ask-prompt-icon svg {
+  width: 100%;
+  height: 100%;
+}
+
+.sider-ask-prompt-text {
+  font-size: 12px;
+  font-weight: 500;
+  color: inherit;
+}
+
+.sider-ask-custom-prompt-popup {
+  position: absolute;
+  top: calc(100% + 8px);
+  left: 0;
+  background: #ffffff;
+  border: 1px solid #e5e7eb;
+  border-radius: 12px;
+  box-shadow: 0 10px 25px rgba(0, 0, 0, 0.1);
+  min-width: 175px;
+  max-width: 320px;
+  max-height: 335px;
+  z-index: 1000;
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+}
+
+.sider-ask-prompt-manager-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 12px 16px;
+  border-bottom: 1px solid #f3f4f6;
+  flex-shrink: 0;
+}
+
+.sider-ask-prompt-manager-title {
+  font-size: 14px;
+  font-weight: 600;
+  color: #111827;
+}
+
+.sider-ask-cube-icon {
+  width: 16px;
+  height: 16px;
+  color: #6b7280;
+  flex-shrink: 0;
+}
+
+.sider-ask-custom-prompt-list {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  padding: 4px;
+  overflow-y: auto;
+  max-height: 360px;
+}
+
+.sider-ask-custom-prompt-list::-webkit-scrollbar {
+  width: 6px;
+}
+
+.sider-ask-custom-prompt-list::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.sider-ask-custom-prompt-list::-webkit-scrollbar-thumb {
+  background: #d1d5db;
+  border-radius: 3px;
+}
+
+.sider-ask-custom-prompt-list::-webkit-scrollbar-thumb:hover {
+  background: #9ca3af;
+}
+
+.sider-ask-custom-prompt-item {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 10px 12px;
+  border-radius: 8px;
+  cursor: pointer;
+  transition: background-color 0.2s;
+  background: transparent;
+  border: none;
+  font-size: 14px;
+  color: #111827;
+  text-align: left;
+  width: 100%;
+  font-family: inherit;
+}
+
+.sider-ask-custom-prompt-item:hover {
+  background: #f9fafb;
+}
+
+.sider-ask-custom-prompt-item.selected {
+  background: #f5f3ff;
+  color: #8b5cf6;
+}
+
+.sider-ask-prompt-item-icon {
+  width: 18px;
+  height: 18px;
+  color: currentColor;
+  flex-shrink: 0;
+}
+
+.sider-ask-input-box {
+  border: 1.5px solid #8b5cf6;
+  border-radius: 12px;
+  padding: 10px;
+  background: #ffffff;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  width: 100%;
+  box-sizing: border-box;
+  max-width: 100%;
+  flex-shrink: 0;
+}
+
+.sider-ask-text-area-wrapper {
+  position: relative;
+}
+
+.sider-ask-text-input {
+  width: 100%;
+  min-height: 120px;
+  max-height: 400px;
+  padding: 10px;
+  border: none;
+  border-radius: 8px;
+  font-size: 16px;
+  font-family: inherit;
+  color: #111827;
+  background: #ffffff;
+  resize: vertical;
+  outline: none;
+  line-height: 1.6;
+  box-sizing: border-box;
+}
+
+.sider-ask-text-input::placeholder {
+  color: #9ca3af;
+}
+
+.sider-ask-input-actions {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding-top: 8px;
+  border-top: 1px solid #f3f4f6;
+  flex-shrink: 0;
+  min-height: 44px;
+}
+
+.sider-ask-input-icons {
+  display: flex;
+  gap: 4px;
+  align-items: center;
+}
+
+.sider-ask-icon-btn {
+  width: 36px;
+  height: 36px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: transparent;
+  border: none;
+  border-radius: 6px;
+  cursor: pointer;
+  color: #6b7280;
+  transition: all 0.2s;
+}
+
+.sider-ask-icon-btn:hover {
+  background: #f3f4f6;
+  color: #374151;
+}
+
+.sider-ask-icon-btn svg {
+  width: 18px;
+  height: 18px;
+}
+
+.sider-ask-send-btn {
+  padding: 10px 20px;
+  background: #8b5cf6;
+  color: #ffffff;
+  border: none;
+  border-radius: 8px;
+  font-size: 14px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.2s;
+  flex-shrink: 0;
+  white-space: nowrap;
+}
+
+.sider-ask-send-btn:hover {
+  background: #7c3aed;
+  transform: translateY(-1px);
+  box-shadow: 0 4px 12px rgba(139, 92, 246, 0.3);
+}
+
+.sider-ask-send-btn:active {
+  transform: translateY(0);
+}
+
+.sider-ask-send-btn:disabled {
+  background: #d1d5db;
+  color: #9ca3af;
+  cursor: not-allowed;
+  transform: none;
+  box-shadow: none;
+}

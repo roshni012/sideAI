@@ -18,6 +18,17 @@
             <label class="sider-model-item">
               <span class="sider-model-info">
                 <span class="sider-model-icon">
+                  <img src="${chrome.runtime.getURL('icons/chatgpt.png')}" alt="GPT-4o mini" style="width: 20px; height: 20px; object-fit: contain;" />
+                </span>
+                <span class="sider-model-text">
+                  <span class="sider-model-name">GPT-4o mini</span>
+                </span>
+              </span>
+              <input type="radio" name="sider-model" value="gpt-4o-mini" />
+            </label>
+            <label class="sider-model-item">
+              <span class="sider-model-info">
+                <span class="sider-model-icon">
                   <img src="${chrome.runtime.getURL('icons/fusion.png')}" alt="Fusion" style="width: 20px; height: 20px; object-fit: contain;" />
                 </span>
                 <span class="sider-model-text">
@@ -288,7 +299,7 @@
 
     // Load saved selected model
     chrome.storage.sync.get(['sider_selected_model'], (result) => {
-      const selected = result.sider_selected_model || 'chatgpt';
+      const selected = result.sider_selected_model || 'gpt-4o-mini';
       const radio = modalEl.querySelector(`input[name="sider-model"][value="${selected}"]`);
       if (radio) radio.checked = true;
     });
@@ -303,10 +314,27 @@
     setTimeout(() => {
       const handleOutsideClick = (e) => {
         const moreOptionsModal = document.getElementById('sider-more-options-modal');
-        if (modalEl && !modalEl.contains(e.target) && 
-            !aiSelectorBtn.contains(e.target) &&
-            (!moreOptionsModal || !moreOptionsModal.contains(e.target)) &&
-            modalEl.style.display === 'block') {
+        const askTabButton = document.getElementById('sider-ask-ai-selector-btn');
+        // Also check for button with temporary ID (in case ask-tab button still has it)
+        const tempButton = document.getElementById('sider-ai-selector-btn');
+        
+        // Check if click is on any selector button (chat tab or ask tab)
+        const isClickOnSelectorButton = aiSelectorBtn && aiSelectorBtn.contains(e.target);
+        const isClickOnAskTabButton = askTabButton && askTabButton.contains(e.target);
+        // Check if tempButton exists and is different from aiSelectorBtn (ask-tab button with temp ID)
+        const isClickOnTempButton = tempButton && tempButton !== aiSelectorBtn && tempButton.contains(e.target);
+        
+        const isClickOnModal = modalEl && modalEl.contains(e.target);
+        const isClickOnMoreOptions = moreOptionsModal && moreOptionsModal.contains(e.target);
+        
+        // Close if click is outside modal and not on any button that could open it
+        if (modalEl && 
+            modalEl.style.display === 'block' &&
+            !isClickOnModal && 
+            !isClickOnSelectorButton &&
+            !isClickOnAskTabButton &&
+            !isClickOnTempButton &&
+            !isClickOnMoreOptions) {
           close();
           closeMoreOptions();
           document.removeEventListener('click', handleOutsideClick);
@@ -369,7 +397,7 @@
 
     // Load saved selected model
     chrome.storage.sync.get(['sider_selected_model'], (result) => {
-      const selected = result.sider_selected_model || 'chatgpt';
+      const selected = result.sider_selected_model || 'gpt-4o-mini';
       const radio = modalEl.querySelector(`input[name="sider-model"][value="${selected}"]`);
       if (radio) radio.checked = true;
     });
@@ -408,6 +436,33 @@
         });
       });
     });
+
+    // Close on outside click for more options modal
+    setTimeout(() => {
+      const handleMoreOptionsOutsideClick = (e) => {
+        const mainWrapper = document.getElementById('sider-ai-modules-modal');
+        const mainModal = mainWrapper ? mainWrapper.querySelector('.sider-modal') : null;
+        const moreOptionsBtn = mainModal ? mainModal.querySelector('#sider-more-options-btn') : null;
+        
+        // Check if click is on the more options modal itself
+        const isClickOnMoreOptionsModal = modalEl && modalEl.contains(e.target);
+        // Check if click is on the main modal
+        const isClickOnMainModal = mainModal && mainModal.contains(e.target);
+        // Check if click is on the "More options" button
+        const isClickOnMoreOptionsBtn = moreOptionsBtn && moreOptionsBtn.contains(e.target);
+        
+        // Close if click is outside both modals and not on the more options button
+        if (modalEl && 
+            modalEl.style.display === 'block' &&
+            !isClickOnMoreOptionsModal && 
+            !isClickOnMainModal &&
+            !isClickOnMoreOptionsBtn) {
+          closeMoreOptions();
+          document.removeEventListener('click', handleMoreOptionsOutsideClick);
+        }
+      };
+      document.addEventListener('click', handleMoreOptionsOutsideClick);
+    }, 100);
   }
 
   function closeMoreOptions() {

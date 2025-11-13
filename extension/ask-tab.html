@@ -1,8 +1,202 @@
 <!-- Ask Tab Component HTML -->
 <div class="sider-ask-container" id="sider-ask-container">
   <div class="sider-ask-content">
-    <h2 class="sider-ask-title">Ask</h2>
-    <p class="sider-ask-description">Ask questions functionality coming soon.</p>
+    <div class="sider-ask-header">
+      <h2 class="sider-ask-title">Ask</h2>
+    </div>
+    
+    <div class="sider-ask-header-controls">
+      <div class="sider-ask-model-wrapper">
+        <button class="sider-ask-model-btn" id="sider-ask-ai-selector-btn" title="Select AI Model">
+          <div class="sider-ask-model-icon">
+            <img id="sider-ask-ai-icon-img" src="" alt="AI Model" style="width: 20px; height: 20px; object-fit: contain; display: block;" />
+          </div>
+          <span class="sider-ask-model-text" id="sider-ask-model-text">GPT-5</span>
+          <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="sider-dropdown-arrow">
+            <polyline points="6 9 12 15 18 9"/>
+          </svg>
+        </button>
+      </div>
+      
+      <div class="sider-ask-custom-prompt-wrapper">
+        <button class="sider-ask-custom-prompt-btn" id="sider-ask-custom-prompt-btn" title="Custom prompt">
+          <span class="sider-ask-prompt-icon" id="sider-ask-prompt-icon">
+            <svg class="sider-ask-sparkle-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"/>
+            </svg>
+          </span>
+          <span class="sider-ask-prompt-text" id="sider-ask-prompt-text">Custom prompt</span>
+          <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="sider-dropdown-arrow">
+            <polyline points="6 9 12 15 18 9"/>
+          </svg>
+        </button>
+        <div class="sider-ask-custom-prompt-popup" id="sider-ask-custom-prompt-popup" style="display: none;">
+          <div class="sider-ask-prompt-manager-header">
+            <span class="sider-ask-prompt-manager-title">Prompt Manager</span>
+            <svg class="sider-ask-cube-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <rect x="3" y="3" width="18" height="18" rx="2" ry="2"/>
+              <path d="M3 9h18M9 3v18"/>
+            </svg>
+          </div>
+          <div class="sider-ask-custom-prompt-list">
+            <button class="sider-ask-custom-prompt-item" data-prompt="custom" data-label="Custom prompt" data-icon="sparkle">
+              <svg class="sider-ask-prompt-item-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"/>
+              </svg>
+              <span>Custom prompt</span>
+            </button>
+            <button class="sider-ask-custom-prompt-item" data-prompt="explain" data-label="Explain" data-icon="document">
+              <svg class="sider-ask-prompt-item-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/>
+                <polyline points="14 2 14 8 20 8"/>
+                <line x1="16" y1="13" x2="8" y2="13"/>
+                <line x1="16" y1="17" x2="8" y2="17"/>
+                <polyline points="10 9 9 9 8 9"/>
+              </svg>
+              <span>Explain</span>
+            </button>
+            <button class="sider-ask-custom-prompt-item" data-prompt="translate" data-label="Translate" data-icon="arrows">
+              <svg class="sider-ask-prompt-item-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <polyline points="9 18 15 12 9 6"/>
+                <polyline points="15 18 21 12 15 6"/>
+              </svg>
+              <span>Translate</span>
+            </button>
+            <button class="sider-ask-custom-prompt-item" data-prompt="summarize" data-label="Summarize" data-icon="search">
+              <svg class="sider-ask-prompt-item-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/>
+                <circle cx="11" cy="11" r="2"/>
+                <path d="M16 16l-2-2"/>
+              </svg>
+              <span>Summarize</span>
+            </button>
+            <button class="sider-ask-custom-prompt-item" data-prompt="improve" data-label="Improve writing" data-icon="pen">
+              <svg class="sider-ask-prompt-item-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/>
+                <path d="M14 2v6h6M16 13H8M16 17H8M10 9H8"/>
+                <path d="M12 13l2 2 4-4"/>
+              </svg>
+              <span>Improve writing</span>
+            </button>
+            <button class="sider-ask-custom-prompt-item" data-prompt="fix-grammar" data-label="Fix spelling & grammar" data-icon="checklist">
+              <svg class="sider-ask-prompt-item-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/>
+                <polyline points="14 2 14 8 20 8"/>
+                <line x1="9" y1="15" x2="15" y2="15"/>
+                <polyline points="9 11 10 12 13 9"/>
+              </svg>
+              <span>Fix spelling & grammar</span>
+            </button>
+            <button class="sider-ask-custom-prompt-item" data-prompt="answer" data-label="Answer this question" data-icon="question">
+              <svg class="sider-ask-prompt-item-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <rect x="3" y="3" width="18" height="18" rx="2" ry="2"/>
+                <path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3"/>
+                <line x1="12" y1="17" x2="12.01" y2="17"/>
+              </svg>
+              <span>Answer this question</span>
+            </button>
+            <button class="sider-ask-custom-prompt-item" data-prompt="explain-code" data-label="Explain codes" data-icon="code">
+              <svg class="sider-ask-prompt-item-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <polyline points="16 18 22 12 16 6"/>
+                <polyline points="8 6 2 12 8 18"/>
+              </svg>
+              <span>Explain codes</span>
+            </button>
+            <button class="sider-ask-custom-prompt-item" data-prompt="action-items" data-label="Find action items" data-icon="flag">
+              <svg class="sider-ask-prompt-item-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M4 15s1-1 4-1 5 2 8 2 4-1 4-1V3s-1 1-4 1-5-2-8-2-4 1-4 1z"/>
+                <line x1="4" y1="22" x2="4" y2="15"/>
+              </svg>
+              <span>Find action items</span>
+            </button>
+            <button class="sider-ask-custom-prompt-item" data-prompt="shorter" data-label="Make shorter" data-icon="lines-short">
+              <svg class="sider-ask-prompt-item-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <line x1="5" y1="12" x2="19" y2="12"/>
+                <line x1="5" y1="8" x2="19" y2="8"/>
+                <line x1="5" y1="16" x2="19" y2="16"/>
+              </svg>
+              <span>Make shorter</span>
+            </button>
+            <button class="sider-ask-custom-prompt-item" data-prompt="longer" data-label="Make longer" data-icon="lines-long">
+              <svg class="sider-ask-prompt-item-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <line x1="5" y1="12" x2="19" y2="12"/>
+                <line x1="5" y1="6" x2="19" y2="6"/>
+                <line x1="5" y1="18" x2="19" y2="18"/>
+              </svg>
+              <span>Make longer</span>
+            </button>
+            <button class="sider-ask-custom-prompt-item" data-prompt="simplify" data-label="Simplify language" data-icon="text">
+              <svg class="sider-ask-prompt-item-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M4 7h16M4 12h16M4 17h10"/>
+              </svg>
+              <span>Simplify language</span>
+            </button>
+            <button class="sider-ask-custom-prompt-item" data-prompt="tone" data-label="Change tone" data-icon="smile">
+              <svg class="sider-ask-prompt-item-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <circle cx="12" cy="12" r="10"/>
+                <path d="M8 14s1.5 2 4 2 4-2 4-2"/>
+                <line x1="9" y1="9" x2="9.01" y2="9"/>
+                <line x1="15" y1="9" x2="15.01" y2="9"/>
+              </svg>
+              <span>Change tone</span>
+            </button>
+            <button class="sider-ask-custom-prompt-item" data-prompt="brainstorm" data-label="Brainstorm about..." data-icon="lightbulb">
+              <svg class="sider-ask-prompt-item-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M9 21h6M12 3a6 6 0 0 0-6 6c0 2.5 1.5 4.5 3 6M12 3a6 6 0 0 1 6 6c0 2.5-1.5 4.5-3 6M9 9h6"/>
+              </svg>
+              <span>Brainstorm about...</span>
+            </button>
+            <button class="sider-ask-custom-prompt-item" data-prompt="outline" data-label="Outline..." data-icon="list">
+              <svg class="sider-ask-prompt-item-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <line x1="8" y1="6" x2="21" y2="6"/>
+                <line x1="8" y1="12" x2="21" y2="12"/>
+                <line x1="8" y1="18" x2="21" y2="18"/>
+                <line x1="3" y1="6" x2="3.01" y2="6"/>
+                <line x1="3" y1="12" x2="3.01" y2="12"/>
+                <line x1="3" y1="18" x2="3.01" y2="18"/>
+              </svg>
+              <span>Outline...</span>
+            </button>
+            <button class="sider-ask-custom-prompt-item" data-prompt="blog" data-label="Blog post..." data-icon="text-bold">
+              <svg class="sider-ask-prompt-item-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M6 4h8a4 4 0 0 1 4 4 4 4 0 0 1-4 4H6z"/>
+                <path d="M6 12h9"/>
+              </svg>
+              <span>Blog post...</span>
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="sider-ask-input-box">
+      <div class="sider-ask-text-area-wrapper">
+        <textarea 
+          class="sider-ask-text-input" 
+          id="sider-ask-text-input"
+          placeholder="Input prompt or choose from menu Press Shift + Enter to start a new line"
+          rows="8"
+        ></textarea>
+      </div>
+
+      <div class="sider-ask-input-actions">
+        <div class="sider-ask-input-icons">
+          <button class="sider-ask-icon-btn" id="sider-ask-mic-btn" title="Voice input">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <path d="M12 1a3 3 0 0 0-3 3v8a3 3 0 0 0 6 0V4a3 3 0 0 0-3-3z"/>
+              <path d="M19 10v2a7 7 0 0 1-14 0v-2M12 19v4M8 23h8"/>
+            </svg>
+          </button>
+          <button class="sider-ask-icon-btn" id="sider-ask-clear-btn" title="Clear text" style="display: none;">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <path d="M3 6h18M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/>
+            </svg>
+          </button>
+        </div>
+        <button class="sider-ask-send-btn" id="sider-ask-send-btn">
+          Send
+        </button>
+      </div>
+    </div>
   </div>
 </div>
-

@@ -1,8 +1,103 @@
 <!-- Grammar Tab Component HTML -->
 <div class="sider-grammar-container" id="sider-grammar-container">
   <div class="sider-grammar-content">
-    <h2 class="sider-grammar-title">Grammar</h2>
-    <p class="sider-grammar-description">Grammar checking functionality coming soon.</p>
+    <div class="sider-grammar-header">
+      <h2 class="sider-grammar-title">Grammar</h2>
+    </div>
+    
+    <div class="sider-grammar-header-controls">
+      <div class="sider-grammar-mode-wrapper">
+        <button class="sider-grammar-mode-btn" id="sider-grammar-mode-btn">
+          <div class="sider-grammar-mode-icon">
+            <img id="sider-grammar-mode-icon-img" src="" alt="Model" style="width: 20px; height: 20px; object-fit: contain; display: block;" />
+          </div>
+          <span class="sider-grammar-mode-text" id="sider-grammar-mode-text">GPT-4.1</span>
+          <svg class="sider-chevron-down" id="sider-grammar-mode-chevron" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <path d="M6 9l6 6 6-6"/>
+          </svg>
+        </button>
+        <div class="sider-grammar-mode-popup" id="sider-grammar-mode-popup" style="display: none;">
+          <div class="sider-grammar-mode-list">
+            <label class="sider-grammar-mode-item">
+              <input type="radio" name="grammar-mode" value="gpt-5-mini">
+              <span class="sider-grammar-mode-icon">
+                <img src="" alt="GPT-5 mini" data-icon="gpt_5mini.png" />
+              </span>
+              <span class="sider-grammar-mode-name">GPT-5 mini</span>
+            </label>
+            <label class="sider-grammar-mode-item">
+              <input type="radio" name="grammar-mode" value="gpt-5">
+              <span class="sider-grammar-mode-icon">
+                <img src="" alt="GPT-5" data-icon="chatgpt.png" />
+              </span>
+              <span class="sider-grammar-mode-name">GPT-5</span>
+            </label>
+            <label class="sider-grammar-mode-item">
+              <input type="radio" name="grammar-mode" value="gpt-4.1" checked>
+              <span class="sider-grammar-mode-icon">
+                <img src="" alt="GPT-4.1" data-icon="chatgpt.png" />
+              </span>
+              <span class="sider-grammar-mode-name">GPT-4.1</span>
+            </label>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="sider-grammar-input-box">
+      <div class="sider-grammar-text-area-wrapper">
+        <textarea 
+          class="sider-grammar-text-input" 
+          id="sider-grammar-text-input"
+          placeholder="Only English is supported. Paste or type text to check."
+          rows="8"
+        ></textarea>
+      </div>
+
+      <div class="sider-grammar-input-actions">
+        <div class="sider-grammar-input-icons">
+          <button class="sider-grammar-icon-btn" id="sider-grammar-mic-btn" title="Voice input">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <path d="M12 1a3 3 0 0 0-3 3v8a3 3 0 0 0 6 0V4a3 3 0 0 0-3-3z"/>
+              <path d="M19 10v2a7 7 0 0 1-14 0v-2M12 19v4M8 23h8"/>
+            </svg>
+          </button>
+          <button class="sider-grammar-icon-btn" id="sider-grammar-clear-btn" title="Clear text" style="display: none;">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <path d="M3 6h18M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/>
+            </svg>
+          </button>
+          <button class="sider-grammar-icon-btn" id="sider-grammar-copy-btn" title="Copy" style="display: none;">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <rect x="9" y="9" width="13" height="13" rx="2" ry="2"/>
+              <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/>
+            </svg>
+          </button>
+        </div>
+        <button class="sider-grammar-submit-btn" id="sider-grammar-submit-btn">
+          Improve
+        </button>
+      </div>
+    </div>
+
+    <div class="sider-grammar-result-box" id="sider-grammar-result-box" style="display: none;">
+      <div class="sider-grammar-result-header">
+        <span class="sider-grammar-result-title">Improved Text</span>
+      </div>
+      <div class="sider-grammar-result-content" id="sider-grammar-result-content"></div>
+      <div class="sider-grammar-result-actions">
+        <button class="sider-grammar-icon-btn" id="sider-grammar-result-copy-btn" title="Copy">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <rect x="9" y="9" width="13" height="13" rx="2" ry="2"/>
+            <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/>
+          </svg>
+        </button>
+        <button class="sider-grammar-icon-btn" id="sider-grammar-result-speaker-btn" title="Listen">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <path d="M11 5L6 9H2v6h4l5 4V5zM19.07 4.93a10 10 0 0 1 0 14.14M15.54 8.46a5 5 0 0 1 0 7.07"/>
+          </svg>
+        </button>
+      </div>
+    </div>
   </div>
 </div>
-
