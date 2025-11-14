@@ -143,7 +143,7 @@ export default function DeepResearch({
 
         {/* Input Field */}
         <div className="w-2/3 max-w-4xl">
-          <div className="relative bg-white rounded-xl border border-gray-200 shadow-sm min-h-[100px] flex flex-col">
+          <div className="relative bg-white rounded-3xl border border-gray-200 shadow-sm min-h-[100px] flex flex-col">
             <textarea
               ref={textareaRef}
               value={inputValue}

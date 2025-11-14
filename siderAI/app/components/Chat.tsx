@@ -56,6 +56,8 @@ import UserProfileDropdown from './UserProfileDropdown';
 import DeepResearch from './DeepResearch';
 import ScholarResearch from './ScholarResearch';
 import WebCreator from './WebCreator';
+import AIWriter from './AIWriter';
+import AISlides from './AISlides';
 import { getApiUrl, API_ENDPOINTS } from '../lib/apiConfig';
 
 interface DropdownPosition {
@@ -168,6 +170,8 @@ export default function Chat() {
   const [deepResearchInput, setDeepResearchInput] = useState('');
   const [scholarResearchInput, setScholarResearchInput] = useState('');
   const [webCreatorInput, setWebCreatorInput] = useState('');
+  const [aiWriterInput, setAIWriterInput] = useState('');
+  const [aiSlidesInput, setAISlidesInput] = useState('');
   const availableModels = AVAILABLE_MODELS;
   const [isModelDropdownOpen, setIsModelDropdownOpen] = useState(false);
   const [isOtherModelsHovered, setIsOtherModelsHovered] = useState(false);
@@ -276,34 +280,44 @@ export default function Chat() {
   ];
 
   useEffect(() => {
-    if (isMoreHovered && moreButtonRef.current) {
-      const rect = moreButtonRef.current.getBoundingClientRect();
-      const dropdownHeight = 360; // estimated dropdown height
-      const viewportHeight = window.innerHeight;
-      
-      // Calculate button center
-      const buttonCenterY = rect.top + rect.height / 2;
-      
-      // Calculate dropdown top position to center it vertically with the button
-      const dropdownTop = buttonCenterY - dropdownHeight / 2;
-      
-      // Check if dropdown would go outside viewport
-      const wouldGoAbove = dropdownTop < 0;
-      const wouldGoBelow = dropdownTop + dropdownHeight > viewportHeight;
-      
-      let finalTop = dropdownTop;
-      if (wouldGoAbove) {
-        finalTop = 8; // Position near top with small margin
-      } else if (wouldGoBelow) {
-        finalTop = viewportHeight - dropdownHeight - 8; // Position near bottom with small margin
-      }
+    const updatePosition = () => {
+      if (isMoreHovered && moreButtonRef.current) {
+        const rect = moreButtonRef.current.getBoundingClientRect();
+        const dropdownHeight = 360; // estimated dropdown height
+        const viewportHeight = window.innerHeight;
+        
+        // Calculate button center
+        const buttonCenterY = rect.top + rect.height / 2;
+        
+        // Calculate dropdown top position to center it vertically with the button
+        const dropdownTop = buttonCenterY - dropdownHeight / 2;
+        
+        // Check if dropdown would go outside viewport
+        const wouldGoAbove = dropdownTop < 0;
+        const wouldGoBelow = dropdownTop + dropdownHeight > viewportHeight;
+        
+        let finalTop = dropdownTop;
+        if (wouldGoAbove) {
+          finalTop = 8; // Position near top with small margin
+        } else if (wouldGoBelow) {
+          finalTop = viewportHeight - dropdownHeight - 8; // Position near bottom with small margin
+        }
 
-      setDropdownPosition({
-        top: finalTop,
-        left: rect.right + 8,
-        direction: 'down',
-      });
-    }
+        setDropdownPosition({
+          top: finalTop,
+          left: rect.right + 8,
+          direction: 'down',
+        });
+      }
+    };
+
+    updatePosition();
+    window.addEventListener('scroll', updatePosition, true);
+    window.addEventListener('resize', updatePosition);
+    return () => {
+      window.removeEventListener('scroll', updatePosition, true);
+      window.removeEventListener('resize', updatePosition);
+    };
   }, [isMoreHovered]);
 
   const agents = [
@@ -1567,20 +1581,32 @@ export default function Chat() {
                   <ChevronRight className="w-4 h-4 ml-auto" />
                 </motion.button>
 
-                {isMoreHovered && (
-                  <motion.div
-                    initial={{ opacity: 0, x: -10 }}
-                    animate={{ opacity: 1, x: 0 }}
-                    exit={{ opacity: 0, x: -10 }}
-                    transition={{ duration: 0.2 }}
-                    className="fixed min-w-[260px] bg-white dark:bg-gray-800 rounded-xl shadow-2xl border border-gray-100 dark:border-gray-700 z-[9999]"
-                    style={{
-                      top: `${dropdownPosition.top}px`,
-                      left: `${dropdownPosition.left}px`,
-                    }}
-                    onMouseEnter={() => setIsMoreHovered(true)}
-                    onMouseLeave={() => setIsMoreHovered(false)}
-                  >
+                {isMoreHovered && moreButtonRef.current && (
+                  <>
+                    {/* Invisible bridge to prevent hover loss */}
+                    <div
+                      className="fixed z-[9998] pointer-events-auto"
+                      style={{
+                        top: `${dropdownPosition.top}px`,
+                        left: `${moreButtonRef.current.getBoundingClientRect().right}px`,
+                        width: '8px',
+                        height: `${360}px`,
+                      }}
+                      onMouseEnter={() => setIsMoreHovered(true)}
+                    />
+                    <motion.div
+                      initial={{ opacity: 0, x: -10 }}
+                      animate={{ opacity: 1, x: 0 }}
+                      exit={{ opacity: 0, x: -10 }}
+                      transition={{ duration: 0.2 }}
+                      className="fixed min-w-[260px] bg-white dark:bg-gray-800 rounded-xl shadow-2xl border border-gray-100 dark:border-gray-700 z-[9999]"
+                      style={{
+                        top: `${dropdownPosition.top}px`,
+                        left: `${dropdownPosition.left}px`,
+                      }}
+                      onMouseEnter={() => setIsMoreHovered(true)}
+                      onMouseLeave={() => setIsMoreHovered(false)}
+                    >
                     {/* IMAGE SECTION */}
                     <div className="p-4 border-b border-gray-100 dark:border-gray-700">
                       <h4 className="text-xs font-semibold text-gray-500 dark:text-gray-400 mb-3 uppercase tracking-wide">
@@ -1667,6 +1693,7 @@ export default function Chat() {
                       </div>
                     </div>
                   </motion.div>
+                  </>
                 )}
               </div>
             </div>
@@ -1788,13 +1815,25 @@ export default function Chat() {
             }}
           />
         ) : activeView === 'ai-writer' ? (
-          <div className="flex-1 flex items-center justify-center">
-            <p className="text-gray-500">AI Writer - Coming Soon</p>
-          </div>
+          <AIWriter
+            inputValue={aiWriterInput}
+            setInputValue={setAIWriterInput}
+            onSend={() => {
+              if (!aiWriterInput.trim()) return;
+              console.log('Sending AI Writer:', aiWriterInput);
+              setAIWriterInput('');
+            }}
+          />
         ) : activeView === 'ai-slides' ? (
-          <div className="flex-1 flex items-center justify-center">
-            <p className="text-gray-500">AI Slides - Coming Soon</p>
-          </div>
+          <AISlides
+            inputValue={aiSlidesInput}
+            setInputValue={setAISlidesInput}
+            onSend={() => {
+              if (!aiSlidesInput.trim()) return;
+              console.log('Sending AI Slides:', aiSlidesInput);
+              setAISlidesInput('');
+            }}
+          />
         ) : (
           /* Chat */
           <>
