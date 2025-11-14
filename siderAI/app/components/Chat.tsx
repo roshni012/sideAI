@@ -51,8 +51,6 @@ import {
   Brain,
   Edit,
   Sliders,
-  MoreVertical,
-  GripVertical,
   Loader2,
 } from 'lucide-react';
 import UserProfileDropdown from './UserProfileDropdown';
@@ -172,6 +170,8 @@ export default function Chat() {
   };
   
   const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(false);
+  const [hoveredItem, setHoveredItem] = useState<string | null>(null);
+  const [tooltipPositions, setTooltipPositions] = useState<Record<string, { top: number; left: number }>>({});
   const [selectedModel, setSelectedModel] = useState('gpt-4o-mini');
   const [activeView, setActiveView] = useState<'chat' | 'deep-research' | 'scholar-research' | 'web-creator' | 'ai-writer' | 'ai-slides'>(() => {
     const syncPathname = getPathnameSync();
@@ -339,10 +339,10 @@ export default function Chat() {
   ];
 
   const wisebaseItems = [
-    { name: 'Demo: Introduction...', icon: FileText, color: 'bg-white', isActive: true },
-    { name: 'Demo: Research on...', icon: Folder, color: 'bg-purple-100 dark:bg-purple-900/20' },
-    { name: 'Demo: NVIDIA Busin...', icon: BarChart3, color: 'bg-orange-100 dark:bg-orange-900/20' },
-    { name: 'AI Inbox', icon: MessageCircle, color: 'bg-green-100 dark:bg-green-900/20' },
+    { name: 'Demo: Introduction...', icon: FileText, color: 'bg-purple-100 dark:bg-purple-900/30', isActive: true },
+    { name: 'Demo: Research on...', icon: Folder, color: 'bg-orange-100 dark:bg-orange-900/30' },
+    { name: 'Demo: NVIDIA Busin...', icon: BarChart3, color: 'bg-green-100 dark:bg-green-900/30' },
+    { name: 'AI Inbox', icon: MessageCircle, color: 'bg-gray-100 dark:bg-gray-700/30' },
   ];
 
   const suggestedPrompts = [
@@ -2196,10 +2196,10 @@ export default function Chat() {
   return (
     <div className="flex h-screen bg-gray-50 dark:bg-gray-900 overflow-hidden">
       {/* Sidebar */}
-      <aside className={`relative ${isSidebarCollapsed ? 'w-26' : 'w-56'} bg-white dark:bg-gray-800 border-r border-gray-200 dark:border-gray-700 flex flex-col transition-all duration-300`}>
+      <aside className={`relative ${isSidebarCollapsed ? 'w-16' : 'w-56'} bg-white dark:bg-gray-800 border-r border-gray-200 dark:border-gray-700 flex flex-col transition-all duration-300`}>
         {/* Logo */}
         <div className={`${isSidebarCollapsed ? 'p-2' : 'p-4'} border-b border-gray-200 dark:border-gray-700`}>
-          <div className="flex items-center justify-between">
+          <div className={`flex items-center ${isSidebarCollapsed ? 'justify-center' : 'justify-between'}`}>
             {!isSidebarCollapsed && (
           <div className="flex items-center gap-2">
             <Sparkles className="w-6 h-6 text-indigo-600 dark:text-indigo-400" />
@@ -2221,27 +2221,49 @@ export default function Chat() {
         </div>
 
         {/* Navigation */}
-        <div className={`flex-1 overflow-y-auto overflow-x-visible ${isSidebarCollapsed ? 'p-2' : 'p-4'} space-y-6`}>
+        <div className={`flex-1 overflow-y-auto overflow-x-visible ${isSidebarCollapsed ? 'p-2' : 'p-4'} ${isSidebarCollapsed ? 'space-y-1' : 'space-y-6'}`}>
           {/* Chat */}
-          <div>
+          <div className="relative">
             <motion.button
               onClick={() => {
                 setActiveView('chat');
                 router.push('/chat');
               }}
-              className={`w-full flex items-center ${isSidebarCollapsed ? 'justify-center px-2' : 'gap-2 px-3 py-2'} rounded-lg mb-2 transition-colors ${isSidebarCollapsed ? '' : 'text-left'} ${
+              onMouseEnter={(e) => {
+                if (isSidebarCollapsed) {
+                  const rect = (e.currentTarget as HTMLElement).getBoundingClientRect();
+                  setTooltipPositions(prev => ({ ...prev, chat: { top: rect.top + rect.height / 2, left: rect.right + 8 } }));
+                  setHoveredItem('chat');
+                }
+              }}
+              onMouseLeave={() => {
+                setHoveredItem(null);
+                setTooltipPositions(prev => {
+                  const { chat: _, ...rest } = prev;
+                  return rest;
+                });
+              }}
+              className={`w-full flex items-center ${isSidebarCollapsed ? 'justify-center p-2' : 'gap-2 px-3 py-2'} rounded-lg ${isSidebarCollapsed ? 'mb-1' : 'mb-2'} transition-colors ${
                 activeView === 'chat'
                   ? 'bg-indigo-50 dark:bg-indigo-900/20 text-indigo-600 dark:text-indigo-400'
                   : 'text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700'
               }`}
             >
-              <MessageCircle className="w-5 h-5" />
+              <MessageCircle className={`${isSidebarCollapsed ? 'w-5 h-5' : 'w-5 h-5'}`} />
               {!isSidebarCollapsed && <span className="font-semibold">Chat</span>}
             </motion.button>
+            {isSidebarCollapsed && hoveredItem === 'chat' && tooltipPositions.chat && (
+              <div className="fixed z-[9999] pointer-events-none" style={{ top: `${tooltipPositions.chat.top}px`, left: `${tooltipPositions.chat.left}px`, transform: 'translateY(-50%)' }}>
+                <div className="bg-gray-900 dark:bg-gray-800 text-white text-sm px-3 py-1.5 rounded-md shadow-lg whitespace-nowrap relative">
+                  <div className="absolute right-full top-1/2 -translate-y-1/2 w-0 h-0 border-t-[6px] border-t-transparent border-b-[6px] border-b-transparent border-r-[6px] border-r-gray-900 dark:border-r-gray-800"></div>
+                  Chat
+                </div>
+              </div>
+            )}
           </div>
 
           {/* Agents */}
-          <div>
+          <div className={isSidebarCollapsed ? 'mt-2' : ''}>
             {!isSidebarCollapsed && (
             <h3 className="text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider px-3 mb-2">
               Agents
@@ -2267,22 +2289,45 @@ export default function Chat() {
                   router.push(route);
                 };
                 return (
-                  <motion.button
-                    key={agent.name}
-                    initial={{ opacity: 0, x: -20 }}
-                    animate={{ opacity: 1, x: 0 }}
-                    transition={{ delay: index * 0.1 }}
-                    onClick={handleAgentClick}
-                    title={isSidebarCollapsed ? agent.name : ''}
-                    className={`w-full flex items-center ${isSidebarCollapsed ? 'justify-center px-2' : 'gap-3 px-3'} py-2 rounded-lg transition-colors text-left ${
-                      isActive
-                        ? 'bg-indigo-50 dark:bg-indigo-900/20 text-indigo-600 dark:text-indigo-400'
-                        : 'text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700'
-                    } ${isSidebarCollapsed ? '' : 'text-left'}`}
-                  >
-                    <Icon className={`${isSidebarCollapsed ? 'w-5 h-5' : 'w-4 h-4'}`} />
-                    {!isSidebarCollapsed && <span className="text-sm">{agent.name}</span>}
-                  </motion.button>
+                  <div key={agent.name} className="relative">
+                    <motion.button
+                      initial={{ opacity: 0, x: -20 }}
+                      animate={{ opacity: 1, x: 0 }}
+                      transition={{ delay: index * 0.1 }}
+                      onClick={handleAgentClick}
+                      onMouseEnter={(e) => {
+                        if (isSidebarCollapsed) {
+                          const rect = (e.currentTarget as HTMLElement).getBoundingClientRect();
+                          setTooltipPositions(prev => ({ ...prev, [`agent-${agent.name}`]: { top: rect.top + rect.height / 2, left: rect.right + 8 } }));
+                          setHoveredItem(`agent-${agent.name}`);
+                        }
+                      }}
+                      onMouseLeave={() => {
+                        setHoveredItem(null);
+                        const key = `agent-${agent.name}`;
+                        setTooltipPositions(prev => {
+                          const { [key]: _, ...rest } = prev;
+                          return rest;
+                        });
+                      }}
+                      className={`w-full flex items-center ${isSidebarCollapsed ? 'justify-center p-2' : 'gap-3 px-3'} py-2 rounded-lg transition-colors ${
+                        isActive
+                          ? 'bg-indigo-50 dark:bg-indigo-900/20 text-indigo-600 dark:text-indigo-400'
+                          : 'text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700'
+                      }`}
+                    >
+                      <Icon className={`${isSidebarCollapsed ? 'w-5 h-5' : 'w-4 h-4'}`} />
+                      {!isSidebarCollapsed && <span className="text-sm">{agent.name}</span>}
+                    </motion.button>
+                    {isSidebarCollapsed && hoveredItem === `agent-${agent.name}` && tooltipPositions[`agent-${agent.name}`] && (
+                      <div className="fixed z-[9999] pointer-events-none" style={{ top: `${tooltipPositions[`agent-${agent.name}`].top}px`, left: `${tooltipPositions[`agent-${agent.name}`].left}px`, transform: 'translateY(-50%)' }}>
+                        <div className="bg-gray-900 dark:bg-gray-800 text-white text-sm px-3 py-1.5 rounded-md shadow-lg whitespace-nowrap relative">
+                          <div className="absolute right-full top-1/2 -translate-y-1/2 w-0 h-0 border-t-[6px] border-t-transparent border-b-[6px] border-b-transparent border-r-[6px] border-r-gray-900 dark:border-r-gray-800"></div>
+                          {agent.name}
+                        </div>
+                      </div>
+                    )}
+                  </div>
                 );
               })}
 
@@ -2290,15 +2335,28 @@ export default function Chat() {
               <div
                 ref={moreButtonRef}
                 className="relative"
-                onMouseEnter={() => setIsMoreHovered(true)}
-                onMouseLeave={() => setIsMoreHovered(false)}
+                onMouseEnter={() => {
+                  setIsMoreHovered(true);
+                  if (isSidebarCollapsed && moreButtonRef.current) {
+                    const rect = moreButtonRef.current.getBoundingClientRect();
+                    setTooltipPositions(prev => ({ ...prev, more: { top: rect.top + rect.height / 2, left: rect.right + 8 } }));
+                    setHoveredItem('more');
+                  }
+                }}
+                onMouseLeave={() => {
+                  setIsMoreHovered(false);
+                  setHoveredItem(null);
+                  setTooltipPositions(prev => {
+                    const { more: _, ...rest } = prev;
+                    return rest;
+                  });
+                }}
               >
                 <motion.button
                   initial={{ opacity: 0, x: -20 }}
                   animate={{ opacity: 1, x: 0 }}
                   transition={{ delay: agents.length * 0.1 }}
-                  className={`w-full flex items-center ${isSidebarCollapsed ? 'justify-center px-2' : 'gap-3 px-3'} py-2 rounded-lg text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors ${isSidebarCollapsed ? '' : 'text-left'}`}
-                  title={isSidebarCollapsed ? 'More' : ''}
+                  className={`w-full flex items-center ${isSidebarCollapsed ? 'justify-center p-2' : 'gap-3 px-3'} py-2 rounded-lg text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors`}
                 >
                   <Grid3x3 className={`${isSidebarCollapsed ? 'w-5 h-5' : 'w-4 h-4'}`} />
                   {!isSidebarCollapsed && (
@@ -2308,6 +2366,14 @@ export default function Chat() {
                     </>
                   )}
                 </motion.button>
+                {isSidebarCollapsed && hoveredItem === 'more' && tooltipPositions.more && (
+                  <div className="fixed z-[9999] pointer-events-none" style={{ top: `${tooltipPositions.more.top}px`, left: `${tooltipPositions.more.left}px`, transform: 'translateY(-50%)' }}>
+                    <div className="bg-gray-900 dark:bg-gray-800 text-white text-sm px-3 py-1.5 rounded-md shadow-lg whitespace-nowrap relative">
+                      <div className="absolute right-full top-1/2 -translate-y-1/2 w-0 h-0 border-t-[6px] border-t-transparent border-b-[6px] border-b-transparent border-r-[6px] border-r-gray-900 dark:border-r-gray-800"></div>
+                      More
+                    </div>
+                  </div>
+                )}
 
                 {isMoreHovered && moreButtonRef.current && (
                   <>
@@ -2428,7 +2494,7 @@ export default function Chat() {
           </div>
 
           {/* Wisebase */}
-          <div>
+          <div className={isSidebarCollapsed ? 'mt-2' : ''}>
             {!isSidebarCollapsed && (
             <h3 className="text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider px-3 mb-2">
               Wisebase
@@ -2438,21 +2504,44 @@ export default function Chat() {
               {wisebaseItems.map((item, index) => {
                 const Icon = item.icon;
                 return (
-                <motion.button
-                  key={item.name}
-                  initial={{ opacity: 0, x: -20 }}
-                  animate={{ opacity: 1, x: 0 }}
-                  transition={{ delay: (agents.length + 1 + index) * 0.1 }}
-                    className={`w-full flex items-center ${isSidebarCollapsed ? 'justify-center px-2' : 'gap-2 px-3'} py-2 rounded-lg transition-colors ${
-                      isSidebarCollapsed 
-                        ? `${item.color} ${item.isActive ? 'shadow-sm' : ''} text-gray-700 dark:text-gray-300` 
-                        : 'text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700'
-                    } ${isSidebarCollapsed ? '' : 'text-left'}`}
-                    title={isSidebarCollapsed ? item.name : ''}
-                  >
-                    <Icon className={`${isSidebarCollapsed ? 'w-5 h-5' : 'w-4 h-4'}`} />
-                    {!isSidebarCollapsed && <span className="text-sm">{item.name}</span>}
-                </motion.button>
+                  <div key={item.name} className="relative">
+                    <motion.button
+                      initial={{ opacity: 0, x: -20 }}
+                      animate={{ opacity: 1, x: 0 }}
+                      transition={{ delay: (agents.length + 1 + index) * 0.1 }}
+                      onMouseEnter={(e) => {
+                        if (isSidebarCollapsed) {
+                          const rect = (e.currentTarget as HTMLElement).getBoundingClientRect();
+                          setTooltipPositions(prev => ({ ...prev, [`wisebase-${item.name}`]: { top: rect.top + rect.height / 2, left: rect.right + 8 } }));
+                          setHoveredItem(`wisebase-${item.name}`);
+                        }
+                      }}
+                      onMouseLeave={() => {
+                        setHoveredItem(null);
+                        const key = `wisebase-${item.name}`;
+                        setTooltipPositions(prev => {
+                          const { [key]: _, ...rest } = prev;
+                          return rest;
+                        });
+                      }}
+                      className={`w-full flex items-center ${isSidebarCollapsed ? 'justify-center p-2' : 'gap-2 px-3'} py-2 rounded-lg transition-colors ${
+                        isSidebarCollapsed 
+                          ? `${item.color} ${item.isActive ? 'shadow-sm' : ''} text-gray-700 dark:text-gray-300` 
+                          : 'text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700'
+                      }`}
+                    >
+                      <Icon className={`${isSidebarCollapsed ? 'w-5 h-5' : 'w-4 h-4'}`} />
+                      {!isSidebarCollapsed && <span className="text-sm">{item.name}</span>}
+                    </motion.button>
+                    {isSidebarCollapsed && hoveredItem === `wisebase-${item.name}` && tooltipPositions[`wisebase-${item.name}`] && (
+                      <div className="fixed z-[9999] pointer-events-none" style={{ top: `${tooltipPositions[`wisebase-${item.name}`].top}px`, left: `${tooltipPositions[`wisebase-${item.name}`].left}px`, transform: 'translateY(-50%)' }}>
+                        <div className="bg-gray-900 dark:bg-gray-800 text-white text-sm px-3 py-1.5 rounded-md shadow-lg whitespace-nowrap relative">
+                          <div className="absolute right-full top-1/2 -translate-y-1/2 w-0 h-0 border-t-[6px] border-t-transparent border-b-[6px] border-b-transparent border-r-[6px] border-r-gray-900 dark:border-r-gray-800"></div>
+                          {item.name}
+                        </div>
+                      </div>
+                    )}
+                  </div>
                 );
               })}
             </div>
@@ -2461,58 +2550,85 @@ export default function Chat() {
         </div>
 
         {/* Footer Icons */}
-        <div className={`${isSidebarCollapsed ? 'p-2' : 'p-4'} border-t border-gray-200 dark:border-gray-700 flex ${isSidebarCollapsed ? 'flex-col items-center gap-3' : 'items-center justify-around'}`}>
-          <motion.button
-            ref={userProfileButtonRef}
-            onClick={handleUserProfileClick}
-            whileHover={{ scale: 1.1 }}
-            whileTap={{ scale: 0.9 }}
-            className="relative p-2 rounded-full bg-gradient-to-r from-orange-400 to-orange-500 flex items-center justify-center transition-all hover:shadow-lg w-9 h-9"
-          >
-            <span className="text-white font-semibold text-sm">
-              {getUserInitial()}
-            </span>
-          </motion.button>
-          {isSidebarCollapsed ? (
-            <>
-              <motion.button
-                whileHover={{ scale: 1.1 }}
-                whileTap={{ scale: 0.9 }}
-                className="p-2 text-gray-600 dark:text-gray-400 hover:text-indigo-600 dark:hover:text-indigo-400 transition-colors"
-                title="Sparkles"
-              >
-                <Sparkles className="w-5 h-5 text-purple-500" />
-              </motion.button>
-              <motion.button
-                whileHover={{ scale: 1.1 }}
-                whileTap={{ scale: 0.9 }}
-                className="p-2 text-gray-600 dark:text-gray-400 hover:text-indigo-600 dark:hover:text-indigo-400 transition-colors"
-                title="More"
-              >
-                <MoreVertical className="w-5 h-5" />
-              </motion.button>
-            </>
-          ) : (
-            <>
-          {[Folder, MessageCircle, Settings].map((Icon, i) => (
+        <div className={`${isSidebarCollapsed ? 'p-2' : 'p-4'} border-t border-gray-200 dark:border-gray-700 flex ${isSidebarCollapsed ? 'flex-col items-center gap-2' : 'items-center justify-around'}`}>
+          <div className="relative">
             <motion.button
-              key={i}
+              ref={userProfileButtonRef}
+              onClick={handleUserProfileClick}
+              onMouseEnter={(e) => {
+                if (isSidebarCollapsed) {
+                  const rect = (e.currentTarget as HTMLElement).getBoundingClientRect();
+                  setTooltipPositions(prev => ({ ...prev, profile: { top: rect.top + rect.height / 2, left: rect.right + 8 } }));
+                  setHoveredItem('profile');
+                }
+              }}
+              onMouseLeave={() => {
+                setHoveredItem(null);
+                setTooltipPositions(prev => {
+                  const { profile: _, ...rest } = prev;
+                  return rest;
+                });
+              }}
               whileHover={{ scale: 1.1 }}
               whileTap={{ scale: 0.9 }}
-              className="p-2 text-gray-600 dark:text-gray-400 hover:text-indigo-600 dark:hover:text-indigo-400 transition-colors"
+              className="relative rounded-full bg-gradient-to-r from-orange-400 to-orange-500 flex items-center justify-center transition-all hover:shadow-lg w-9 h-9"
             >
-              <Icon className="w-5 h-5" />
+              <span className="text-white font-semibold text-sm">
+                {getUserInitial()}
+              </span>
             </motion.button>
-          ))}
-            </>
-          )}
+            {isSidebarCollapsed && hoveredItem === 'profile' && tooltipPositions.profile && (
+              <div className="fixed z-[9999] pointer-events-none" style={{ top: `${tooltipPositions.profile.top}px`, left: `${tooltipPositions.profile.left}px`, transform: 'translateY(-50%)' }}>
+                <div className="bg-gray-900 dark:bg-gray-800 text-white text-sm px-3 py-1.5 rounded-md shadow-lg whitespace-nowrap relative">
+                  <div className="absolute right-full top-1/2 -translate-y-1/2 w-0 h-0 border-t-[6px] border-t-transparent border-b-[6px] border-b-transparent border-r-[6px] border-r-gray-900 dark:border-r-gray-800"></div>
+                  Profile
+                </div>
+              </div>
+            )}
+          </div>
+          {[Folder, MessageCircle, Settings].map((Icon, i) => {
+            const footerLabels = ['Folder', 'Message', 'Settings'];
+            return (
+              <div key={i} className="relative">
+                <motion.button
+                  whileHover={{ scale: 1.1 }}
+                  whileTap={{ scale: 0.9 }}
+                  onMouseEnter={(e) => {
+                    if (isSidebarCollapsed) {
+                      const rect = (e.currentTarget as HTMLElement).getBoundingClientRect();
+                      setTooltipPositions(prev => ({ ...prev, [`footer-${i}`]: { top: rect.top + rect.height / 2, left: rect.right + 8 } }));
+                      setHoveredItem(`footer-${i}`);
+                    }
+                  }}
+                  onMouseLeave={() => {
+                    setHoveredItem(null);
+                    const key = `footer-${i}`;
+                    setTooltipPositions(prev => {
+                      const { [key]: _, ...rest } = prev;
+                      return rest;
+                    });
+                  }}
+                  className="p-2 text-gray-600 dark:text-gray-400 hover:text-indigo-600 dark:hover:text-indigo-400 transition-colors"
+                >
+                  <Icon className="w-5 h-5" />
+                </motion.button>
+                {isSidebarCollapsed && hoveredItem === `footer-${i}` && tooltipPositions[`footer-${i}`] && (
+                  <div className="fixed z-[9999] pointer-events-none" style={{ top: `${tooltipPositions[`footer-${i}`].top}px`, left: `${tooltipPositions[`footer-${i}`].left}px`, transform: 'translateY(-50%)' }}>
+                    <div className="bg-gray-900 dark:bg-gray-800 text-white text-sm px-3 py-1.5 rounded-md shadow-lg whitespace-nowrap relative">
+                      <div className="absolute right-full top-1/2 -translate-y-1/2 w-0 h-0 border-t-[6px] border-t-transparent border-b-[6px] border-b-transparent border-r-[6px] border-r-gray-900 dark:border-r-gray-800"></div>
+                      {footerLabels[i]}
+                    </div>
+                  </div>
+                )}
+              </div>
+            );
+          })}
         </div>
       </aside>
 
       {/* Main */}
       <main className="flex-1 flex flex-col overflow-hidden relative z-0">
-        {/* Top Pink Line */}
-        <div className="h-0.5 bg-pink-200 dark:bg-pink-900"></div>
+      
         <header className="h-16 dark:bg-gray-800 border-gray-200 dark:border-gray-700 flex items-center justify-end px-6">
           <motion.button
             whileHover={{ scale: 1.1 }}
