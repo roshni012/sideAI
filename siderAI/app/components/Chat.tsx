@@ -1781,7 +1781,6 @@ export default function Chat() {
                     transition={{ delay: index * 0.1 }}
                     onClick={handleAgentClick}
                     title={isSidebarCollapsed ? agent.name : ''}
-                    className={`w-full flex items-center ${isSidebarCollapsed ? 'justify-center px-2' : 'gap-3 px-3'} py-2 rounded-lg text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors ${isSidebarCollapsed ? '' : 'text-left'}`}
                     className={`w-full flex items-center ${isSidebarCollapsed ? 'justify-center px-2' : 'gap-3 px-3'} py-2 rounded-lg transition-colors text-left ${
                       isActive
                         ? 'bg-indigo-50 dark:bg-indigo-900/20 text-indigo-600 dark:text-indigo-400'
