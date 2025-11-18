@@ -299,9 +299,14 @@
 
     // Load saved selected model
     chrome.storage.sync.get(['sider_selected_model'], (result) => {
-      const selected = result.sider_selected_model || 'gpt-4o-mini';
-      const radio = modalEl.querySelector(`input[name="sider-model"][value="${selected}"]`);
-      if (radio) radio.checked = true;
+      const fallback = (window.SiderChatTab && typeof window.SiderChatTab.getActiveModel === 'function')
+        ? window.SiderChatTab.getActiveModel()
+        : null;
+      const selected = result.sider_selected_model || fallback;
+      if (selected) {
+        const radio = modalEl.querySelector(`input[name="sider-model"][value="${selected}"]`);
+        if (radio) radio.checked = true;
+      }
     });
 
     // Show modal
@@ -397,9 +402,14 @@
 
     // Load saved selected model
     chrome.storage.sync.get(['sider_selected_model'], (result) => {
-      const selected = result.sider_selected_model || 'gpt-4o-mini';
-      const radio = modalEl.querySelector(`input[name="sider-model"][value="${selected}"]`);
-      if (radio) radio.checked = true;
+      const fallback = (window.SiderChatTab && typeof window.SiderChatTab.getActiveModel === 'function')
+        ? window.SiderChatTab.getActiveModel()
+        : null;
+      const selected = result.sider_selected_model || fallback;
+      if (selected) {
+        const radio = modalEl.querySelector(`input[name="sider-model"][value="${selected}"]`);
+        if (radio) radio.checked = true;
+      }
     });
 
     // Attach handlers for more options modal - click on entire item

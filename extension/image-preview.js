@@ -875,6 +875,33 @@
         }
         break;
       case 'extract':
+        // Convert image to data URL if it's not already
+        if (imgSrc.startsWith('data:')) {
+          // Already a data URL, send directly
+          chrome.runtime.sendMessage({
+            type: 'EXTRACT_TEXT',
+            dataUrl: imgSrc,
+            alt: imgAlt
+          });
+        } else {
+          // Need to convert to data URL
+          convertImageToDataUrl(imgSrc).then(dataUrl => {
+            chrome.runtime.sendMessage({
+              type: 'EXTRACT_TEXT',
+              dataUrl: dataUrl,
+              alt: imgAlt
+            });
+          }).catch(err => {
+            console.error('Error converting image to data URL:', err);
+            // Fallback: send the URL and let side panel handle it
+            chrome.runtime.sendMessage({
+              type: 'EXTRACT_TEXT',
+              imageUrl: imgSrc,
+              alt: imgAlt
+            });
+          });
+        }
+        // Also dispatch the event for backward compatibility
         window.dispatchEvent(new CustomEvent('sider:extract-text', {
           detail: { src: imgSrc, element: img }
         }));

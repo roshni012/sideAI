@@ -1,10 +1,12 @@
 (function() {
   'use strict';
   
-  let currentModel = 'chatgpt';
+  let currentModel = null;
   let currentTab = null;
   let lastActiveGroup1Tab = 'rec-note'; // Track last active tab from Group 1
   let activeSidebarTab = 'chat'; // Track currently active sidebar tab
+  let lastTabUrl = null; // Track last URL to detect page reloads
+  let lastTabId = null; // Track last tab ID
   
   // Get current tab info
   async function getCurrentTab() {
@@ -16,30 +18,42 @@
     }
   }
   
-  // Update page title in summarize card
-  async function updatePageTitle() {
+  // Update page title in summarize card (only in chat tab)
+  async function updatePageTitle(showCard = false) {
+    // Only update if chat tab is active (card only exists in chat-tab.html)
+    if (activeSidebarTab !== 'chat') return;
+    
     currentTab = await getCurrentTab();
     if (!currentTab) return;
     
-    const summarizeCard = document.getElementById('sider-summarize-card');
-    const siteNameSpan = document.getElementById('sider-summarize-site-name');
+    // Wait for the summarize card element to be available in DOM
+    // Retry a few times if element is not found (in case HTML is still loading)
+    let summarizeCard = document.getElementById('sider-summarize-card');
+    let siteNameSpan = document.getElementById('sider-summarize-site-name');
+    
+    // If elements not found and we want to show the card, wait a bit and retry
+    if (showCard && (!summarizeCard || !siteNameSpan)) {
+      await new Promise(resolve => setTimeout(resolve, 200));
+      summarizeCard = document.getElementById('sider-summarize-card');
+      siteNameSpan = document.getElementById('sider-summarize-site-name');
+    }
     
     if (summarizeCard && siteNameSpan) {
       let siteName = currentTab.title || 'Page';
+      let siteDomain = '';
+      let faviconUrl = '';
+      
       try {
         const url = new URL(currentTab.url);
-        siteName = url.hostname.replace('www.', '');
-        const parts = siteName.split('.');
-        if (parts.length > 1) {
-          siteName = parts[0];
-        }
-        siteName = siteName.charAt(0).toUpperCase() + siteName.slice(1);
+        siteDomain = url.hostname.replace('www.', '');
+        siteName = siteDomain;
         
-        if (currentTab.title && currentTab.title.length < 50 && currentTab.title.length > siteName.length) {
-          siteName = currentTab.title.substring(0, 40);
-          if (currentTab.title.length > 40) {
-            siteName += '...';
-          }
+        // Get favicon URL
+        if (currentTab.favIconUrl) {
+          faviconUrl = currentTab.favIconUrl;
+        } else {
+          // Fallback: use Google's favicon service
+          faviconUrl = `https://www.google.com/s2/favicons?domain=${siteDomain}&sz=32`;
         }
       } catch (e) {
         siteName = (currentTab.title || 'Page').substring(0, 40);
@@ -48,12 +62,64 @@
         }
       }
       
-      siteNameSpan.textContent = siteName;
-      // Only show summarize card if chat tab is active
-      if (activeSidebarTab === 'chat') {
-      summarizeCard.style.display = 'flex';
+      // Update site name - always show the domain name
+      const displayName = siteDomain || siteName;
+      siteNameSpan.textContent = displayName;
+      
+      // Ensure site name is visible
+      siteNameSpan.style.display = 'block';
+      siteNameSpan.style.visibility = 'visible';
+      siteNameSpan.style.opacity = '1';
+      
+      console.log('Summarize card updated:', { 
+        siteDomain, 
+        siteName, 
+        displayName, 
+        faviconUrl,
+        hasFavicon: !!faviconUrl 
+      });
+      
+      // Update favicon/logo
+      const faviconImg = document.getElementById('sider-summarize-favicon');
+      const iconSvg = document.getElementById('sider-summarize-icon-svg');
+      if (faviconImg && faviconUrl) {
+        faviconImg.src = faviconUrl;
+        faviconImg.alt = siteDomain || siteName;
+        faviconImg.onerror = function() {
+          // If favicon fails to load, show fallback icon
+          this.style.display = 'none';
+          if (iconSvg) {
+            iconSvg.style.display = 'block';
+          }
+        };
+        faviconImg.onload = function() {
+          // When favicon loads successfully, hide fallback
+          this.style.display = 'block';
+          if (iconSvg) {
+            iconSvg.style.display = 'none';
+          }
+        };
+        // Try to load the favicon
+        faviconImg.style.display = 'block';
+        if (iconSvg) {
+          iconSvg.style.display = 'none';
+        }
+      } else if (iconSvg) {
+        // No favicon URL, show fallback icon
+        iconSvg.style.display = 'block';
+        if (faviconImg) {
+          faviconImg.style.display = 'none';
+        }
+      }
+      
+      // Only show card if explicitly requested (on page reload)
+      if (showCard) {
+        summarizeCard.style.display = 'flex';
+        console.log('Summarize card shown on page reload');
+      }
+    } else if (showCard) {
+      console.warn('Summarize card element not found when trying to show it. Chat tab HTML may not be loaded yet.');
     }
-  }
   }
   
   // Auto-resize is now handled by ChatTab component
@@ -335,6 +401,8 @@
   
   // Show/hide summarize card based on active tab (only show in chat)
   function toggleSummarizeCard(show) {
+    // Only show summarize card if chat tab is active (card only exists in chat-tab.html)
+    if (activeSidebarTab !== 'chat') return;
     const summarizeCard = document.getElementById('sider-summarize-card');
     if (summarizeCard) {
       summarizeCard.style.display = show ? 'flex' : 'none';
@@ -510,7 +578,7 @@
     
     const aiIconImg = document.getElementById('sider-ai-icon-img');
     if (aiIconImg) {
-      const imageUrl = iconMap[model] || iconMap['chatgpt'] || chrome.runtime.getURL('icons/fusion.png');
+      const imageUrl = iconMap[model] || chrome.runtime.getURL('icons/fusion.png');
       aiIconImg.src = imageUrl;
       aiIconImg.alt = model;
     }
@@ -590,14 +658,22 @@
   // OCR Functions
   let ocrImageScale = 1;
   let ocrExtractedText = '';
+  let isProcessingOCR = false; // Guard to prevent multiple simultaneous OCR calls
   
   function openOCR() {
     const ocrContainer = document.getElementById('sider-ocr-container');
     const welcome = document.querySelector('.sider-welcome');
     const chatContainer = document.getElementById('sider-chat-container');
-    const summarizeCard = document.getElementById('sider-summarize-card');
     const panelFooter = document.querySelector('.sider-panel-footer');
     const panelBody = document.getElementById('sider-panel-body');
+    
+    // Hide summarize card when switching to OCR (only exists in chat tab)
+    if (activeSidebarTab === 'chat') {
+      const summarizeCard = document.getElementById('sider-summarize-card');
+      if (summarizeCard) {
+        summarizeCard.style.display = 'none';
+      }
+    }
     
     if (ocrContainer) {
       ocrContainer.style.display = 'flex';
@@ -710,6 +786,12 @@
   }
   
   async function processOCR(imageDataUrl) {
+    // Prevent multiple simultaneous OCR calls
+    if (isProcessingOCR) {
+      console.log('⚠️ OCR is already processing, skipping duplicate call');
+      return;
+    }
+    
     const result = document.getElementById('sider-ocr-result');
     const resultContent = document.getElementById('sider-ocr-result-content');
     const imageWrapper = document.getElementById('sider-ocr-image-wrapper');
@@ -722,16 +804,15 @@
       return;
     }
     
+    // Set processing flag
+    isProcessingOCR = true;
+    
     // Show loading state
     resultContent.textContent = 'Processing OCR...';
     result.style.display = 'block';
     
     try {
       // Call OCR API or service
-      // For now, using a placeholder - you'll need to integrate with an actual OCR service
-      // Examples: Tesseract.js (client-side), Google Cloud Vision API, AWS Textract, etc.
-      
-      // Simulate OCR processing (replace with actual OCR call)
       const extractedText = await performOCR(imageDataUrl);
       
       ocrExtractedText = extractedText;
@@ -740,26 +821,60 @@
     } catch (error) {
       console.error('OCR processing error:', error);
       resultContent.textContent = 'Error processing image. Please try again.';
+    } finally {
+      // Always reset the processing flag
+      isProcessingOCR = false;
     }
   }
   
+  // Helper function to convert data URL to Blob
+  function dataURLtoBlob(dataUrl) {
+    const arr = dataUrl.split(',');
+    const mime = arr[0].match(/:(.*?);/)[1];
+    const bstr = atob(arr[1]);
+    let n = bstr.length;
+    const u8arr = new Uint8Array(n);
+    while (n--) {
+      u8arr[n] = bstr.charCodeAt(n);
+    }
+    return new Blob([u8arr], { type: mime });
+  }
+
   async function performOCR(imageDataUrl) {
-    // Placeholder OCR function
-    // Replace this with actual OCR implementation
-    // Options:
-    // 1. Tesseract.js (client-side, free)
-    // 2. Google Cloud Vision API
-    // 3. AWS Textract
-    // 4. Azure Computer Vision
-    // 5. Your own backend OCR service
-    
-    // For now, return a placeholder message
-    return new Promise((resolve) => {
-      setTimeout(() => {
-        // Simulate OCR result
-        resolve('OCR text extraction would appear here.\n\nTo implement actual OCR, integrate with:\n- Tesseract.js (client-side)\n- Google Cloud Vision API\n- AWS Textract\n- Azure Computer Vision\n- Or your own OCR service');
-      }, 1000);
-    });
+    // Check if ImageService is available
+    if (!window.SiderImageService) {
+      console.error('ImageService not available');
+      return 'Error: Image service not available. Please refresh the page.';
+    }
+
+    try {
+      // Convert data URL to Blob
+      const blob = dataURLtoBlob(imageDataUrl);
+      
+      // Create a File object from the Blob (for better compatibility)
+      const file = new File([blob], 'ocr-image.png', { type: blob.type || 'image/png' });
+
+      const chatTabModel = (window.SiderChatTab && typeof window.SiderChatTab.getActiveModel === 'function')
+        ? window.SiderChatTab.getActiveModel()
+        : (window.SiderChatTab && window.SiderChatTab.currentModel);
+      const ocrModel = currentModel || chatTabModel;
+      
+      // Use ImageService to upload and extract text
+      const result = await window.SiderImageService.extractTextFromImage(file, {
+        mime: blob.type || 'image/png',
+        type: 'image'
+      }, ocrModel);
+
+      if (result.success && result.data) {
+        return result.data.text || 'No text detected in the image.';
+      } else {
+        console.error('OCR extraction failed:', result.error);
+        return `Error: ${result.error || 'Failed to extract text from image'}`;
+      }
+    } catch (error) {
+      console.error('OCR processing error:', error);
+      return `Error: ${error.message || 'Failed to process image'}`;
+    }
   }
   
   function setupOCREventListeners() {
@@ -1105,6 +1220,72 @@
     return false;
   });
   
+  // Listen for extract text from image-preview.js
+  chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
+    if (request.type === 'EXTRACT_TEXT') {
+      // Switch to OCR tab first
+      switchToTab('ocr');
+      
+      // Convert image to data URL if needed
+      const processImage = (dataUrl) => {
+        // Small delay to ensure OCR tab is fully opened
+        setTimeout(() => {
+          displayOCRImage(dataUrl);
+          processOCR(dataUrl);
+        }, 100);
+      };
+      
+      if (request.dataUrl) {
+        // Already a data URL
+        processImage(request.dataUrl);
+      } else if (request.imageUrl) {
+        // Need to convert URL to data URL
+        convertImageUrlToDataUrl(request.imageUrl).then(dataUrl => {
+          processImage(dataUrl);
+        }).catch(err => {
+          console.error('Error converting image URL to data URL:', err);
+          // Try to display the image URL directly (may not work due to CORS)
+          processImage(request.imageUrl);
+        });
+      }
+    }
+    return false;
+  });
+  
+  // Helper function to convert image URL to data URL
+  function convertImageUrlToDataUrl(url) {
+    return new Promise((resolve, reject) => {
+      // Try using fetch first
+      fetch(url)
+        .then(response => response.blob())
+        .then(blob => {
+          const reader = new FileReader();
+          reader.onloadend = () => resolve(reader.result);
+          reader.onerror = reject;
+          reader.readAsDataURL(blob);
+        })
+        .catch(() => {
+          // Fallback: try using an image element
+          const img = new Image();
+          img.crossOrigin = 'anonymous';
+          img.onload = function() {
+            try {
+              const canvas = document.createElement('canvas');
+              canvas.width = img.width;
+              canvas.height = img.height;
+              const ctx = canvas.getContext('2d');
+              ctx.drawImage(img, 0, 0);
+              resolve(canvas.toDataURL('image/png'));
+            } catch (e) {
+              reject(e);
+            }
+          };
+          img.onerror = reject;
+          img.src = url;
+        });
+    });
+  }
+  
   function initializePanel() {
     // Cleanup: Remove google_client_id from storage if it exists
     try {
@@ -1118,13 +1299,21 @@
       console.warn('⚠️ Failed to cleanup google_client_id:', error);
     }
     
-    // Get current tab
+    // Get current tab (don't set lastTabUrl yet - wait for first 'complete' status)
     getCurrentTab().then(tab => {
       currentTab = tab;
       if (window.SiderChatTab) {
         window.SiderChatTab.updateCurrentTab(tab);
       }
-      updatePageTitle();
+      updatePageTitle(false); // Don't show card on initial load
+      // Note: lastTabUrl and lastTabId will be set after first page completes
+      // This prevents the first load from being detected as a reload
+      
+      // Set initial tracking if tab is already loaded
+      if (tab && tab.url && tab.status === 'complete') {
+        lastTabUrl = tab.url;
+        lastTabId = tab.id;
+      }
     });
     
     // Show input footer by default since chat is the default tab
@@ -1662,7 +1851,7 @@
     
     // Summarize button
     const summarizeBtn = document.getElementById('sider-summarize-btn');
-    const summarizeCopyBtn = document.getElementById('sider-summarize-copy-btn');
+    const summarizeSaveBtn = document.getElementById('sider-summarize-save-btn');
     const summarizeCloseBtn = document.getElementById('sider-summarize-close-btn');
     
     if (summarizeBtn) {
@@ -1674,40 +1863,37 @@
       });
     }
     
-    if (summarizeCopyBtn) {
-      summarizeCopyBtn.addEventListener('click', (e) => {
+    if (summarizeSaveBtn) {
+      summarizeSaveBtn.addEventListener('click', (e) => {
         e.stopPropagation();
-        if (currentTab && currentTab.url) {
-          navigator.clipboard.writeText(currentTab.url).then(() => {
-            const originalTitle = summarizeCopyBtn.getAttribute('title');
-            summarizeCopyBtn.setAttribute('title', 'Copied!');
-            setTimeout(() => {
-              summarizeCopyBtn.setAttribute('title', originalTitle || 'Copy URL');
-            }, 2000);
-          }).catch(() => {
-            const textArea = document.createElement('textarea');
-            textArea.value = currentTab.url;
-            document.body.appendChild(textArea);
-            textArea.select();
-            document.execCommand('copy');
-            document.body.removeChild(textArea);
-          });
-        }
+        // Save functionality - can be implemented later
+        // For now, just show a feedback
+        const originalTitle = summarizeSaveBtn.getAttribute('title');
+        summarizeSaveBtn.setAttribute('title', 'Saved!');
+        setTimeout(() => {
+          summarizeSaveBtn.setAttribute('title', originalTitle || 'Save');
+        }, 2000);
+        console.log('Save button clicked - save functionality to be implemented');
       });
     }
     
     if (summarizeCloseBtn) {
       summarizeCloseBtn.addEventListener('click', (e) => {
         e.stopPropagation();
-        const summarizeCard = document.getElementById('sider-summarize-card');
-        if (summarizeCard) {
-          summarizeCard.style.display = 'none';
+        // Only hide if chat tab is active (card only exists in chat-tab.html)
+        if (activeSidebarTab === 'chat') {
+          const summarizeCard = document.getElementById('sider-summarize-card');
+          if (summarizeCard) {
+            summarizeCard.style.display = 'none';
+          }
         }
       });
     }
     
     // Close AI dropdown when clicking outside
     document.addEventListener('click', (e) => {
+      const aiDropdown = document.getElementById('sider-ai-dropdown');
+      const aiSelectorBtn = document.getElementById('sider-ai-selector-btn');
       if (aiDropdown && aiDropdown.style.display !== 'none') {
         if (!aiDropdown.contains(e.target) && !aiSelectorBtn?.contains(e.target)) {
           aiDropdown.style.display = 'none';
@@ -1752,12 +1938,37 @@
       try {
         const [activeTab] = await chrome.tabs.query({ active: true, currentWindow: true });
         if (activeTab && tabId === activeTab.id) {
+          // Only process when page is complete or title changes
           if (changeInfo.status === 'complete' || changeInfo.title) {
+            // Detect page reload: status is 'complete', URL exists, and URL/tabId match previous values
+            // This means the same page was reloaded (not navigation to a new page)
+            const isPageReload = changeInfo.status === 'complete' && 
+                                 tab.url && 
+                                 lastTabUrl !== null && // Must have a previous URL
+                                 lastTabUrl === tab.url && 
+                                 lastTabId === tabId;
+            
             currentTab = tab;
             if (window.SiderChatTab) {
               window.SiderChatTab.updateCurrentTab(tab);
             }
-            updatePageTitle();
+            
+            // Show summarize card only on page reload (not on initial load, navigation, or new chats)
+            if (isPageReload && activeSidebarTab === 'chat') {
+              // Use setTimeout to ensure DOM is ready and card isn't immediately hidden
+              setTimeout(() => {
+                updatePageTitle(true); // Pass true to show the card
+              }, 100);
+            } else {
+              updatePageTitle(false); // Update title but don't show card
+            }
+            
+            // Update tracking variables after checking for reload
+            // This ensures next reload will be detected correctly
+            if (tab.url && changeInfo.status === 'complete') {
+              lastTabUrl = tab.url;
+              lastTabId = tabId;
+            }
           }
         }
       } catch (e) {
@@ -2195,4 +2406,82 @@
       }
     }, 2000);
   }
-})();
+  
+  // Initialize custom tooltips (hide native tooltips)
+  function initTooltips(container) {
+    if (!container) container = document;
+    
+    // Convert all title attributes to data-tooltip for custom styling
+    const elementsWithTitle = container.querySelectorAll('[title]');
+    elementsWithTitle.forEach(el => {
+      if (el.title && !el.dataset.tooltip) {
+        el.dataset.tooltip = el.title;
+      }
+    });
+    
+    // Use event delegation to hide native tooltips on hover
+    container.addEventListener('mouseenter', function(e) {
+      if (!e || !e.target) return;
+      // Handle text nodes - get the parent element
+      let element = e.target;
+      if (element.nodeType !== 1) {
+        element = element.parentElement;
+      }
+      if (!element || typeof element.closest !== 'function') return;
+      const target = element.closest('[data-tooltip]');
+      if (target && target.title) {
+        // Store original title and remove it to hide native tooltip
+        if (!target.dataset.originalTitle) {
+          target.dataset.originalTitle = target.title;
+        }
+        target.removeAttribute('title');
+      }
+    }, true);
+    
+    container.addEventListener('mouseleave', function(e) {
+      if (!e || !e.target) return;
+      // Handle text nodes - get the parent element
+      let element = e.target;
+      if (element.nodeType !== 1) {
+        element = element.parentElement;
+      }
+      if (!element || typeof element.closest !== 'function') return;
+      const target = element.closest('[data-original-title]');
+      if (target && target.dataset.originalTitle) {
+        // Restore original title
+        target.title = target.dataset.originalTitle;
+      }
+    }, true);
+    
+    // Watch for dynamically added elements
+    const observer = new MutationObserver(mutations => {
+      mutations.forEach(mutation => {
+        mutation.addedNodes.forEach(node => {
+          if (node.nodeType === 1) { // Element node
+            if (node.hasAttribute && node.hasAttribute('title') && !node.dataset.tooltip) {
+              node.dataset.tooltip = node.title;
+            }
+            // Check children
+            const childrenWithTitle = node.querySelectorAll ? node.querySelectorAll('[title]') : [];
+            childrenWithTitle.forEach(el => {
+              if (el.title && !el.dataset.tooltip) {
+                el.dataset.tooltip = el.title;
+              }
+            });
+          }
+        });
+      });
+    });
+    
+    observer.observe(container, { childList: true, subtree: true });
+  }
+  
+  // Initialize tooltips when DOM is ready
+  if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', () => {
+      initTooltips();
+    });
+  } else {
+    initTooltips();
+  }
+  })();
