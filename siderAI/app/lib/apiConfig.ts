@@ -17,11 +17,20 @@ export const API_ENDPOINTS = {
     CREATE: '/api/conversations',
     GET: '/api/conversations', // GET /api/conversations/{conversation_id}
     LIST: '/api/conversations',
+    UPDATE: '/api/conversations', // PUT/PATCH /api/conversations/{conversation_id}
+    DELETE: '/api/conversations', // DELETE /api/conversations/{conversation_id}
+    DELETE_ALL: '/api/conversations/all', // DELETE /api/conversations/all
   },
   // File endpoints
   FILES: {
     UPLOAD: '/api/files/upload',
     UPLOAD_DIRECTLY: '/api/uploader/v1/file/upload-directly',
+  },
+  // Image processing endpoints
+  IMAGES: {
+    REMOVE_BACKGROUND: '/api/images/remove-background',
+    GENERATE: '/api/images/generate',
+    UPSCALE: '/api/images/upscale',
   },
 } as const;
 

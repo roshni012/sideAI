@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useRef, useEffect, useLayoutEffect } from 'react';
+import { useState, useRef, useEffect, useLayoutEffect, useMemo } from 'react';
 import { useRouter, usePathname } from 'next/navigation';
 import { motion } from 'framer-motion';
 import {
@@ -46,12 +46,15 @@ import {
   Plus,
   Trash2,
   Globe,
+  AlertCircle,
   FolderPlus,
   BarChart3,
   Brain,
   Edit,
   Sliders,
   Loader2,
+  MoreVertical,
+  Download,
 } from 'lucide-react';
 import UserProfileDropdown from './UserProfileDropdown';
 import DeepResearch from './DeepResearch';
@@ -80,38 +83,49 @@ interface Message {
   content: string;
   isGenerating?: boolean;
   images?: string[]; // Array of image preview URLs for user messages
+  files?: Array<{ name: string; url: string; type: string }>; // Array of file info (PDFs, etc.) for user messages
 }
 
 interface Model {
   id: string;
   name: string;
+  displayName?: string;
   icon?: React.ReactNode;
   category?: 'basic' | 'advanced' | 'other';
 }
 
+type FilePreview = {
+  file: File;
+  preview: string;
+  fileId?: string;
+  cdnURL?: string;
+  isUploading?: boolean;
+  isImage: boolean;
+};
+
 const AVAILABLE_MODELS: Model[] = [
   // Basic models
-  { id: 'gpt-4o-mini', name: 'gpt-4o-mini', category: 'basic' },
-  { id: 'sider-fusion', name: 'Sider Fusion', category: 'basic' },
-  { id: 'gpt-5-mini', name: 'GPT-5 mini', category: 'basic' },
-  { id: 'claude-haiku-4.5', name: 'Claude Haiku 4.5', category: 'basic' },
-  { id: 'gemini-2.5-flash', name: 'Gemini 2.5 Flash', category: 'basic' },
+  { id: 'webby-fusion', name: 'webby fusion', displayName: 'webby fusion', category: 'basic' },
+  { id: 'gpt-5-mini', name: 'gpt -5 mini', displayName: 'gpt -5 mini', category: 'basic' },
+  { id: 'claude-haiku-4.5', name: 'claude haiku 4.5', displayName: 'claude haiku 4.5', category: 'basic' },
+  { id: 'gemini-2.5-flash', name: 'gemini 2.5 flash', displayName: 'gemini 2.5 flash', category: 'basic' },
+  { id: 'gpt-5.1', name: 'gpt -5.1', displayName: 'gpt -5.1', category: 'basic' },
+  { id: 'gpt-4.1', name: 'gpt -4.1', displayName: 'gpt -4.1', category: 'basic' },
   // Advanced models
-  { id: 'gpt-5', name: 'GPT-5', category: 'advanced' },
-  { id: 'gpt-4.1', name: 'GPT-4.1', category: 'advanced' },
-  { id: 'deepseek-v3.1', name: 'DeepSeek v3.1', category: 'advanced' },
-  { id: 'claude-sonnet-4.5', name: 'Claude Sonnet 4.5', category: 'advanced' },
-  { id: 'gemini-2.5-pro', name: 'Gemini 2.5 Pro', category: 'advanced' },
-  { id: 'grok-4', name: 'Grok 4', category: 'advanced' },
+  { id: 'deepseek-v3.1', name: 'deepseek v3.1', displayName: 'deepseek v3.1', category: 'advanced' },
+  { id: 'claude-sonnet-4.5', name: 'claude sonnet 4.5', displayName: 'claude sonnet 4.5', category: 'advanced' },
+  { id: 'gemini-2.5-pro', name: 'gemini 2.5 pro', displayName: 'gemini 2.5 pro', category: 'advanced' },
+  { id: 'grok-4', name: 'grok 4', displayName: 'grok 4', category: 'advanced' },
+  { id: 'gpt-5', name: 'gpt -5', displayName: 'gpt -5', category: 'advanced' },
 ];
 
 const OTHER_MODELS: Model[] = [
-  { id: 'claude-3.5-haiku', name: 'Claude 3.5 Haiku', category: 'other' },
-  { id: 'kimi-k2', name: 'Kimi K2', category: 'other' },
-  { id: 'deepseek-v3', name: 'DeepSeek V3', category: 'other' },
-  { id: 'claude-3.7-sonnet', name: 'Claude 3.7 Sonnet', category: 'other' },
-  { id: 'claude-sonnet-4', name: 'Claude Sonnet 4', category: 'other' },
-  { id: 'claude-opus-4.1', name: 'Claude Opus 4.1', category: 'other' },
+  { id: 'claude-3.5-haiku', name: 'claude 3.5 haiku', displayName: 'claude 3.5 haiku', category: 'other' },
+  { id: 'kimi-k2', name: 'kimi k2', displayName: 'kimi k2', category: 'other' },
+  { id: 'deepseek-v3', name: 'deepseek v3', displayName: 'deepseek v3', category: 'other' },
+  { id: 'claude-3.7-sonnet', name: 'claude 3.7 sonnet', displayName: 'claude 3.7 sonnet', category: 'other' },
+  { id: 'claude-sonnet-4', name: 'claude sonnet 4', displayName: 'claude sonnet 4', category: 'other' },
+  { id: 'claude-opus-4.1', name: 'claude opus 4.1', displayName: 'claude opus 4.1', category: 'other' },
 ];
 
 const getModelIcon = (modelId: string) => {
@@ -172,7 +186,7 @@ export default function Chat() {
   const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(false);
   const [hoveredItem, setHoveredItem] = useState<string | null>(null);
   const [tooltipPositions, setTooltipPositions] = useState<Record<string, { top: number; left: number }>>({});
-  const [selectedModel, setSelectedModel] = useState('gpt-4o-mini');
+  const [selectedModel, setSelectedModel] = useState('webby fusion');
   const [activeView, setActiveView] = useState<'chat' | 'deep-research' | 'scholar-research' | 'web-creator' | 'ai-writer' | 'ai-slides'>(() => {
     const syncPathname = getPathnameSync();
     return getInitialActiveView(syncPathname);
@@ -184,8 +198,14 @@ export default function Chat() {
   const [aiWriterInput, setAIWriterInput] = useState('');
   const [aiSlidesInput, setAISlidesInput] = useState('');
   const availableModels = AVAILABLE_MODELS;
+  const availableModelNames = useMemo(() => new Set(availableModels.map((model) => model.name)), [availableModels]);
+  const filteredOtherModels = useMemo(
+    () => OTHER_MODELS.filter((model) => !availableModelNames.has(model.name)),
+    [availableModelNames]
+  );
   const [isModelDropdownOpen, setIsModelDropdownOpen] = useState(false);
   const [isOtherModelsHovered, setIsOtherModelsHovered] = useState(false);
+  const [otherModelsDropdownPosition, setOtherModelsDropdownPosition] = useState({ top: 0, left: 0 });
   const otherModelsRef = useRef<HTMLButtonElement>(null);
   const [viewMode, setViewMode] = useState<'single' | 'double'>('single');
   const [inputValue, setInputValue] = useState('');
@@ -194,7 +214,7 @@ export default function Chat() {
   const [conversationId, setConversationId] = useState<string | null>(null);
   
   // Second panel state for double view
-  const [selectedModel2, setSelectedModel2] = useState('GPT-5 mini');
+  const [selectedModel2, setSelectedModel2] = useState('openai/gpt-5-mini');
   const [messages2, setMessages2] = useState<Message[]>([]);
   const [isGenerating2, setIsGenerating2] = useState(false);
   const [conversationId2, setConversationId2] = useState<string | null>(null);
@@ -222,7 +242,7 @@ export default function Chat() {
   const attachmentButtonRef = useRef<HTMLButtonElement>(null);
   const attachmentDropdownRef = useRef<HTMLDivElement>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
-  const [filePreviews, setFilePreviews] = useState<{ file: File; preview: string; fileId?: string; cdnURL?: string; isUploading?: boolean }[]>([]);
+  const [filePreviews, setFilePreviews] = useState<FilePreview[]>([]);
   const [isTranslateDropdownOpen, setIsTranslateDropdownOpen] = useState<number | null>(null);
 
   // Debug: Log filePreviews changes
@@ -242,6 +262,18 @@ export default function Chat() {
   const [isChatHistoryOpen, setIsChatHistoryOpen] = useState(false);
   const [chatHistoryTab, setChatHistoryTab] = useState<'all' | 'starred'>('all');
   const [chatHistorySearch, setChatHistorySearch] = useState('');
+  const [isLoadingChatHistory, setIsLoadingChatHistory] = useState(false);
+  const [deleteConfirmOpen, setDeleteConfirmOpen] = useState(false);
+  const [conversationToDelete, setConversationToDelete] = useState<string | null>(null);
+  const [deleteAllConfirmOpen, setDeleteAllConfirmOpen] = useState(false);
+  const [isDeletingAll, setIsDeletingAll] = useState(false);
+  const [isDeleting, setIsDeleting] = useState(false);
+  const [openMenuId, setOpenMenuId] = useState<string | null>(null);
+  const [editTitleModalOpen, setEditTitleModalOpen] = useState(false);
+  const [conversationToEdit, setConversationToEdit] = useState<string | null>(null);
+  const [editTitleValue, setEditTitleValue] = useState('');
+  const [isUpdatingTitle, setIsUpdatingTitle] = useState(false);
+  const menuRefs = useRef<Record<string, HTMLDivElement | null>>({});
   const chatControlsRef = useRef<HTMLDivElement>(null);
   const chatControlsButtonRef = useRef<HTMLButtonElement>(null);
   const chatHistoryRef = useRef<HTMLDivElement>(null);
@@ -254,6 +286,19 @@ export default function Chat() {
   const [languageSearch, setLanguageSearch] = useState('');
   const languageDropdownRef = useRef<HTMLDivElement>(null);
   const languageButtonRef = useRef<HTMLButtonElement>(null);
+  const imagePreviewItems = useMemo(
+    () =>
+      filePreviews
+        .map((preview, idx) =>
+          preview.isImage ? { filePreview: preview, originalIndex: idx } : null
+        )
+        .filter(
+          (item): item is { filePreview: FilePreview; originalIndex: number } => item !== null
+        ),
+    [filePreviews]
+  );
+  const currentImageItem =
+    selectedImageIndex !== null ? imagePreviewItems[selectedImageIndex] : null;
   
   // Chat history data structure
   interface ChatHistoryItem {
@@ -330,6 +375,40 @@ export default function Chat() {
       window.removeEventListener('resize', updatePosition);
     };
   }, [isMoreHovered]);
+
+  useEffect(() => {
+    const updateOtherModelsPosition = () => {
+      if (isOtherModelsHovered && otherModelsRef.current && modelDropdownRef.current) {
+        const buttonRect = otherModelsRef.current.getBoundingClientRect();
+        const mainDropdownRect = modelDropdownRef.current.getBoundingClientRect();
+        const viewportHeight = window.innerHeight;
+        const dropdownHeight = 384; // max-h-96 = 384px
+        let top = buttonRect.top;
+        if (buttonRect.top + dropdownHeight > viewportHeight) {
+          top = viewportHeight - dropdownHeight - 8;
+          if (top < 8) {
+            top = 8;
+          }
+        }
+        
+        const left = mainDropdownRect.left - 8;
+        setOtherModelsDropdownPosition({
+          top: top,
+          left: left,
+        });
+      }
+    };
+
+    updateOtherModelsPosition();
+    
+    window.addEventListener('scroll', updateOtherModelsPosition, true);
+    window.addEventListener('resize', updateOtherModelsPosition);
+    
+    return () => {
+      window.removeEventListener('scroll', updateOtherModelsPosition, true);
+      window.removeEventListener('resize', updateOtherModelsPosition);
+    };
+  }, [isOtherModelsHovered]);
 
   const agents = [
     { name: 'Deep Research', icon: FileText },
@@ -455,14 +534,6 @@ export default function Chat() {
         setIsModelDropdownOpen(false);
       }
       if (
-        attachmentDropdownRef.current &&
-        attachmentButtonRef.current &&
-        !attachmentDropdownRef.current.contains(event.target as Node) &&
-        !attachmentButtonRef.current.contains(event.target as Node)
-      ) {
-        setIsAttachmentDropdownOpen(false);
-      }
-      if (
         translateDropdownRef.current &&
         !translateDropdownRef.current.contains(event.target as Node)
       ) {
@@ -492,9 +563,18 @@ export default function Chat() {
       ) {
         setIsLanguageDropdownOpen(false);
       }
+      
+      if (openMenuId !== null && !deleteConfirmOpen) {
+        const clickedInsideMenu = Object.values(menuRefs.current).some(
+          (menuRef) => menuRef && menuRef.contains(event.target as Node)
+        );
+        if (!clickedInsideMenu) {
+          setOpenMenuId(null);
+        }
+      }
     };
 
-    const shouldAddListener = isModelDropdownOpen || isAttachmentDropdownOpen || isTranslateDropdownOpen !== null || isChatControlsOpen || isImageModelDropdownOpen || isLanguageDropdownOpen;
+    const shouldAddListener = isModelDropdownOpen || isTranslateDropdownOpen !== null || isChatControlsOpen || isImageModelDropdownOpen || isLanguageDropdownOpen || openMenuId !== null;
     
     if (shouldAddListener) {
       document.addEventListener('mousedown', handleClickOutside);
@@ -504,10 +584,12 @@ export default function Chat() {
     return () => {
       document.removeEventListener('mousedown', handleClickOutside);
     };
-  }, [isModelDropdownOpen, isAttachmentDropdownOpen, isTranslateDropdownOpen, isChatControlsOpen, isImageModelDropdownOpen, isLanguageDropdownOpen]);
+  }, [isModelDropdownOpen, isTranslateDropdownOpen, isChatControlsOpen, isImageModelDropdownOpen, isLanguageDropdownOpen, openMenuId]);
 
   const handleAttachmentClick = () => {
-    setIsAttachmentDropdownOpen(!isAttachmentDropdownOpen);
+    if (fileInputRef.current) {
+      fileInputRef.current.click();
+    }
   };
 
   const handleFileSelect = () => {
@@ -522,14 +604,12 @@ export default function Chat() {
     if (files && files.length > 0) {
       const fileArray = Array.from(files);
       
-      // Create previews for image files with uploading state
-      const newPreviews = fileArray
-        .filter((file) => file.type.startsWith('image/'))
-        .map((file) => ({
-          file,
-          preview: URL.createObjectURL(file),
-          isUploading: true,
-        }));
+      const newPreviews = fileArray.map((file) => ({
+        file,
+        preview: URL.createObjectURL(file),
+        isUploading: true,
+        isImage: file.type.startsWith('image/'),
+      }));
       
       // Add previews immediately with uploading state
       setFilePreviews((prev) => [...prev, ...newPreviews]);
@@ -629,8 +709,13 @@ export default function Chat() {
     const message = 'Extract text from this image';
     const fileIds = filePreviews.map(preview => preview.fileId).filter((id): id is string => !!id);
     // Use CDN URLs if available, otherwise use object URLs
-    const imagePreviews = filePreviews.map(p => p.cdnURL || p.preview);
-    const imageUrls = filePreviews.map(p => p.cdnURL).filter((url): url is string => !!url);
+    const imagePreviews = filePreviews
+      .filter((p) => p.isImage)
+      .map((p) => p.cdnURL || p.preview);
+    const imageUrls = filePreviews
+      .filter((p) => p.isImage)
+      .map((p) => p.cdnURL)
+      .filter((url): url is string => !!url);
     
     // Store object URLs for cleanup later
     const objectUrlsToCleanup = filePreviews
@@ -646,7 +731,7 @@ export default function Chat() {
       if (isGenerating || isGenerating2) return;
       const abortController1 = new AbortController();
       const abortController2 = new AbortController();
-      sendMessageToPanel(1, message, selectedModel, conversationId, setConversationId, setMessages, setIsGenerating, abortController1, fileIds, imagePreviews, imageUrls).finally(() => {
+        sendMessageToPanel(1, message, selectedModel, conversationId, setConversationId, setMessages, setIsGenerating, abortController1, fileIds, imagePreviews, imageUrls, undefined).finally(() => {
         // Revoke object URLs after message is sent (with delay)
         setTimeout(() => {
           objectUrlsToCleanup.forEach((url) => {
@@ -655,12 +740,12 @@ export default function Chat() {
         }, 1000);
       });
       if (isPanel2Open) {
-        sendMessageToPanel(2, message, selectedModel2, conversationId2, setConversationId2, setMessages2, setIsGenerating2, abortController2, fileIds, imagePreviews, imageUrls);
+        sendMessageToPanel(2, message, selectedModel2, conversationId2, setConversationId2, setMessages2, setIsGenerating2, abortController2, fileIds, imagePreviews, imageUrls, undefined);
       }
     } else {
       if (isGenerating) return;
       const abortController = new AbortController();
-      await sendMessageToPanel(1, message, selectedModel, conversationId, setConversationId, setMessages, setIsGenerating, abortController, fileIds, imagePreviews, imageUrls).finally(() => {
+      await sendMessageToPanel(1, message, selectedModel, conversationId, setConversationId, setMessages, setIsGenerating, abortController, fileIds, imagePreviews, imageUrls, undefined).finally(() => {
         // Revoke object URLs after message is sent (with delay)
         setTimeout(() => {
           objectUrlsToCleanup.forEach((url) => {
@@ -675,8 +760,13 @@ export default function Chat() {
     const message = 'Solve the math problems in this image';
     const fileIds = filePreviews.map(preview => preview.fileId).filter((id): id is string => !!id);
     // Use CDN URLs if available, otherwise use object URLs
-    const imagePreviews = filePreviews.map(p => p.cdnURL || p.preview);
-    const imageUrls = filePreviews.map(p => p.cdnURL).filter((url): url is string => !!url);
+    const imagePreviews = filePreviews
+      .filter((p) => p.isImage)
+      .map((p) => p.cdnURL || p.preview);
+    const imageUrls = filePreviews
+      .filter((p) => p.isImage)
+      .map((p) => p.cdnURL)
+      .filter((url): url is string => !!url);
     
     // Store object URLs for cleanup later
     const objectUrlsToCleanup = filePreviews
@@ -692,7 +782,7 @@ export default function Chat() {
       if (isGenerating || isGenerating2) return;
       const abortController1 = new AbortController();
       const abortController2 = new AbortController();
-      sendMessageToPanel(1, message, selectedModel, conversationId, setConversationId, setMessages, setIsGenerating, abortController1, fileIds, imagePreviews, imageUrls).finally(() => {
+        sendMessageToPanel(1, message, selectedModel, conversationId, setConversationId, setMessages, setIsGenerating, abortController1, fileIds, imagePreviews, imageUrls, undefined).finally(() => {
         // Revoke object URLs after message is sent (with delay)
         setTimeout(() => {
           objectUrlsToCleanup.forEach((url) => {
@@ -701,12 +791,12 @@ export default function Chat() {
         }, 1000);
       });
       if (isPanel2Open) {
-        sendMessageToPanel(2, message, selectedModel2, conversationId2, setConversationId2, setMessages2, setIsGenerating2, abortController2, fileIds, imagePreviews, imageUrls);
+        sendMessageToPanel(2, message, selectedModel2, conversationId2, setConversationId2, setMessages2, setIsGenerating2, abortController2, fileIds, imagePreviews, imageUrls, undefined);
       }
     } else {
       if (isGenerating) return;
       const abortController = new AbortController();
-      await sendMessageToPanel(1, message, selectedModel, conversationId, setConversationId, setMessages, setIsGenerating, abortController, fileIds, imagePreviews, imageUrls).finally(() => {
+      await sendMessageToPanel(1, message, selectedModel, conversationId, setConversationId, setMessages, setIsGenerating, abortController, fileIds, imagePreviews, imageUrls, undefined).finally(() => {
         // Revoke object URLs after message is sent (with delay)
         setTimeout(() => {
           objectUrlsToCleanup.forEach((url) => {
@@ -722,8 +812,13 @@ export default function Chat() {
     const message = `Translate the text in this image to ${languageName}`;
     const fileIds = filePreviews.map(preview => preview.fileId).filter((id): id is string => !!id);
     // Use CDN URLs if available, otherwise use object URLs
-    const imagePreviews = filePreviews.map(p => p.cdnURL || p.preview);
-    const imageUrls = filePreviews.map(p => p.cdnURL).filter((url): url is string => !!url);
+    const imagePreviews = filePreviews
+      .filter((p) => p.isImage)
+      .map((p) => p.cdnURL || p.preview);
+    const imageUrls = filePreviews
+      .filter((p) => p.isImage)
+      .map((p) => p.cdnURL)
+      .filter((url): url is string => !!url);
     
     // Store object URLs for cleanup later
     const objectUrlsToCleanup = filePreviews
@@ -739,7 +834,7 @@ export default function Chat() {
       if (isGenerating || isGenerating2) return;
       const abortController1 = new AbortController();
       const abortController2 = new AbortController();
-      sendMessageToPanel(1, message, selectedModel, conversationId, setConversationId, setMessages, setIsGenerating, abortController1, fileIds, imagePreviews, imageUrls).finally(() => {
+        sendMessageToPanel(1, message, selectedModel, conversationId, setConversationId, setMessages, setIsGenerating, abortController1, fileIds, imagePreviews, imageUrls, undefined).finally(() => {
         // Revoke object URLs after message is sent (with delay)
         setTimeout(() => {
           objectUrlsToCleanup.forEach((url) => {
@@ -748,12 +843,12 @@ export default function Chat() {
         }, 1000);
       });
       if (isPanel2Open) {
-        sendMessageToPanel(2, message, selectedModel2, conversationId2, setConversationId2, setMessages2, setIsGenerating2, abortController2, fileIds, imagePreviews, imageUrls);
+        sendMessageToPanel(2, message, selectedModel2, conversationId2, setConversationId2, setMessages2, setIsGenerating2, abortController2, fileIds, imagePreviews, imageUrls, undefined);
       }
     } else {
       if (isGenerating) return;
       const abortController = new AbortController();
-      await sendMessageToPanel(1, message, selectedModel, conversationId, setConversationId, setMessages, setIsGenerating, abortController, fileIds, imagePreviews, imageUrls).finally(() => {
+      await sendMessageToPanel(1, message, selectedModel, conversationId, setConversationId, setMessages, setIsGenerating, abortController, fileIds, imagePreviews, imageUrls, undefined).finally(() => {
         // Revoke object URLs after message is sent (with delay)
         setTimeout(() => {
           objectUrlsToCleanup.forEach((url) => {
@@ -764,8 +859,12 @@ export default function Chat() {
     }
   };
 
-  const handleImageClick = (index: number) => {
-    setSelectedImageIndex(index);
+  const handleImageClick = (filePreviewIndex: number) => {
+    const imageIndex = imagePreviewItems.findIndex(
+      (item) => item.originalIndex === filePreviewIndex
+    );
+    if (imageIndex < 0) return;
+    setSelectedImageIndex(imageIndex);
     setIsImageMinimized(false);
     setIsImageMaximized(false);
     setImageZoom(1);
@@ -809,8 +908,174 @@ export default function Chat() {
     );
   };
 
-  const handleDeleteChat = (chatId: string) => {
-    setChatHistory((prev) => prev.filter((chat) => chat.id !== chatId));
+  const handleDeleteChatClick = (chatId: string, e: React.MouseEvent) => {
+    e.stopPropagation();
+    console.log('Opening delete confirmation for chat:', chatId);
+    setConversationToDelete(chatId);
+    setDeleteConfirmOpen(true);
+  };
+
+  // Handle edit title click - open modal
+  const handleEditTitleClick = (chatId: string, currentTitle: string) => {
+    setConversationToEdit(chatId);
+    setEditTitleValue(currentTitle);
+    setEditTitleModalOpen(true);
+  };
+
+  // Handle edit title API call
+  const handleEditTitle = async () => {
+    if (!conversationToEdit || !editTitleValue.trim() || isUpdatingTitle) return;
+
+    setIsUpdatingTitle(true);
+    try {
+      const authToken = localStorage.getItem('authToken');
+      if (!authToken || !authToken.trim()) {
+        console.error('Authentication required');
+        setIsUpdatingTitle(false);
+        return;
+      }
+
+      const headers: HeadersInit = {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${authToken.trim()}`,
+      };
+
+      // Call update API (typically PUT or PATCH)
+      const response = await fetch(`${getApiUrl(API_ENDPOINTS.CONVERSATIONS.UPDATE)}/${conversationToEdit}`, {
+        method: 'PUT',
+        headers,
+        body: JSON.stringify({
+          title: editTitleValue.trim(),
+        }),
+      });
+
+      if (response.ok) {
+        const data = await response.json();
+        console.log('Conversation title updated:', data);
+        
+        // Update chat history with new title
+        setChatHistory((prev) =>
+          prev.map((chat) =>
+            chat.id === conversationToEdit ? { ...chat, title: editTitleValue.trim() } : chat
+          )
+        );
+        
+        setEditTitleModalOpen(false);
+        setConversationToEdit(null);
+        setEditTitleValue('');
+      } else {
+        const errorData = await response.json().catch(() => ({ detail: 'Failed to update conversation title' }));
+        console.error('Failed to update conversation title:', errorData);
+      }
+    } catch (error) {
+      console.error('Error updating conversation title:', error);
+    } finally {
+      setIsUpdatingTitle(false);
+    }
+  };
+
+  const handleDeleteChat = async () => {
+    if (!conversationToDelete || isDeleting) return;
+
+    const chatId = conversationToDelete;
+    setIsDeleting(true);
+    try {
+      const authToken = localStorage.getItem('authToken');
+      if (!authToken || !authToken.trim()) {
+        console.error('Authentication required');
+        setDeleteConfirmOpen(false);
+        setConversationToDelete(null);
+        return;
+      }
+
+      const headers: HeadersInit = {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${authToken.trim()}`,
+      };
+
+      // Call delete API
+      const response = await fetch(`${getApiUrl(API_ENDPOINTS.CONVERSATIONS.DELETE)}/${chatId}`, {
+        method: 'DELETE',
+        headers,
+      });
+
+      if (response.ok) {
+        const data = await response.json();
+        console.log('Conversation deleted:', data);
+        
+        // Update chat history by removing the deleted chat
+        setChatHistory((prev) => prev.filter((chat) => chat.id !== chatId));
+        
+        // If the deleted conversation is currently open, clear it
+        if (conversationId === chatId) {
+          setConversationId(null);
+          setMessages([]);
+          setInputValue('');
+        }
+      } else {
+        const errorData = await response.json().catch(() => ({ detail: 'Failed to delete conversation' }));
+        console.error('Failed to delete conversation:', errorData);
+        // Still remove from UI if it's a 404 (already deleted) or show error
+        if (response.status === 404) {
+          setChatHistory((prev) => prev.filter((chat) => chat.id !== chatId));
+        }
+      }
+    } catch (error) {
+      console.error('Error deleting conversation:', error);
+      // Optionally show error to user, but don't remove from UI if API call failed
+    } finally {
+      setIsDeleting(false);
+      setDeleteConfirmOpen(false);
+      setConversationToDelete(null);
+    }
+  };
+
+  const handleDeleteAllConversations = async () => {
+    if (isDeletingAll) return;
+
+    setIsDeletingAll(true);
+    try {
+      const authToken = localStorage.getItem('authToken');
+      if (!authToken || !authToken.trim()) {
+        console.error('Authentication required');
+        setDeleteAllConfirmOpen(false);
+        return;
+      }
+
+      const headers: HeadersInit = {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${authToken.trim()}`,
+      };
+
+      // Call delete all API
+      const response = await fetch(getApiUrl(API_ENDPOINTS.CONVERSATIONS.DELETE_ALL), {
+        method: 'DELETE',
+        headers,
+      });
+
+      if (response.ok) {
+        const data = await response.json();
+        console.log('All conversations deleted:', data);
+        
+        // Clear chat history
+        setChatHistory([]);
+        
+        // Clear current conversation if open
+        setConversationId(null);
+        setMessages([]);
+        setInputValue('');
+      } else {
+        const errorData = await response.json().catch(() => ({ detail: 'Failed to delete all conversations' }));
+        console.error('Failed to delete all conversations:', errorData);
+        alert(errorData.detail || 'Failed to delete all conversations');
+      }
+    } catch (error) {
+      console.error('Error deleting all conversations:', error);
+      alert('An error occurred while deleting all conversations');
+    } finally {
+      setIsDeletingAll(false);
+      setDeleteAllConfirmOpen(false);
+    }
   };
 
   const getFilteredChatHistory = () => {
@@ -903,8 +1168,48 @@ export default function Chat() {
     }
   }, [messages, conversationId]);
 
-  // Helper function to send message to a specific panel
-  // Fetch conversation details
+  const extractImageUrls = (message: any): string[] | undefined => {
+    if (!message) return undefined;
+    const urls = new Set<string>();
+
+    const addUrl = (value?: unknown) => {
+      if (typeof value === 'string') {
+        const trimmed = value.trim();
+        if (trimmed && (trimmed.startsWith('http://') || trimmed.startsWith('https://'))) {
+          urls.add(trimmed);
+        }
+      }
+    };
+
+    const addFromArray = (value?: unknown) => {
+      if (Array.isArray(value)) {
+        value.forEach((item) => {
+          if (typeof item === 'string') {
+            addUrl(item);
+          } else if (item && typeof item === 'object') {
+            addUrl((item as { url?: string }).url);
+          }
+        });
+      }
+    };
+
+    addFromArray(message.images);
+    addFromArray(message.image_urls);
+    addFromArray(message.imageUrls);
+    addUrl(message.image_url);
+    addUrl(message.imageUrl);
+
+    if (Array.isArray(message.attachments)) {
+      message.attachments.forEach((attachment: any) => {
+        if (attachment) {
+          addUrl(attachment.url || attachment.image_url || attachment.imageUrl);
+        }
+      });
+    }
+
+    return urls.size > 0 ? Array.from(urls) : undefined;
+  };
+
   const fetchConversation = async (conversationId: string): Promise<void> => {
     try {
       const authToken = localStorage.getItem('authToken');
@@ -923,17 +1228,44 @@ export default function Chat() {
       if (response.ok) {
         const data = await response.json();
         console.log('Conversation details fetched:', data);
+        if (data.code === 0 && data.data) {
+          const convData = data.data;
+          setConversationId(conversationId);
+          if (convData.messages && Array.isArray(convData.messages)) {
+            const loadedMessages: Message[] = convData.messages.map((msg: any) => ({
+              id: msg.id || `${Date.now()}-${Math.random()}`,
+              role: msg.role || 'assistant',
+              content: msg.content || msg.text || '',
+              isGenerating: false,
+              images: extractImageUrls(msg),
+            }));
+            setMessages(loadedMessages);
+          } else {
+            setMessages([]);
+          }
+          setIsChatHistoryOpen(false);
+        }
+      } else {
+        console.error('Failed to fetch conversation:', response.statusText);
       }
     } catch (error) {
       console.error('Error fetching conversation:', error);
     }
   };
 
+  const handleChatHistoryItemClick = (chatId: string) => {
+    fetchConversation(chatId);
+  };
+
   // List all conversations
   const listConversations = async (): Promise<void> => {
     try {
+      setIsLoadingChatHistory(true);
       const authToken = localStorage.getItem('authToken');
-      if (!authToken || !authToken.trim()) return;
+      if (!authToken || !authToken.trim()) {
+        setIsLoadingChatHistory(false);
+        return;
+      }
 
       const headers: HeadersInit = {
         'Content-Type': 'application/json',
@@ -948,13 +1280,55 @@ export default function Chat() {
       if (response.ok) {
         const data = await response.json();
         console.log('Conversations listed:', data);
-        // Update chat history if needed
-        if (data.code === 0 && data.data && Array.isArray(data.data)) {
-          // You can update chatHistory state here if needed
+        let conversations: any[] = [];
+        if (data.code === 0 && data.data) {
+          if (Array.isArray(data.data)) {
+            conversations = data.data;
+          } else if (Array.isArray(data.data.conversations)) {
+            conversations = data.data.conversations;
+          } else if (Array.isArray(data.data.items)) {
+            conversations = data.data.items;
+          }
+        } else if (Array.isArray(data)) {
+          conversations = data;
+        } else if (data.conversations && Array.isArray(data.conversations)) {
+          conversations = data.conversations;
         }
+        
+        if (conversations.length > 0) {
+          const mappedHistory: ChatHistoryItem[] = conversations.map((conv: any) => {
+            const id = conv.id || conv.conversation_id || conv._id || '';
+            const title = conv.title || conv.name || 'New Chat';
+            const preview = conv.preview || conv.last_message || conv.lastMessage || conv.description || title || 'No preview';
+            const timestamp = conv.created_at ? new Date(conv.created_at) : 
+                            (conv.createdAt ? new Date(conv.createdAt) : 
+                            (conv.updated_at ? new Date(conv.updated_at) : 
+                            (conv.updatedAt ? new Date(conv.updatedAt) : new Date())));
+            const starred = conv.starred || conv.is_starred || false;
+            
+            return {
+              id,
+              title,
+              preview: preview.substring(0, 100),
+              timestamp,
+              starred,
+            };
+          });
+          
+          mappedHistory.sort((a, b) => b.timestamp.getTime() - a.timestamp.getTime());
+          setChatHistory(mappedHistory);
+        } else {
+          setChatHistory([]);
+        }
+      } else {
+        console.error('Failed to fetch conversations:', response.statusText);
+        setChatHistory([]);
       }
     } catch (error) {
       console.error('Error listing conversations:', error);
+      setChatHistory([]);
+    } finally {
+      setIsLoadingChatHistory(false);
     }
   };
 
@@ -1062,13 +1436,36 @@ export default function Chat() {
     abortController: AbortController,
     fileIds?: string[], // File IDs (files are already uploaded when attached)
     imagePreviews?: string[], // Optional preview URLs to use instead of creating new ones
-    imageUrls?: string[] // CDN URLs for images (used with send API)
+    imageUrls?: string[], // CDN URLs for images (used with send API)
+    pdfFiles?: Array<{ name: string; url: string; type: string }> // PDF file information
   ) => {
+    // Only store CDN URLs in messages (not blob URLs that get revoked)
+    // Filter out invalid/empty URLs
+    const validImageUrls = imagePreviews?.filter((url): url is string => {
+      if (!url || typeof url !== 'string') return false;
+      // Only include CDN URLs (http/https), exclude blob URLs
+      return url.startsWith('http://') || url.startsWith('https://');
+    });
+
+    if (validImageUrls && validImageUrls.length > 0) {
+      console.log(`Storing images in user message (panel ${panelNumber}):`, validImageUrls);
+    }
+
+    // Filter PDF files to only include CDN URLs
+    const validPdfFiles = pdfFiles?.filter((file) => {
+      return file.url && (file.url.startsWith('http://') || file.url.startsWith('https://'));
+    });
+
+    if (validPdfFiles && validPdfFiles.length > 0) {
+      console.log(`Storing PDF files in user message (panel ${panelNumber}):`, validPdfFiles);
+    }
+
     const userMessage: Message = {
       id: `${Date.now()}-${panelNumber}`,
       role: 'user',
       content: messageText,
-      images: imagePreviews && imagePreviews.length > 0 ? imagePreviews : undefined,
+      images: validImageUrls && validImageUrls.length > 0 ? validImageUrls : undefined,
+      files: validPdfFiles && validPdfFiles.length > 0 ? validPdfFiles : undefined,
     };
 
     setMessagesState((prev) => [...prev, userMessage]);
@@ -1171,11 +1568,7 @@ export default function Chat() {
         if (abortController.signal.aborted) {
           setIsGeneratingState(false);
           setMessagesState((prev) =>
-            prev.map((msg) =>
-              msg.id === aiMessageId
-                ? { ...msg, isGenerating: false }
-                : msg
-            )
+            prev.filter((msg) => msg.id !== aiMessageId)
           );
           return;
         }
@@ -1196,11 +1589,7 @@ export default function Chat() {
         if (abortController.signal.aborted) {
           setIsGeneratingState(false);
           setMessagesState((prev) =>
-            prev.map((msg) =>
-              msg.id === aiMessageId
-                ? { ...msg, isGenerating: false }
-                : msg
-            )
+            prev.filter((msg) => msg.id !== aiMessageId)
           );
           return;
         }
@@ -1209,11 +1598,7 @@ export default function Chat() {
         if (abortController.signal.aborted) {
           setIsGeneratingState(false);
           setMessagesState((prev) =>
-            prev.map((msg) =>
-              msg.id === aiMessageId
-                ? { ...msg, isGenerating: false }
-                : msg
-            )
+            prev.filter((msg) => msg.id !== aiMessageId)
           );
           return;
         }
@@ -1226,11 +1611,7 @@ export default function Chat() {
           if (abortController.signal.aborted) {
             setIsGeneratingState(false);
             setMessagesState((prev) =>
-              prev.map((msg) =>
-                msg.id === aiMessageId
-                  ? { ...msg, isGenerating: false }
-                  : msg
-              )
+              prev.filter((msg) => msg.id !== aiMessageId)
             );
             return;
           }
@@ -1240,14 +1621,19 @@ export default function Chat() {
             setConversationIdState(cid);
           }
           
-          // Update message with response text
-          setMessagesState((prev) =>
-            prev.map((msg) =>
+          // Update message with response text (only if message still exists - wasn't removed by stop)
+          setMessagesState((prev) => {
+            const messageExists = prev.find((msg) => msg.id === aiMessageId);
+            if (!messageExists) {
+              // Message was removed by stop, don't update
+              return prev;
+            }
+            return prev.map((msg) =>
               msg.id === aiMessageId
                 ? { ...msg, content: text || '', isGenerating: false }
                 : msg
-            )
-          );
+            );
+          });
           
           console.log('Message completed:', { cid, tokens_used });
           
@@ -1257,8 +1643,6 @@ export default function Chat() {
             if (finalCid) {
               // Call GET conversation details
               await fetchConversation(finalCid);
-              // Call LIST conversations
-              await listConversations();
             }
           }
         } else {
@@ -1297,11 +1681,7 @@ export default function Chat() {
         if (abortController.signal.aborted) {
           setIsGeneratingState(false);
           setMessagesState((prev) =>
-            prev.map((msg) =>
-              msg.id === aiMessageId
-                ? { ...msg, isGenerating: false }
-                : msg
-            )
+            prev.filter((msg) => msg.id !== aiMessageId)
           );
           return;
         }
@@ -1322,11 +1702,7 @@ export default function Chat() {
         if (abortController.signal.aborted) {
           setIsGeneratingState(false);
           setMessagesState((prev) =>
-            prev.map((msg) =>
-              msg.id === aiMessageId
-                ? { ...msg, isGenerating: false }
-                : msg
-            )
+            prev.filter((msg) => msg.id !== aiMessageId)
           );
           return;
         }
@@ -1335,11 +1711,7 @@ export default function Chat() {
         if (abortController.signal.aborted) {
           setIsGeneratingState(false);
           setMessagesState((prev) =>
-            prev.map((msg) =>
-              msg.id === aiMessageId
-                ? { ...msg, isGenerating: false }
-                : msg
-            )
+            prev.filter((msg) => msg.id !== aiMessageId)
           );
           return;
         }
@@ -1352,11 +1724,7 @@ export default function Chat() {
           if (abortController.signal.aborted) {
             setIsGeneratingState(false);
             setMessagesState((prev) =>
-              prev.map((msg) =>
-                msg.id === aiMessageId
-                  ? { ...msg, isGenerating: false }
-                  : msg
-              )
+              prev.filter((msg) => msg.id !== aiMessageId)
             );
             return;
           }
@@ -1366,14 +1734,19 @@ export default function Chat() {
             setConversationIdState(cid);
           }
           
-          // Update message with response text
-          setMessagesState((prev) =>
-            prev.map((msg) =>
+          // Update message with response text (only if message still exists - wasn't removed by stop)
+          setMessagesState((prev) => {
+            const messageExists = prev.find((msg) => msg.id === aiMessageId);
+            if (!messageExists) {
+              // Message was removed by stop, don't update
+              return prev;
+            }
+            return prev.map((msg) =>
               msg.id === aiMessageId
                 ? { ...msg, content: text || '', isGenerating: false }
                 : msg
-            )
-          );
+            );
+          });
           
           console.log('Message completed:', { id, cid, tokens_used, model: responseModel, parent_message_id });
           
@@ -1383,8 +1756,6 @@ export default function Chat() {
             if (finalCid) {
               // Call GET conversation details
               await fetchConversation(finalCid);
-              // Call LIST conversations
-              await listConversations();
             }
           }
         } else {
@@ -1393,14 +1764,10 @@ export default function Chat() {
       }
     } catch (error: unknown) {
       if (error instanceof Error && error.name === 'AbortError') {
-        // Request was aborted - ensure state is cleaned up
+        // Request was aborted - remove the message completely (no response should be shown)
         setIsGeneratingState(false);
         setMessagesState((prev) =>
-          prev.map((msg) =>
-            msg.id === aiMessageId
-              ? { ...msg, isGenerating: false }
-              : msg
-          )
+          prev.filter((msg) => msg.id !== aiMessageId)
         );
         return;
       }
@@ -1564,7 +1931,7 @@ export default function Chat() {
         // Step 2: Send message using completion API
         const requestBody: CompletionRequestBody = {
           cid: currentConversationId,
-          model: selectedModel || 'gpt-4o-mini',
+          model: selectedModel || 'webby fusion',
           multi_content: [
             {
               type: 'text',
@@ -1661,8 +2028,22 @@ export default function Chat() {
       // Get file IDs, image previews, and image URLs from filePreviews before clearing
       const fileIds = filePreviews.map(preview => preview.fileId).filter((id): id is string => !!id);
       // Use CDN URLs if available, otherwise use object URLs
-      const imagePreviews = filePreviews.map(p => p.cdnURL || p.preview);
-      const imageUrls = filePreviews.map(p => p.cdnURL).filter((url): url is string => !!url);
+      const imagePreviews = filePreviews
+        .filter((p) => p.isImage)
+        .map((p) => p.cdnURL || p.preview);
+      const imageUrls = filePreviews
+        .filter((p) => p.isImage)
+        .map((p) => p.cdnURL)
+        .filter((url): url is string => !!url);
+      
+      // Extract PDF file information
+      const pdfFiles = filePreviews
+        .filter((p) => !p.isImage && p.cdnURL)
+        .map((p) => ({
+          name: p.file.name,
+          url: p.cdnURL!,
+          type: p.file.type,
+        }));
       
       // Store object URLs for cleanup later (only those without CDN URLs)
       const objectUrlsToCleanup = filePreviews
@@ -1686,7 +2067,8 @@ export default function Chat() {
         abortController1,
         fileIds,
         imagePreviews,
-        imageUrls
+        imageUrls,
+        pdfFiles
       ).finally(() => {
         abortController1Ref.current = null;
         // Only revoke object URLs that aren't CDN URLs (after a delay to ensure message is rendered)
@@ -1710,7 +2092,8 @@ export default function Chat() {
           abortController2,
           fileIds,
           imagePreviews,
-          imageUrls
+          imageUrls,
+          pdfFiles
         ).finally(() => {
           abortController2Ref.current = null;
         });
@@ -1719,23 +2102,59 @@ export default function Chat() {
       // Single view - original logic
       if (isGenerating) return;
 
+    // Get file IDs, image previews, and image URLs from filePreviews before clearing
+    const fileIds = filePreviews.map(preview => preview.fileId).filter((id): id is string => !!id);
+    // Use CDN URLs if available, otherwise use object URLs
+    const imagePreviews = filePreviews
+      .filter((p) => p.isImage)
+      .map((p) => p.cdnURL || p.preview);
+    const imageUrls = filePreviews
+      .filter((p) => p.isImage)
+      .map((p) => p.cdnURL)
+      .filter((url): url is string => !!url);
+    
+    // Extract PDF file information
+    const pdfFiles = filePreviews
+      .filter((p) => !p.isImage && p.cdnURL)
+      .map((p) => ({
+        name: p.file.name,
+        url: p.cdnURL!,
+        type: p.file.type,
+      }));
+    
+    // Only store CDN URLs in messages (not blob URLs that get revoked)
+    // Filter out invalid/empty URLs
+    const validImageUrls = imagePreviews?.filter((url): url is string => {
+      if (!url || typeof url !== 'string') return false;
+      // Only include CDN URLs (http/https), exclude blob URLs
+      return url.startsWith('http://') || url.startsWith('https://');
+    });
+
+    if (validImageUrls && validImageUrls.length > 0) {
+      console.log('Storing images in user message:', validImageUrls);
+    }
+
+    // Filter PDF files to only include CDN URLs
+    const validPdfFiles = pdfFiles.filter((file) => {
+      return file.url && (file.url.startsWith('http://') || file.url.startsWith('https://'));
+    });
+
+    if (validPdfFiles && validPdfFiles.length > 0) {
+      console.log('Storing PDF files in user message:', validPdfFiles);
+    }
+
     const userMessage: Message = {
       id: Date.now().toString(),
       role: 'user',
       content: inputValue.trim(),
-      images: filePreviews.length > 0 ? filePreviews.map(p => p.preview) : undefined,
+      images: validImageUrls && validImageUrls.length > 0 ? validImageUrls : undefined,
+      files: validPdfFiles && validPdfFiles.length > 0 ? validPdfFiles : undefined,
     };
 
     setMessages((prev) => [...prev, userMessage]);
     const messageText = inputValue.trim();
     setInputValue('');
     setIsGenerating(true);
-
-    // Get file IDs, image previews, and image URLs from filePreviews before clearing
-    const fileIds = filePreviews.map(preview => preview.fileId).filter((id): id is string => !!id);
-    // Use CDN URLs if available, otherwise use object URLs
-    const imagePreviews = filePreviews.map(p => p.cdnURL || p.preview);
-    const imageUrls = filePreviews.map(p => p.cdnURL).filter((url): url is string => !!url);
     
     // Store object URLs for cleanup later (only those that aren't CDN URLs)
     const objectUrlsToCleanup = filePreviews
@@ -1832,7 +2251,7 @@ export default function Chat() {
       if (imageUrls && imageUrls.length > 0) {
         const requestBody = {
           message: messageText,
-          model: selectedModel || 'gpt-4o-mini',
+          model: selectedModel || 'webby fusion',
           conversation_id: currentConversationId,
           stream: false,
           image_url: imageUrls[0], // Use first image URL
@@ -1840,7 +2259,7 @@ export default function Chat() {
         
         console.log('Sending message with images using send API:', {
           message: messageText,
-          model: selectedModel || 'gpt-4o-mini',
+          model: selectedModel || 'webby fusion',
           conversation_id: currentConversationId,
           image_url: imageUrls[0],
         });
@@ -1942,8 +2361,6 @@ export default function Chat() {
             if (finalCid) {
               // Call GET conversation details
               await fetchConversation(finalCid);
-              // Call LIST conversations
-              await listConversations();
             }
           }
         } else {
@@ -1953,7 +2370,7 @@ export default function Chat() {
         // No images, use completions API
         const requestBody: CompletionRequestBody = {
           cid: currentConversationId,
-          model: selectedModel || 'gpt-4o-mini',
+          model: selectedModel || 'webby fusion',
           multi_content: [
             {
               type: 'text',
@@ -1965,7 +2382,7 @@ export default function Chat() {
         
         console.log('Sending message without images using completions API:', {
           message: messageText,
-          model: selectedModel || 'gpt-4o-mini',
+          model: selectedModel || 'webby fusion',
           conversation_id: currentConversationId,
           file_ids: fileIds && fileIds.length > 0 ? fileIds : 'none',
           file_count: fileIds ? fileIds.length : 0
@@ -2068,8 +2485,6 @@ export default function Chat() {
             if (finalCid) {
               // Call GET conversation details
               await fetchConversation(finalCid);
-              // Call LIST conversations
-              await listConversations();
             }
           }
         } else {
@@ -2132,14 +2547,14 @@ export default function Chat() {
   };
 
   const handleStopGenerating = () => {
-    // Immediately update UI state first
+    // Immediately remove all generating messages (no response should be shown)
     setIsGenerating(false);
     setIsGenerating2(false);
     setMessages((prev) =>
-      prev.map((msg) => (msg.isGenerating ? { ...msg, isGenerating: false } : msg))
+      prev.filter((msg) => !msg.isGenerating)
     );
     setMessages2((prev) =>
-      prev.map((msg) => (msg.isGenerating ? { ...msg, isGenerating: false } : msg))
+      prev.filter((msg) => !msg.isGenerating)
     );
     
     // Then abort controllers
@@ -2753,7 +3168,7 @@ export default function Chat() {
                                     <div className={`flex-shrink-0 ${isSelected ? 'text-purple-600 dark:text-purple-400' : 'text-gray-500 dark:text-gray-400'}`}>
                                       {getModelIcon(model.id)}
                                     </div>
-                                    <span className="text-sm font-medium flex-1">{model.name}</span>
+                                    <span className="text-sm font-medium flex-1">{model.displayName || model.name}</span>
                                     {isSelected && <Zap className="w-4 h-4 text-purple-600 dark:text-purple-400" />}
                                   </motion.button>
                                 );
@@ -2783,7 +3198,7 @@ export default function Chat() {
                                     <div className={`flex-shrink-0 ${isSelected ? 'text-purple-600 dark:text-purple-400' : 'text-gray-500 dark:text-gray-400'}`}>
                                       {getModelIcon(model.id)}
                                     </div>
-                                    <span className="text-sm font-medium flex-1">{model.name}</span>
+                                    <span className="text-sm font-medium flex-1">{model.displayName || model.name}</span>
                                     {isSelected && <Zap className="w-4 h-4 text-purple-600 dark:text-purple-400" />}
                                   </motion.button>
                                 );
@@ -2855,7 +3270,27 @@ export default function Chat() {
                                     alt={`Uploaded image ${idx + 1}`}
                                     className="max-w-[150px] max-h-[150px] rounded-lg object-contain cursor-pointer"
                                     onClick={() => handleImageClick(idx)}
+                                    onError={(e) => {
+                                      console.error('Failed to load image:', imageUrl);
+                                      (e.target as HTMLImageElement).style.display = 'none';
+                                    }}
+                                    loading="lazy"
                                   />
+                                ))}
+                              </div>
+                            )}
+                            {message.files && message.files.length > 0 && (
+                              <div className="mb-2 flex flex-wrap gap-2">
+                                {message.files.map((file, idx) => (
+                                  <div
+                                    key={idx}
+                                    className="flex items-center gap-2 px-3 py-2 bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-600"
+                                  >
+                                    <FileText className="w-5 h-5 text-purple-500 flex-shrink-0" />
+                                    <span className="text-xs text-gray-700 dark:text-gray-300 line-clamp-1 max-w-[150px]">
+                                      {file.name}
+                                    </span>
+                                  </div>
                                 ))}
                               </div>
                             )}
@@ -2887,7 +3322,9 @@ export default function Chat() {
                         onClick={() => setIsModelDropdownOpen2(!isModelDropdownOpen2)}
                         className="px-3 py-1.5 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg font-medium text-sm flex items-center gap-2 hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors text-gray-900 dark:text-white shadow-sm"
                       >
-                        {selectedModel2}
+                        {availableModels.find((m) => m.name === selectedModel2)?.displayName || 
+                         OTHER_MODELS.find((m) => m.name === selectedModel2)?.displayName || 
+                         selectedModel2}
                         {isModelDropdownOpen2 ? (
                           <ChevronUp className="w-3 h-3" />
                         ) : (
@@ -2927,7 +3364,7 @@ export default function Chat() {
                                       <div className={`flex-shrink-0 ${isSelected ? 'text-purple-600 dark:text-purple-400' : 'text-gray-500 dark:text-gray-400'}`}>
                                         {getModelIcon(model.id)}
                                       </div>
-                                      <span className="text-sm font-medium flex-1">{model.name}</span>
+                                      <span className="text-sm font-medium flex-1">{model.displayName || model.name}</span>
                                       {isSelected && <Zap className="w-4 h-4 text-purple-600 dark:text-purple-400" />}
                                     </motion.button>
                                   );
@@ -2957,7 +3394,7 @@ export default function Chat() {
                                       <div className={`flex-shrink-0 ${isSelected ? 'text-purple-600 dark:text-purple-400' : 'text-gray-500 dark:text-gray-400'}`}>
                                         {getModelIcon(model.id)}
                                       </div>
-                                      <span className="text-sm font-medium flex-1">{model.name}</span>
+                                      <span className="text-sm font-medium flex-1">{model.displayName || model.name}</span>
                                       {isSelected && <Zap className="w-4 h-4 text-purple-600 dark:text-purple-400" />}
                                     </motion.button>
                                   );
@@ -3008,7 +3445,9 @@ export default function Chat() {
                               </div>
                               <div className="flex-1">
                                 <div className="text-xs text-gray-600 dark:text-gray-400 mb-1">
-                                  {selectedModel2}
+                                  {availableModels.find((m) => m.name === selectedModel2)?.displayName || 
+                         OTHER_MODELS.find((m) => m.name === selectedModel2)?.displayName || 
+                         selectedModel2}
                                 </div>
                                 <div className="bg-white dark:bg-gray-800 rounded-lg p-3 text-sm text-gray-900 dark:text-white shadow-sm">
                                   {message.content}
@@ -3030,6 +3469,21 @@ export default function Chat() {
                                       className="max-w-[150px] max-h-[150px] rounded-lg object-contain cursor-pointer"
                                       onClick={() => handleImageClick(idx)}
                                     />
+                                  ))}
+                                </div>
+                              )}
+                              {message.files && message.files.length > 0 && (
+                                <div className="mb-2 flex flex-wrap gap-2">
+                                  {message.files.map((file, idx) => (
+                                    <div
+                                      key={idx}
+                                      className="flex items-center gap-2 px-3 py-2 bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-600"
+                                    >
+                                      <FileText className="w-5 h-5 text-purple-500 flex-shrink-0" />
+                                      <span className="text-xs text-gray-700 dark:text-gray-300 line-clamp-1 max-w-[150px]">
+                                        {file.name}
+                                      </span>
+                                    </div>
                                   ))}
                                 </div>
                               )}
@@ -3120,30 +3574,38 @@ export default function Chat() {
                                 alt={`Uploaded image ${idx + 1}`}
                                 className="max-w-[200px] max-h-[200px] rounded-lg object-contain cursor-pointer"
                                 onClick={() => handleImageClick(idx)}
+                                onError={(e) => {
+                                  console.error('Failed to load image:', imageUrl);
+                                  // Hide broken image
+                                  (e.target as HTMLImageElement).style.display = 'none';
+                                }}
+                                loading="lazy"
                               />
                             ))}
                           </div>
                         )}
+                        {message.files && message.files.length > 0 && (
+                          <div className="mb-2 flex flex-wrap gap-2">
+                            {message.files.map((file, idx) => (
+                              <div
+                                key={idx}
+                                className="flex items-center gap-2 px-3 py-2 bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-600"
+                              >
+                                <FileText className="w-5 h-5 text-purple-500 flex-shrink-0" />
+                                <span className="text-xs text-gray-700 dark:text-gray-300 line-clamp-1 max-w-[200px]">
+                                  {file.name}
+                                </span>
+                              </div>
+                            ))}
+                          </div>
+                        )}
                         {message.content && (
-                        <p className="text-gray-900 dark:text-white">{message.content}</p>
+                          <p className="text-gray-900 dark:text-white">{message.content}</p>
                         )}
                       </div>
                     )}
                   </motion.div>
                 ))}
-                {isGenerating && (
-                  <div className="flex justify-center mt-4">
-                    <motion.button
-                      initial={{ opacity: 0 }}
-                      animate={{ opacity: 1 }}
-                      onClick={handleStopGenerating}
-                      className="px-4 py-2 bg-gray-800 dark:bg-gray-700 text-white rounded-lg text-sm flex items-center gap-2 hover:bg-gray-700 dark:hover:bg-gray-600 transition-colors"
-                    >
-                      <SquareIcon className="w-4 h-4" />
-                      Stop generating
-                    </motion.button>
-                  </div>
-                )}
                 <div ref={messagesEndRef} />
               </div>
             )}
@@ -3155,7 +3617,7 @@ export default function Chat() {
 
         {/* Input - Only show for chat view */}
         {activeView === 'chat' && (
-        <div className="bg-white dark:bg-gray-800 border-t border-gray-200 dark:border-gray-700 p-4">
+        <div className="dark:bg-gray-800 border-gray-200 dark:border-gray-700 p-4">
           <div className="max-w-4xl mx-auto">
             {/* All buttons in one line */}
             <div className="flex items-center gap-2 mb-3">
@@ -3170,7 +3632,9 @@ export default function Chat() {
                   <div className="w-5 h-5 rounded-full bg-gradient-to-br from-purple-500 to-pink-500 flex items-center justify-center flex-shrink-0">
                     <Zap className="w-3 h-3 text-white" />
                   </div>
-                  {selectedModel}
+                  {availableModels.find((m) => m.name === selectedModel)?.displayName || 
+                   OTHER_MODELS.find((m) => m.name === selectedModel)?.displayName || 
+                   selectedModel}
                   {isModelDropdownOpen ? (
                     <ChevronUp className="w-4 h-4" />
                   ) : (
@@ -3224,7 +3688,7 @@ export default function Chat() {
                                   {getModelIcon(model.id)}
                                 </div>
                                 <span className="text-sm font-medium flex-1">
-                                  {model.name}
+                                  {model.displayName || model.name}
                             </span>
                                 {isSelected && (
                                   <Zap className="w-4 h-4 text-purple-600 dark:text-purple-400" />
@@ -3266,7 +3730,7 @@ export default function Chat() {
                                   {getModelIcon(model.id)}
                                 </div>
                                 <span className="text-sm font-medium flex-1">
-                                  {model.name}
+                                  {model.displayName || model.name}
                                 </span>
                                 {isSelected && (
                                   <Zap className="w-4 h-4 text-purple-600 dark:text-purple-400" />
@@ -3292,102 +3756,39 @@ export default function Chat() {
                         </motion.button>
 
                         {/* Other Models Hover Dropdown */}
-                        {isOtherModelsHovered && (
-                          <motion.div
-                            ref={otherModelsDropdownRef}
-                            initial={{ opacity: 0, x: -10 }}
-                            animate={{ opacity: 1, x: 0 }}
-                            exit={{ opacity: 0, x: -10 }}
-                            onMouseEnter={() => setIsOtherModelsHovered(true)}
-                            onMouseLeave={() => setIsOtherModelsHovered(false)}
-                            className="absolute left-full top-0 ml-2 w-64 bg-white dark:bg-gray-800 rounded-lg shadow-xl border border-gray-200 dark:border-gray-700 z-[60] max-h-96 overflow-y-auto"
-                          >
+                        {isOtherModelsHovered && otherModelsRef.current && (
+                          <>
+                            {/* Invisible bridge to prevent hover loss */}
+                            {modelDropdownRef.current && (
+                              <div
+                                className="fixed z-[59] pointer-events-auto"
+                                style={{
+                                  top: `${otherModelsDropdownPosition.top}px`,
+                                  left: `${otherModelsDropdownPosition.left}px`,
+                                  width: `${Math.max(8, otherModelsRef.current.getBoundingClientRect().right - otherModelsDropdownPosition.left + 8)}px`,
+                                  height: `${otherModelsRef.current.getBoundingClientRect().height}px`,
+                                }}
+                                onMouseEnter={() => setIsOtherModelsHovered(true)}
+                              />
+                            )}
+                            <motion.div
+                              ref={otherModelsDropdownRef}
+                              initial={{ opacity: 0, x: -10 }}
+                              animate={{ opacity: 1, x: 0 }}
+                              exit={{ opacity: 0, x: -10 }}
+                              onMouseEnter={() => setIsOtherModelsHovered(true)}
+                              onMouseLeave={() => setIsOtherModelsHovered(false)}
+                              className="fixed w-64 bg-white dark:bg-gray-800 rounded-lg shadow-xl border border-gray-200 dark:border-gray-700 z-[60] max-h-96 overflow-y-auto"
+                              style={{
+                                top: `${otherModelsDropdownPosition.top}px`,
+                                left: `${otherModelsDropdownPosition.left}px`,
+                              }}
+                            >
                             <div className="p-2">
-                              {/* Show currently selected model at top if it's an advanced model */}
-                              {availableModels
-                                .filter((m) => m.category === 'advanced' && selectedModel === m.name)
-                                .map((model) => {
-                                  const isSelected = selectedModel === model.name;
-                                  return (
-                                    <motion.button
-                                      key={model.id}
-                                      onClick={() => {
-                                        setSelectedModel(model.name);
-                                        setIsModelDropdownOpen(false);
-                                        setIsOtherModelsHovered(false);
-                                      }}
-                                      className={`w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-left transition-colors mb-2 ${
-                                        isSelected
-                                          ? 'bg-purple-100 dark:bg-purple-900/30 text-purple-700 dark:text-purple-300'
-                                          : 'text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700'
-                                      }`}
-                                    >
-                                      <div
-                                        className={`flex-shrink-0 ${
-                                          isSelected
-                                            ? 'text-purple-600 dark:text-purple-400'
-                                            : 'text-gray-500 dark:text-gray-400'
-                                        }`}
-                                      >
-                                        {getModelIcon(model.id)}
-                                      </div>
-                                      <span className="text-sm font-medium flex-1">
-                                        {model.name}
-                                      </span>
-                                      {isSelected && (
-                                        <Zap className="w-4 h-4 text-purple-600 dark:text-purple-400" />
-                                      )}
-                                    </motion.button>
-                                  );
-                                })}
-
-                              {/* Advanced Models Section */}
-                              <div className="mb-2">
-                                <div className="px-3 py-2 text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider">
-                                  Advanced
-                                </div>
-                                {availableModels
-                                  .filter((model) => model.category === 'advanced')
-                                  .map((model) => {
-                                    const isSelected = selectedModel === model.name;
-                                    return (
-                                      <motion.button
-                                        key={model.id}
-                                        onClick={() => {
-                                          setSelectedModel(model.name);
-                                          setIsModelDropdownOpen(false);
-                                          setIsOtherModelsHovered(false);
-                                        }}
-                                        className={`w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-left transition-colors ${
-                                          isSelected
-                                            ? 'bg-purple-100 dark:bg-purple-900/30 text-purple-700 dark:text-purple-300'
-                                            : 'text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700'
-                                        }`}
-                                      >
-                                        <div
-                                          className={`flex-shrink-0 ${
-                                            isSelected
-                                              ? 'text-purple-600 dark:text-purple-400'
-                                              : 'text-gray-500 dark:text-gray-400'
-                                          }`}
-                                        >
-                                          {getModelIcon(model.id)}
-                                        </div>
-                                        <span className="text-sm font-medium flex-1">
-                                          {model.name}
-                                        </span>
-                                        {isSelected && (
-                                          <Zap className="w-4 h-4 text-purple-600 dark:text-purple-400" />
-                                        )}
-                                      </motion.button>
-                                    );
-                                  })}
-                              </div>
-
                               {/* Additional Other Models */}
-                              {OTHER_MODELS.length > 0 && (
-                                <div className="mt-2 pt-2 border-t border-gray-200 dark:border-gray-700">
-                                  {OTHER_MODELS.map((model) => {
+                              {filteredOtherModels.length > 0 && (
+                                <div>
+                                  {filteredOtherModels.map((model) => {
                                     const isSelected = selectedModel === model.name;
                                     return (
                                       <motion.button
@@ -3413,7 +3814,7 @@ export default function Chat() {
                                           {getModelIcon(model.id)}
                                         </div>
                                         <span className="text-sm font-medium flex-1">
-                                          {model.name}
+                                          {model.displayName || model.name}
                                         </span>
                                         {model.id === 'claude-opus-4.1' && (
                                           <div className="flex items-center gap-1">
@@ -3427,9 +3828,10 @@ export default function Chat() {
                                 </div>
                               )}
                             </div>
-                  </motion.div>
-                )}
-              </div>
+                            </motion.div>
+                          </>
+                        )}
+                      </div>
                     </div>
                   </motion.div>
                 )}
@@ -3497,42 +3899,6 @@ export default function Chat() {
                 >
                   <Paperclip className="w-5 h-5" />
                 </motion.button>
-                
-                {/* Tooltip for Attachment */}
-                <div className="absolute bottom-full left-0 mb-2 w-80 bg-gray-900 dark:bg-gray-700 text-white text-sm rounded-lg shadow-lg opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none z-50 p-3">
-                  <div className="space-y-1">
-                    <div>
-                      <span className="font-semibold">Support:</span> Webpage, PDF, DOC, XLSX, CSV, JPG, JSON, MP3, WAV, M4A, MPGA, and more
-                    </div>
-                    <div>
-                      <span className="font-semibold">Limit:</span> Up to 6 files, 100MB each
-                    </div>
-                  </div>
-                  <div className="absolute top-full left-4 w-0 h-0 border-l-4 border-r-4 border-t-4 border-transparent border-t-gray-900 dark:border-t-gray-700"></div>
-                </div>
-
-                {/* Attachment Dropdown */}
-                {isAttachmentDropdownOpen && (
-                  <motion.div
-                    ref={attachmentDropdownRef}
-                    initial={{ opacity: 0, y: -10 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    exit={{ opacity: 0, y: -10 }}
-                    className="absolute bottom-full left-0 mb-2 w-64 bg-white dark:bg-gray-800 rounded-lg shadow-xl border border-gray-200 dark:border-gray-700 z-50"
-                  >
-                    <div className="p-2">
-                      <motion.button
-                        whileHover={{ scale: 1.02 }}
-                        whileTap={{ scale: 0.98 }}
-                        onClick={handleFileSelect}
-                        className="w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-left transition-colors text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700"
-                      >
-                        <Upload className="w-4 h-4 text-purple-500" />
-                        <span className="text-sm font-medium">Upload from your computer</span>
-                      </motion.button>
-                    </div>
-                  </motion.div>
-                )}
               </div>
 
               {/* Right Side Action Buttons */}
@@ -3847,7 +4213,13 @@ export default function Chat() {
                 <motion.button
                   whileHover={{ scale: 1.05 }}
                   whileTap={{ scale: 0.95 }}
-                  onClick={() => setIsChatHistoryOpen(!isChatHistoryOpen)}
+                  onClick={async () => {
+                    const newState = !isChatHistoryOpen;
+                    setIsChatHistoryOpen(newState);
+                    if (newState) {
+                      await listConversations();
+                    }
+                  }}
                   className="p-2 rounded-lg border border-gray-200 dark:border-gray-700 transition-colors bg-white dark:bg-gray-800 text-gray-600 dark:text-gray-400 hover:bg-gray-50 dark:hover:bg-gray-700"
                 >
                   <History className="w-5 h-5" />
@@ -3879,7 +4251,7 @@ export default function Chat() {
               </div>
             </div>
 
-            <div className="relative bg-gray-50 dark:bg-gray-900 rounded-xl p-4 shadow-sm border border-gray-200 dark:border-gray-700 min-h-[200px]">
+            <div className="relative bg-gray-50 dark:bg-gray-900 rounded-xl p-4 shadow-sm border border-gray-200 dark:border-gray-700 min-h-[120px]">
               {/* File Previews */}
               {filePreviews.length > 0 && (
                 <div className="mb-4">
@@ -3900,18 +4272,27 @@ export default function Chat() {
                             </div>
                           ) : (
                             <>
-                              <img
-                                src={preview.preview}
-                                alt={preview.file.name}
-                                className="max-h-32 w-auto object-contain cursor-pointer"
-                                onClick={() => handleImageClick(index)}
-                                onError={() => {
-                                  console.error('Image failed to load:', preview.preview, preview.file.name);
-                                }}
-                                onLoad={() => {
-                                  console.log('Image loaded successfully:', preview.file.name);
-                                }}
-                              />
+                              {preview.isImage ? (
+                                <img
+                                  src={preview.preview}
+                                  alt={preview.file.name}
+                                  className="max-h-32 w-auto object-contain cursor-pointer"
+                                  onClick={() => handleImageClick(index)}
+                                  onError={() => {
+                                    console.error('Image failed to load:', preview.preview, preview.file.name);
+                                  }}
+                                  onLoad={() => {
+                                    console.log('Image loaded successfully:', preview.file.name);
+                                  }}
+                                />
+                              ) : (
+                                <div className="flex flex-col items-center justify-center w-full h-full p-3 text-center gap-2">
+                                  <FileText className="w-8 h-8 text-purple-500" />
+                                  <span className="text-xs text-gray-700 dark:text-gray-300 line-clamp-3">
+                                    {preview.file.name}
+                                  </span>
+                                </div>
+                              )}
                               <motion.button
                                 whileHover={{ scale: 1.1 }}
                                 whileTap={{ scale: 0.9 }}
@@ -4004,6 +4385,7 @@ export default function Chat() {
                   ref={fileInputRef}
                   type="file"
                   multiple
+                  accept="image/*,application/pdf"
                   className="hidden"
                   onChange={handleFileChange}
                 />
@@ -4038,14 +4420,16 @@ export default function Chat() {
                    <motion.button
                      whileHover={{ scale: 1.1 }}
                      whileTap={{ scale: 0.9 }}
-                     onClick={handleSendMessage}
-                    disabled={!inputValue.trim() || (viewMode === 'single' ? isGenerating : isGenerating || isGenerating2)}
+                     onClick={(viewMode === 'single' ? isGenerating : isGenerating || isGenerating2) ? handleStopGenerating : handleSendMessage}
+                     disabled={!inputValue.trim() && !(viewMode === 'single' ? isGenerating : isGenerating || isGenerating2)}
                      className="p-2 text-gray-600 dark:text-gray-400 hover:text-indigo-600 dark:hover:text-indigo-400 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
                    >
-                    {inputValue.trim() ? (
+                    {(viewMode === 'single' ? isGenerating : isGenerating || isGenerating2) ? (
+                      <SquareIcon className="w-5 h-5" />
+                    ) : inputValue.trim() ? (
                       <Send className="w-5 h-5" />
                     ) : (
-                     <Mic className="w-5 h-5" />
+                      <Mic className="w-5 h-5" />
                     )}
                    </motion.button>
                  </div>
@@ -4064,7 +4448,11 @@ export default function Chat() {
       />
 
       {/* Image Modal */}
-      {selectedImageIndex !== null && filePreviews[selectedImageIndex] && (
+      {currentImageItem &&
+        (() => {
+          const { filePreview } = currentImageItem;
+          const { file, preview } = filePreview;
+          return (
         <motion.div
           ref={imageModalRef}
           initial={{ opacity: 0 }}
@@ -4097,7 +4485,7 @@ export default function Chat() {
             <div className="absolute top-0 left-0 right-0 bg-gradient-to-b from-black/60 to-transparent p-4 z-10 flex items-center justify-between">
               <div className="flex items-center gap-2">
                 <span className="text-white text-sm font-medium">
-                  {filePreviews[selectedImageIndex].file.name}
+                  {file.name}
                 </span>
                 <span className="text-white/70 text-xs">
                   {Math.round(imageZoom * 100)}%
@@ -4167,8 +4555,8 @@ export default function Chat() {
             {/* Image Container */}
             <div className="w-full h-full flex items-center justify-center overflow-auto bg-gray-100 dark:bg-gray-900 p-4">
               <motion.img
-                src={filePreviews[selectedImageIndex].preview}
-                alt={filePreviews[selectedImageIndex].file.name}
+                src={preview}
+                alt={file.name}
                 style={{ 
                   transform: `scale(${imageZoom})`,
                   maxWidth: '100%',
@@ -4181,13 +4569,16 @@ export default function Chat() {
             </div>
 
             {/* Navigation Arrows (if multiple images) */}
-            {filePreviews.length > 1 && (
+            {imagePreviewItems.length > 1 && (
               <>
                 <motion.button
                   whileHover={{ scale: 1.1 }}
                   whileTap={{ scale: 0.9 }}
                   onClick={() => {
-                    const prevIndex = selectedImageIndex > 0 ? selectedImageIndex - 1 : filePreviews.length - 1;
+                    const prevIndex =
+                      selectedImageIndex !== null && selectedImageIndex > 0
+                        ? selectedImageIndex - 1
+                        : imagePreviewItems.length - 1;
                     setSelectedImageIndex(prevIndex);
                     setImageZoom(1);
                   }}
@@ -4200,7 +4591,10 @@ export default function Chat() {
                   whileHover={{ scale: 1.1 }}
                   whileTap={{ scale: 0.9 }}
                   onClick={() => {
-                    const nextIndex = selectedImageIndex < filePreviews.length - 1 ? selectedImageIndex + 1 : 0;
+                    const nextIndex =
+                      selectedImageIndex !== null && selectedImageIndex < imagePreviewItems.length - 1
+                        ? selectedImageIndex + 1
+                        : 0;
                     setSelectedImageIndex(nextIndex);
                     setImageZoom(1);
                   }}
@@ -4213,7 +4607,8 @@ export default function Chat() {
             )}
           </motion.div>
         </motion.div>
-      )}
+          );
+        })()}
 
       {/* Chat History Sidebar */}
       {isChatHistoryOpen && (
@@ -4238,34 +4633,44 @@ export default function Chat() {
           </div>
 
           {/* Tabs */}
-          <div className="flex items-center border-b border-gray-200 dark:border-gray-700 px-4">
-            <button
-              onClick={() => setChatHistoryTab('all')}
-              className={`px-4 py-3 text-sm font-medium transition-colors relative ${
-                chatHistoryTab === 'all'
-                  ? 'text-gray-900 dark:text-white'
-                  : 'text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-300'
-              }`}
+          <div className="flex items-center justify-between border-b border-gray-200 dark:border-gray-700 px-4">
+            <div className="flex items-center">
+              <button
+                onClick={() => setChatHistoryTab('all')}
+                className={`px-4 py-3 text-sm font-medium transition-colors relative ${
+                  chatHistoryTab === 'all'
+                    ? 'text-gray-900 dark:text-white'
+                    : 'text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-300'
+                }`}
+              >
+                All
+                {chatHistoryTab === 'all' && (
+                  <div className="absolute bottom-0 left-0 right-0 h-0.5 bg-gray-900 dark:bg-white"></div>
+                )}
+              </button>
+              <button
+                onClick={() => setChatHistoryTab('starred')}
+                className={`px-4 py-3 text-sm font-medium transition-colors relative ${
+                  chatHistoryTab === 'starred'
+                    ? 'text-gray-900 dark:text-white'
+                    : 'text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-300'
+                }`}
+              >
+                Starred
+                {chatHistoryTab === 'starred' && (
+                  <div className="absolute bottom-0 left-0 right-0 h-0.5 bg-gray-900 dark:bg-white"></div>
+                )}
+              </button>
+            </div>
+            <motion.button
+              whileHover={{ scale: 1.1 }}
+              whileTap={{ scale: 0.9 }}
+              onClick={() => setDeleteAllConfirmOpen(true)}
+              className="p-2 text-gray-500 dark:text-gray-400 hover:text-red-600 dark:hover:text-red-400 transition-colors"
+              title="Delete All Conversations"
             >
-              All
-              {chatHistoryTab === 'all' && (
-                <div className="absolute bottom-0 left-0 right-0 h-0.5 bg-gray-900 dark:bg-white"></div>
-              )}
-            </button>
-            <button
-              onClick={() => setChatHistoryTab('starred')}
-              className={`px-4 py-3 text-sm font-medium transition-colors relative flex items-center gap-2 ${
-                chatHistoryTab === 'starred'
-                  ? 'text-gray-900 dark:text-white'
-                  : 'text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-300'
-              }`}
-            >
-              Starred
-              {chatHistoryTab === 'starred' && (
-                <div className="absolute bottom-0 left-0 right-0 h-0.5 bg-gray-900 dark:bg-white"></div>
-              )}
-              <Trash2 className="w-4 h-4 ml-auto" />
-            </button>
+              <Trash2 className="w-4 h-4" />
+            </motion.button>
           </div>
 
           {/* Search */}
@@ -4284,7 +4689,12 @@ export default function Chat() {
 
           {/* Chat History List */}
           <div className="flex-1 overflow-y-auto p-4">
-            {getFilteredChatHistory().length === 0 ? (
+            {isLoadingChatHistory ? (
+              <div className="flex flex-col items-center justify-center h-full text-center">
+                <Loader2 className="w-8 h-8 text-gray-400 animate-spin mb-4" />
+                <p className="text-gray-500 dark:text-gray-400">Loading history...</p>
+              </div>
+            ) : getFilteredChatHistory().length === 0 ? (
               <div className="flex flex-col items-center justify-center h-full text-center">
                 <div className="w-16 h-16 rounded-full bg-gray-100 dark:bg-gray-700 flex items-center justify-center mb-4">
                   <History className="w-8 h-8 text-gray-400" />
@@ -4311,7 +4721,12 @@ export default function Chat() {
                       <motion.div
                         key={chat.id}
                         whileHover={{ scale: 1.02 }}
-                        className="group p-3 rounded-lg border border-gray-200 dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors cursor-pointer mb-2"
+                        onClick={() => handleChatHistoryItemClick(chat.id)}
+                        className={`group p-3 rounded-lg border transition-colors mb-2 ${
+                          conversationId === chat.id
+                            ? 'bg-purple-50 dark:bg-purple-900/20 border-purple-200 dark:border-purple-700'
+                            : 'border-gray-200 dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-700 cursor-pointer'
+                        }`}
                       >
                         <div className="flex items-start justify-between gap-2">
                           <div className="flex-1 min-w-0">
@@ -4322,7 +4737,7 @@ export default function Chat() {
                               {chat.preview}
                             </p>
                           </div>
-                          <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
+                          <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity relative">
                             <motion.button
                               whileHover={{ scale: 1.1 }}
                               whileTap={{ scale: 0.9 }}
@@ -4340,17 +4755,74 @@ export default function Chat() {
                                 }`}
                               />
                             </motion.button>
-                            <motion.button
-                              whileHover={{ scale: 1.1 }}
-                              whileTap={{ scale: 0.9 }}
-                              onClick={(e) => {
-                                e.stopPropagation();
-                                handleDeleteChat(chat.id);
-                              }}
-                              className="p-1 rounded hover:bg-gray-200 dark:hover:bg-gray-600"
-                            >
-                              <Trash2 className="w-4 h-4 text-gray-400" />
-                            </motion.button>
+                            <div className="relative">
+                              <motion.button
+                                whileHover={{ scale: 1.1 }}
+                                whileTap={{ scale: 0.9 }}
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  setOpenMenuId(openMenuId === chat.id ? null : chat.id);
+                                }}
+                                className="p-1 rounded hover:bg-gray-200 dark:hover:bg-gray-600"
+                              >
+                                <MoreVertical className="w-4 h-4 text-gray-400" />
+                              </motion.button>
+                              
+                              {/* Dropdown Menu */}
+                              {openMenuId === chat.id && (
+                                <motion.div
+                                  ref={(el) => {
+                                    if (el) menuRefs.current[chat.id] = el;
+                                    else delete menuRefs.current[chat.id];
+                                  }}
+                                  initial={{ opacity: 0, y: -10 }}
+                                  animate={{ opacity: 1, y: 0 }}
+                                  exit={{ opacity: 0, y: -10 }}
+                                  className="absolute right-0 top-full mt-1 w-48 bg-white dark:bg-gray-800 rounded-lg shadow-xl border border-gray-200 dark:border-gray-700 z-50 py-1"
+                                  onClick={(e) => e.stopPropagation()}
+                                >
+                                  <button
+                                    onClick={(e) => {
+                                      e.stopPropagation();
+                                      setOpenMenuId(null);
+                                      // TODO: Implement export functionality
+                                      console.log('Export conversation:', chat.id);
+                                    }}
+                                    className="w-full px-4 py-2 text-left text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 flex items-center gap-3 transition-colors"
+                                  >
+                                    <Download className="w-4 h-4" />
+                                    <span>Export</span>
+                                  </button>
+                                  <button
+                                    onClick={(e) => {
+                                      e.stopPropagation();
+                                      setOpenMenuId(null);
+                                      handleEditTitleClick(chat.id, chat.title);
+                                    }}
+                                    className="w-full px-4 py-2 text-left text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 flex items-center gap-3 transition-colors"
+                                  >
+                                    <Edit className="w-4 h-4" />
+                                    <span>Edit title</span>
+                                  </button>
+                                  <button
+                                    onClick={(e) => {
+                                      e.stopPropagation();
+                                      e.preventDefault();
+                                      // Open delete confirmation first
+                                      handleDeleteChatClick(chat.id, e);
+                                      // Close menu after a brief delay to ensure state is set
+                                      requestAnimationFrame(() => {
+                                        setOpenMenuId(null);
+                                      });
+                                    }}
+                                    className="w-full px-4 py-2 text-left text-sm text-red-600 dark:text-red-400 hover:bg-gray-100 dark:hover:bg-gray-700 flex items-center gap-3 transition-colors"
+                                  >
+                                    <Trash2 className="w-4 h-4" />
+                                    <span>Delete</span>
+                                  </button>
+                                </motion.div>
+                              )}
+                            </div>
                           </div>
                         </div>
                       </motion.div>
@@ -4372,6 +4844,266 @@ export default function Chat() {
           onClick={() => setIsChatHistoryOpen(false)}
           className="fixed inset-0 bg-black/50 z-[80]"
         />
+      )}
+
+      {/* Delete All Confirmation Modal */}
+      {deleteAllConfirmOpen && (
+        <>
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            onClick={() => {
+              if (!isDeletingAll) {
+                setDeleteAllConfirmOpen(false);
+              }
+            }}
+            className="fixed inset-0 bg-black/50 z-[100]"
+          />
+          <motion.div
+            initial={{ opacity: 0, scale: 0.95 }}
+            animate={{ opacity: 1, scale: 1 }}
+            exit={{ opacity: 0, scale: 0.95 }}
+            className="fixed inset-0 flex items-center justify-center z-[101] pointer-events-none"
+          >
+            <div
+              className="bg-white dark:bg-gray-800 rounded-lg shadow-xl p-6 max-w-md w-full mx-4 pointer-events-auto"
+              onClick={(e) => e.stopPropagation()}
+            >
+              {/* Warning Icon */}
+              <div className="flex justify-center mb-4">
+                <div className="w-12 h-12 rounded-full bg-red-100 dark:bg-red-900/30 flex items-center justify-center">
+                  <AlertCircle className="w-6 h-6 text-red-600 dark:text-red-400" />
+                </div>
+              </div>
+
+              {/* Title */}
+              <h3 className="text-lg font-semibold text-gray-900 dark:text-white text-center mb-2">
+                Delete All Conversations?
+              </h3>
+
+              {/* Description */}
+              <p className="text-sm text-gray-600 dark:text-gray-400 text-center mb-6">
+                This action cannot be undone. All your conversations will be permanently deleted.
+              </p>
+
+              {/* Buttons */}
+              <div className="flex gap-3">
+                <motion.button
+                  whileHover={!isDeletingAll ? { scale: 1.02 } : {}}
+                  whileTap={!isDeletingAll ? { scale: 0.98 } : {}}
+                  onClick={() => {
+                    if (!isDeletingAll) {
+                      setDeleteAllConfirmOpen(false);
+                    }
+                  }}
+                  disabled={isDeletingAll}
+                  className="flex-1 px-4 py-2 bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-300 rounded-lg font-medium text-sm hover:bg-gray-200 dark:hover:bg-gray-600 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                >
+                  Cancel
+                </motion.button>
+                <motion.button
+                  whileHover={!isDeletingAll ? { scale: 1.02 } : {}}
+                  whileTap={!isDeletingAll ? { scale: 0.98 } : {}}
+                  onClick={handleDeleteAllConversations}
+                  disabled={isDeletingAll}
+                  className="flex-1 px-4 py-2 bg-red-600 dark:bg-red-500 text-white rounded-lg font-medium text-sm hover:bg-red-700 dark:hover:bg-red-600 transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
+                >
+                  {isDeletingAll ? (
+                    <>
+                      <Loader2 className="w-4 h-4 animate-spin" />
+                      Deleting...
+                    </>
+                  ) : (
+                    'Delete All'
+                  )}
+                </motion.button>
+              </div>
+            </div>
+          </motion.div>
+        </>
+      )}
+
+      {/* Delete Confirmation Modal */}
+      {deleteConfirmOpen && (
+        <>
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            onClick={() => {
+              if (!isDeleting) {
+                setDeleteConfirmOpen(false);
+                setConversationToDelete(null);
+              }
+            }}
+            className="fixed inset-0 bg-black/50 z-[100]"
+          />
+          <motion.div
+            initial={{ opacity: 0, scale: 0.95 }}
+            animate={{ opacity: 1, scale: 1 }}
+            exit={{ opacity: 0, scale: 0.95 }}
+            className="fixed inset-0 flex items-center justify-center z-[101] pointer-events-none"
+          >
+            <div
+              className="bg-white dark:bg-gray-800 rounded-lg shadow-xl p-6 max-w-md w-full mx-4 pointer-events-auto"
+              onClick={(e) => e.stopPropagation()}
+            >
+              {/* Warning Icon */}
+              <div className="flex justify-center mb-4">
+                <div className="w-12 h-12 rounded-full bg-red-100 dark:bg-red-900/30 flex items-center justify-center">
+                  <AlertCircle className="w-6 h-6 text-red-600 dark:text-red-400" />
+                </div>
+              </div>
+
+              {/* Title */}
+              <h3 className="text-lg font-semibold text-gray-900 dark:text-white text-center mb-2">
+                Delete this conversation?
+              </h3>
+
+              {/* Warning Message */}
+              <p className="text-sm text-gray-500 dark:text-gray-400 text-center mb-6">
+                This action cannot be undone.
+              </p>
+
+              {/* Action Buttons */}
+              <div className="flex gap-3">
+                <motion.button
+                  whileHover={!isDeleting ? { scale: 1.02 } : {}}
+                  whileTap={!isDeleting ? { scale: 0.98 } : {}}
+                  onClick={() => {
+                    if (!isDeleting) {
+                      setDeleteConfirmOpen(false);
+                      setConversationToDelete(null);
+                    }
+                  }}
+                  disabled={isDeleting}
+                  className="flex-1 px-4 py-2.5 rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-700 dark:text-gray-300 font-medium hover:bg-gray-50 dark:hover:bg-gray-600 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                >
+                  Cancel
+                </motion.button>
+                <motion.button
+                  whileHover={!isDeleting ? { scale: 1.02 } : {}}
+                  whileTap={!isDeleting ? { scale: 0.98 } : {}}
+                  onClick={handleDeleteChat}
+                  disabled={isDeleting}
+                  className="flex-1 px-4 py-2.5 rounded-lg bg-red-600 hover:bg-red-700 text-white font-medium transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
+                >
+                  {isDeleting ? (
+                    <>
+                      <Loader2 className="w-4 h-4 animate-spin" />
+                      Deleting...
+                    </>
+                  ) : (
+                    'Delete'
+                  )}
+                </motion.button>
+              </div>
+            </div>
+          </motion.div>
+        </>
+      )}
+
+      {/* Edit Title Modal */}
+      {editTitleModalOpen && (
+        <>
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            onClick={() => {
+              if (!isUpdatingTitle) {
+                setEditTitleModalOpen(false);
+                setConversationToEdit(null);
+                setEditTitleValue('');
+              }
+            }}
+            className="fixed inset-0 bg-black/50 z-[100]"
+          />
+          <motion.div
+            initial={{ opacity: 0, scale: 0.95 }}
+            animate={{ opacity: 1, scale: 1 }}
+            exit={{ opacity: 0, scale: 0.95 }}
+            className="fixed inset-0 flex items-center justify-center z-[101] pointer-events-none"
+          >
+            <div
+              className="bg-white dark:bg-gray-800 rounded-lg shadow-xl p-6 max-w-md w-full mx-4 pointer-events-auto"
+              onClick={(e) => e.stopPropagation()}
+            >
+              {/* Title */}
+              <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-4">
+                Edit title
+              </h3>
+
+              {/* Input Field */}
+              <div className="mb-6">
+                <div className="relative">
+                  <input
+                    type="text"
+                    value={editTitleValue}
+                    onChange={(e) => {
+                      const value = e.target.value;
+                      if (value.length <= 200) {
+                        setEditTitleValue(value);
+                      }
+                    }}
+                    onKeyDown={(e) => {
+                      if (e.key === 'Enter' && !isUpdatingTitle && editTitleValue.trim()) {
+                        handleEditTitle();
+                      } else if (e.key === 'Escape' && !isUpdatingTitle) {
+                        setEditTitleModalOpen(false);
+                        setConversationToEdit(null);
+                        setEditTitleValue('');
+                      }
+                    }}
+                    disabled={isUpdatingTitle}
+                    autoFocus
+                    className="w-full px-3 py-2 text-sm text-gray-900 dark:text-white bg-white dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-500 disabled:opacity-50"
+                    placeholder="Enter conversation title"
+                  />
+                  <div className="absolute right-3 top-1/2 -translate-y-1/2 text-xs text-gray-400 dark:text-gray-500">
+                    {editTitleValue.length} / 200
+                  </div>
+                </div>
+              </div>
+
+              {/* Action Buttons */}
+              <div className="flex gap-3">
+                <motion.button
+                  whileHover={!isUpdatingTitle ? { scale: 1.02 } : {}}
+                  whileTap={!isUpdatingTitle ? { scale: 0.98 } : {}}
+                  onClick={() => {
+                    if (!isUpdatingTitle) {
+                      setEditTitleModalOpen(false);
+                      setConversationToEdit(null);
+                      setEditTitleValue('');
+                    }
+                  }}
+                  disabled={isUpdatingTitle}
+                  className="flex-1 px-4 py-2.5 rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-700 dark:text-gray-300 font-medium hover:bg-gray-50 dark:hover:bg-gray-600 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                >
+                  Cancel
+                </motion.button>
+                <motion.button
+                  whileHover={!isUpdatingTitle ? { scale: 1.02 } : {}}
+                  whileTap={!isUpdatingTitle ? { scale: 0.98 } : {}}
+                  onClick={handleEditTitle}
+                  disabled={isUpdatingTitle || !editTitleValue.trim()}
+                  className="flex-1 px-4 py-2.5 rounded-lg bg-purple-600 hover:bg-purple-700 text-white font-medium transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
+                >
+                  {isUpdatingTitle ? (
+                    <>
+                      <Loader2 className="w-4 h-4 animate-spin" />
+                      Saving...
+                    </>
+                  ) : (
+                    'Save'
+                  )}
+                </motion.button>
+              </div>
+            </div>
+          </motion.div>
+        </>
       )}
     </div>
   );
