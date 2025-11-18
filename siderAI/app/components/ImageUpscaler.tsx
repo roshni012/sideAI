@@ -41,8 +41,9 @@ export default function ImageUpscaler() {
   const [fileId, setFileId] = useState<string | null>(null);
   const [cdnURL, setCdnURL] = useState<string | null>(null);
   const [isUploading, setIsUploading] = useState(false);
-  const [, setProcessedImage] = useState<string | null>(null);
+  const [processedImage, setProcessedImage] = useState<string | null>(null);
   const [isProcessing, setIsProcessing] = useState(false);
+  const [errorMessage, setErrorMessage] = useState<string | null>(null);
   const [isUserProfileOpen, setIsUserProfileOpen] = useState(false);
   const [userProfilePosition, setUserProfilePosition] = useState({ top: 0, left: 0 });
   const [selectedMagnification, setSelectedMagnification] = useState('4X');
@@ -142,6 +143,8 @@ export default function ImageUpscaler() {
   const handleFileUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (file && file.type.startsWith('image/')) {
+      setProcessedImage(null);
+      setErrorMessage(null);
       uploadFile(file);
     }
   };
@@ -150,6 +153,8 @@ export default function ImageUpscaler() {
     e.preventDefault();
     const file = e.dataTransfer.files[0];
     if (file && file.type.startsWith('image/')) {
+      setProcessedImage(null);
+      setErrorMessage(null);
       uploadFile(file);
     }
   };
@@ -158,14 +163,66 @@ export default function ImageUpscaler() {
     e.preventDefault();
   };
 
-  const handleConfirm = () => {
-    if (!uploadedImage) return;
+  const getScaleValue = (option: string) => {
+    const numeric = parseInt(option, 10);
+    return Number.isNaN(numeric) ? 2 : numeric;
+  };
+
+  const handleConfirm = async () => {
+    if (!cdnURL || isProcessing) return;
+
     setIsProcessing(true);
-    // TODO: Implement image upscaling API call
-    setTimeout(() => {
-      setProcessedImage(uploadedImage); // Placeholder - replace with actual upscaled image
+    setErrorMessage(null);
+
+    try {
+      const authToken = localStorage.getItem('authToken');
+      if (!authToken || !authToken.trim()) {
+        throw new Error('Authentication required. Please login first.');
+      }
+
+      const payload = {
+        image_url: cdnURL,
+        model: 'real-esrgan',
+        scale: getScaleValue(selectedMagnification),
+      };
+
+      const response = await fetch(getApiUrl(API_ENDPOINTS.IMAGES.UPSCALE), {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: `Bearer ${authToken.trim()}`,
+        },
+        body: JSON.stringify(payload),
+      });
+
+      const data = await response.json().catch(() => ({}));
+
+      if (!response.ok) {
+        const detail = data?.detail || data?.msg || 'Failed to upscale image';
+        throw new Error(
+          Array.isArray(detail)
+            ? detail.map((item: { msg?: string; message?: string }) => item?.msg || item?.message).join(', ')
+            : detail,
+        );
+      }
+
+      const upscaledUrl: string | undefined =
+        data?.data?.upscaled_image_url ||
+        data?.data?.processed_image_url ||
+        data?.upscaled_image_url ||
+        data?.processed_image_url;
+
+      if (upscaledUrl) {
+        setProcessedImage(upscaledUrl);
+      } else {
+        setErrorMessage('Upscaling succeeded but no image was returned.');
+      }
+    } catch (error) {
+      console.error('Error upscaling image:', error);
+      setErrorMessage(error instanceof Error ? error.message : 'Failed to upscale image. Please try again.');
+    } finally {
       setIsProcessing(false);
-    }, 2000);
+    }
   };
 
   return (
@@ -360,6 +417,12 @@ export default function ImageUpscaler() {
             </div>
           )}
 
+          {errorMessage && (
+            <div className="w-full max-w-5xl mb-6 rounded-lg border border-red-200 dark:border-red-700 bg-red-50/70 dark:bg-red-900/20 px-4 py-3 text-sm text-red-700 dark:text-red-300">
+              {errorMessage}
+            </div>
+          )}
+
           {/* Image Preview and Controls Section */}
           {uploadedImage && (
             <div className="w-full max-w-5xl mb-8">
@@ -404,12 +467,38 @@ export default function ImageUpscaler() {
                     whileHover={{ scale: 1.05 }}
                     whileTap={{ scale: 0.95 }}
                     onClick={handleConfirm}
-                    disabled={isProcessing}
+                    disabled={!cdnURL || isProcessing}
                     className="px-6 py-2.5 bg-gradient-to-r from-purple-500 to-purple-600 text-white rounded-lg font-semibold text-sm flex items-center gap-2 hover:from-purple-600 hover:to-purple-700 transition-all disabled:opacity-50 disabled:cursor-not-allowed shadow-lg"
                   >
                     <Sparkles className="w-4 h-4 text-white" />
                     {isProcessing ? 'Processing...' : 'Confirm'}
                   </motion.button>
+                </div>
+              </div>
+            </div>
+          )}
+
+          {processedImage && (
+            <div className="w-full max-w-5xl mb-8">
+              <h2 className="text-lg font-semibold text-gray-900 dark:text-white mb-4">Upscaled Result</h2>
+              <div className="grid gap-6 md:grid-cols-2">
+                <div>
+                  <p className="text-sm text-gray-500 dark:text-gray-400 mb-2">Original</p>
+                  {/* eslint-disable-next-line @next/next/no-img-element */}
+                  <img
+                    src={uploadedImage ?? ''}
+                    alt="Original"
+                    className="w-full h-auto rounded-lg border border-gray-200 dark:border-gray-700"
+                  />
+                </div>
+                <div>
+                  <p className="text-sm text-gray-500 dark:text-gray-400 mb-2">Upscaled ({selectedMagnification})</p>
+                  {/* eslint-disable-next-line @next/next/no-img-element */}
+                  <img
+                    src={processedImage}
+                    alt="Upscaled"
+                    className="w-full h-auto rounded-lg border border-purple-200 dark:border-purple-700 shadow-lg"
+                  />
                 </div>
               </div>
             </div>
@@ -456,7 +545,7 @@ export default function ImageUpscaler() {
                   whileHover={{ scale: 1.05 }}
                   whileTap={{ scale: 0.95 }}
                   onClick={handleConfirm}
-                  disabled={!uploadedImage || isProcessing}
+                  disabled={!cdnURL || isProcessing}
                   className="px-6 py-2.5 bg-gradient-to-r from-purple-500 to-purple-600 text-white rounded-lg font-semibold text-sm flex items-center gap-2 hover:from-purple-600 hover:to-purple-700 transition-all disabled:opacity-50 disabled:cursor-not-allowed shadow-lg whitespace-nowrap"
                 >
                   <Sparkles className="w-4 h-4 text-white" />

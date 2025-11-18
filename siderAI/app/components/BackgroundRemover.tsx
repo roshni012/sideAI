@@ -40,7 +40,7 @@ export default function BackgroundRemover() {
   const [fileId, setFileId] = useState<string | null>(null);
   const [cdnURL, setCdnURL] = useState<string | null>(null);
   const [isUploading, setIsUploading] = useState(false);
-  const [, setProcessedImage] = useState<string | null>(null);
+  const [processedImage, setProcessedImage] = useState<string | null>(null);
   const [isProcessing, setIsProcessing] = useState(false);
   const [isUserProfileOpen, setIsUserProfileOpen] = useState(false);
   const [userProfilePosition, setUserProfilePosition] = useState({ top: 0, left: 0 });
@@ -140,6 +140,7 @@ export default function BackgroundRemover() {
   const handleFileUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (file && file.type.startsWith('image/')) {
+      setProcessedImage(null);
       uploadFile(file);
     }
   };
@@ -148,6 +149,7 @@ export default function BackgroundRemover() {
     e.preventDefault();
     const file = e.dataTransfer.files[0];
     if (file && file.type.startsWith('image/')) {
+      setProcessedImage(null);
       uploadFile(file);
     }
   };
@@ -156,14 +158,58 @@ export default function BackgroundRemover() {
     e.preventDefault();
   };
 
-  const handleConfirm = () => {
-    if (!uploadedImage) return;
+  const handleConfirm = async () => {
+    if (!uploadedImage || !cdnURL || isProcessing) return;
     setIsProcessing(true);
-    // TODO: Implement background removal API call
-    setTimeout(() => {
-      setProcessedImage(uploadedImage); // Placeholder - replace with actual processed image
+    try {
+      const authToken = localStorage.getItem('authToken');
+      if (!authToken || !authToken.trim()) {
+        console.error('Authentication required. Please login first.');
+        setIsProcessing(false);
+        return;
+      }
+      const headers: HeadersInit = {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${authToken.trim()}`,
+      };
+      const response = await fetch(getApiUrl(API_ENDPOINTS.IMAGES.REMOVE_BACKGROUND), {
+        method: 'POST',
+        headers,
+        body: JSON.stringify({
+          image_url: cdnURL,
+          model: 'rembg',
+        }),
+      });
+      if (!response.ok) {
+        const errorData = await response.json().catch(() => ({ detail: 'Failed to remove background' }));
+        console.error('Error removing background:', errorData);
+        setIsProcessing(false);
+        return;
+      }
+      const data = await response.json();
+      console.log('Background removal response:', data);
+      
+      let processedImageUrl: string | null = null;
+      if (data.code === 0 && data.data) {
+        processedImageUrl = data.data.processed_url || data.data.url || data.data.image_url || data.data.cdnURL || data.data.signedCDNURL;
+      } else if (data.processed_url) {
+        processedImageUrl = data.processed_url;
+      } else if (data.url) {
+        processedImageUrl = data.url;
+      } else if (data.image_url) {
+        processedImageUrl = data.image_url;
+      }
+      
+      if (processedImageUrl) {
+        setProcessedImage(processedImageUrl);
+      } else {
+        console.error('No processed image URL found in response:', data);
+      }
+    } catch (error) {
+      console.error('Error removing background:', error);
+    } finally {
       setIsProcessing(false);
-    }, 2000);
+    }
   };
 
   return (
@@ -281,6 +327,34 @@ export default function BackgroundRemover() {
                     <Loader2 className="w-8 h-8 text-indigo-500 animate-spin" />
                     <span className="text-sm text-gray-500 dark:text-gray-400">Uploading...</span>
                   </div>
+                ) : isProcessing ? (
+                  <div className="flex flex-col items-center justify-center gap-3 w-full h-full min-h-[300px]">
+                    <Loader2 className="w-8 h-8 text-purple-500 animate-spin" />
+                    <span className="text-sm text-gray-500 dark:text-gray-400">Removing background...</span>
+                  </div>
+                ) : processedImage ? (
+                  <motion.div
+                    initial={{ opacity: 0, scale: 0.95 }}
+                    animate={{ opacity: 1, scale: 1 }}
+                    className="relative w-full h-full min-h-[300px] flex items-center justify-center"
+                  >
+                    {/* Checkerboard pattern for transparency */}
+                    <div
+                      className="absolute inset-0 opacity-30 rounded-lg"
+                      style={{
+                        backgroundImage:
+                          'linear-gradient(45deg, #ccc 25%, transparent 25%), linear-gradient(-45deg, #ccc 25%, transparent 25%), linear-gradient(45deg, transparent 75%, #ccc 75%), linear-gradient(-45deg, transparent 75%, #ccc 75%)',
+                        backgroundSize: '20px 20px',
+                        backgroundPosition: '0 0, 0 10px, 10px -10px, -10px 0px',
+                      }}
+                    />
+                    {/* eslint-disable-next-line @next/next/no-img-element */}
+                    <img
+                      src={processedImage}
+                      alt="Background Removed"
+                      className="max-w-full max-h-[600px] w-auto h-auto object-contain rounded-lg relative z-10"
+                    />
+                  </motion.div>
                 ) : uploadedImage ? (
                   <motion.div
                     initial={{ opacity: 0, scale: 0.95 }}
@@ -395,26 +469,40 @@ export default function BackgroundRemover() {
             <motion.button
               whileHover={{ scale: 1.1 }}
               whileTap={{ scale: 0.9 }}
-              onClick={() => fileInputRef.current?.click()}
-              disabled={!uploadedImage}
+              onClick={() => {
+                setProcessedImage(null);
+                fileInputRef.current?.click();
+              }}
+              disabled={isProcessing}
               className="p-2.5 rounded-lg bg-white dark:bg-gray-800 text-gray-600 dark:text-gray-400 hover:text-purple-600 dark:hover:text-purple-400 transition-colors shadow-sm disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:text-gray-600 dark:disabled:hover:text-gray-400"
-              title="Change Image"
+              title={processedImage ? "Upload New Image" : "Change Image"}
             >
               <div className="relative">
                 <ImageIcon className="w-5 h-5" />
                 <Plus className="w-3 h-3 absolute -top-1 -right-1 bg-white dark:bg-gray-800 rounded-full" />
               </div>
             </motion.button>
-            <motion.button
-              whileHover={{ scale: 1.05 }}
-              whileTap={{ scale: 0.95 }}
-              onClick={handleConfirm}
-              disabled={!uploadedImage || isProcessing}
-              className="px-8 py-3 bg-gradient-to-r from-purple-500 to-purple-600 text-white rounded-lg font-semibold text-sm flex items-center gap-2 hover:from-purple-600 hover:to-purple-700 transition-all disabled:opacity-50 disabled:cursor-not-allowed shadow-lg"
-            >
-              <Sparkles className="w-4 h-4 text-white" />
-              {isProcessing ? 'Processing...' : 'Confirm'}
-            </motion.button>
+            {!processedImage && (
+              <motion.button
+                whileHover={{ scale: 1.05 }}
+                whileTap={{ scale: 0.95 }}
+                onClick={handleConfirm}
+                disabled={!uploadedImage || !fileId || isProcessing}
+                className="px-8 py-3 bg-gradient-to-r from-purple-500 to-purple-600 text-white rounded-lg font-semibold text-sm flex items-center gap-2 hover:from-purple-600 hover:to-purple-700 transition-all disabled:opacity-50 disabled:cursor-not-allowed shadow-lg"
+              >
+                {isProcessing ? (
+                  <>
+                    <Loader2 className="w-4 h-4 animate-spin" />
+                    Processing...
+                  </>
+                ) : (
+                  <>
+                    <Sparkles className="w-4 h-4 text-white" />
+                    Confirm
+                  </>
+                )}
+              </motion.button>
+            )}
           </motion.div>
         </div>
       </main>
