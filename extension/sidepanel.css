@@ -1264,7 +1264,6 @@ body {
   padding: 16px;
   background: #ffffff;
   flex-shrink: 0;
-  border-top: 1px solid #e5e7eb;
 }
 
 .sider-input-wrapper {
@@ -1444,152 +1443,7 @@ body {
   margin: 12px 0;
 }
 
-.sider-summarize-card {
-  position: relative;
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 12px;
-  padding: 12px 40px 12px 16px;
-  background: #ffffff;
-  border: 1px solid #e5e7eb;
-  border-radius: 12px;
-  margin-top: 16px;
-  margin-bottom: 16px;
-  transition: all 0.2s;
-  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.05);
-}
-
-.sider-summarize-card:hover {
-  border-color: #d1d5db;
-  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
-}
-
-.sider-summarize-close-btn {
-  position: absolute;
-  top: 8px;
-  right: 8px;
-  background: transparent !important;
-  border: none !important;
-  padding: 4px !important;
-  width: 24px !important;
-  height: 24px !important;
-  display: flex !important;
-  align-items: center !important;
-  justify-content: center !important;
-  cursor: pointer !important;
-  color: #9ca3af !important;
-  border-radius: 4px !important;
-  transition: all 0.2s !important;
-  z-index: 10 !important;
-  flex-shrink: 0 !important;
-}
-
-.sider-summarize-close-btn:hover {
-  background: #f3f4f6 !important;
-  color: #111827 !important;
-}
-
-.sider-summarize-close-btn:active {
-  transform: scale(0.95);
-}
-
-.sider-summarize-close-btn svg {
-  width: 16px;
-  height: 16px;
-}
-
-.sider-summarize-card-left {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  flex: 1;
-  min-width: 0;
-}
-
-.sider-summarize-icon {
-  width: 20px;
-  height: 20px;
-  flex-shrink: 0;
-  color: #8b5cf6;
-}
-
-.sider-summarize-icon svg {
-  width: 100%;
-  height: 100%;
-}
-
-.sider-summarize-site-name {
-  font-size: 12px;
-  font-weight: 500;
-  color: #111827;
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  flex: 1;
-  min-width: 0;
-}
-
-.sider-summarize-card-right {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  flex-shrink: 0;
-}
-
-.sider-summarize-btn {
-  color: #8b5cf6 !important;
-  border: none !important;
-  border-radius: 6px !important;
-  padding: 6px 16px !important;
-  font-size: 13px !important;
-  font-weight: 600 !important;
-  cursor: pointer !important;
-  transition: all 0.2s !important;
-  white-space: nowrap !important;
-  flex-shrink: 0 !important;
-}
-
-.sider-summarize-btn:active {
-  transform: scale(0.98);
-}
-
-.sider-summarize-btn:disabled {
-  background: #a0aec0 !important;
-  color: #ffffff !important;
-  cursor: not-allowed !important;
-}
-
-.sider-summarize-copy-btn {
-  background: #f9fafb !important;
-  border: 1px solid #e5e7eb !important;
-  border-radius: 6px !important;
-  padding: 6px !important;
-  width: 32px !important;
-  height: 32px !important;
-  display: flex !important;
-  align-items: center !important;
-  justify-content: center !important;
-  cursor: pointer !important;
-  transition: all 0.2s !important;
-  flex-shrink: 0 !important;
-  color: #6b7280 !important;
-}
-
-.sider-summarize-copy-btn:hover {
-  background: #f3f4f6 !important;
-  border-color: #d1d5db !important;
-  color: #111827 !important;
-}
-
-.sider-summarize-copy-btn:active {
-  transform: scale(0.95);
-}
-
-.sider-summarize-copy-btn svg {
-  width: 16px;
-  height: 16px;
-}
+/* Summarize card styles moved to chat-tab.css (only used in chat tab) */
 
 .sider-input-area {
   position: relative;
@@ -1856,22 +1710,33 @@ body {
   padding: 6px 12px !important;
   font-size: 13px !important;
   font-weight: 500 !important;
-  color: #111827 !important;
-  cursor: pointer !important;
+  color: #9ca3af !important;
+  cursor: not-allowed !important;
   display: flex !important;
   align-items: center !important;
   gap: 6px !important;
   transition: all 0.2s !important;
   white-space: nowrap !important;
+  opacity: 0.6 !important;
 }
 
-.sider-bottom-action-btn:hover {
+.sider-bottom-action-btn:not(:disabled) {
+  color: #111827 !important;
+  cursor: pointer !important;
+  opacity: 1 !important;
+}
+
+.sider-bottom-action-btn:not(:disabled):hover {
   background: #e5e7eb !important;
   border-color: #d1d5db !important;
 }
 
-.sider-bottom-action-btn:active {
+.sider-bottom-action-btn:not(:disabled):active {
   transform: scale(0.98);
+}
+
+.sider-bottom-action-btn:disabled {
+  pointer-events: none;
 }
 
 .sider-bottom-action-btn svg {
@@ -2645,3 +2510,80 @@ body {
     height: 16px;
   }
 }
+
+/* Global Tooltip Styles */
+[data-tooltip],
+[title] {
+  position: relative;
+}
+
+[data-tooltip]:hover::after {
+  content: attr(data-tooltip);
+  position: absolute;
+  bottom: 100%;
+  left: 50%;
+  transform: translateX(-50%);
+  background: #111827;
+  color: white;
+  padding: 6px 10px;
+  border-radius: 6px;
+  white-space: nowrap;
+  font-size: 12px;
+  margin-bottom: 5px;
+  z-index: 10000;
+  pointer-events: none;
+  opacity: 0;
+  animation: tooltipFadeIn 0.2s ease-out forwards;
+}
+
+[title]:hover::after {
+  content: attr(title);
+  position: absolute;
+  bottom: 100%;
+  left: 50%;
+  transform: translateX(-50%);
+  background: #111827;
+  color: white;
+  padding: 6px 10px;
+  border-radius: 6px;
+  white-space: nowrap;
+  font-size: 12px;
+  margin-bottom: 5px;
+  z-index: 10000;
+  pointer-events: none;
+  opacity: 0;
+  animation: tooltipFadeIn 0.2s ease-out forwards;
+}
+
+[data-tooltip]:hover::before,
+[title]:hover::before {
+  content: '';
+  position: absolute;
+  bottom: 100%;
+  left: 50%;
+  transform: translateX(-50%);
+  border: 5px solid transparent;
+  border-top-color: #111827;
+  margin-bottom: -5px;
+  z-index: 10001;
+  pointer-events: none;
+  opacity: 0;
+  animation: tooltipFadeIn 0.2s ease-out forwards;
+}
+
+@keyframes tooltipFadeIn {
+  from {
+    opacity: 0;
+    transform: translateX(-50%) translateY(-5px);
+  }
+  to {
+    opacity: 1;
+    transform: translateX(-50%) translateY(0);
+  }
+}
+
+[data-tooltip]:hover::before {
+  transform: translateX(-50%) translateY(0);
+}
+
+/* Hide native tooltip - handled by JavaScript */

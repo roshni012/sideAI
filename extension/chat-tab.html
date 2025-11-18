@@ -43,6 +43,42 @@
   </div>
 </div>
 
+<!-- Summarize Card (only in chat-tab) -->
+<div class="sider-summarize-card" id="sider-summarize-card" style="display: none;">
+  <div class="sider-summarize-card-left">
+    <div class="sider-summarize-icon" id="sider-summarize-icon">
+      <img id="sider-summarize-favicon" src="" alt="" style="display: none; width: 20px; height: 20px; border-radius: 4px; object-fit: contain;" />
+      <svg id="sider-summarize-icon-svg" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+        <circle cx="12" cy="12" r="10" fill="#8b5cf6"/>
+        <path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z" fill="#ffffff" opacity="0.3"/>
+        <line x1="2" y1="12" x2="22" y2="12" stroke="#ffffff" stroke-width="2"/>
+      </svg>
+    </div>
+    <span class="sider-summarize-site-name" id="sider-summarize-site-name"></span>
+  </div>
+  <div class="sider-summarize-card-right">
+    <button class="sider-summarize-btn" id="sider-summarize-btn" data-action="summarize">
+      <svg class="sider-summarize-sparkle" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+        <path d="M12 2L13.5 8.5L20 10L13.5 11.5L12 18L10.5 11.5L4 10L10.5 8.5L12 2Z"/>
+      </svg>
+      <span>Summarize</span>
+    </button>
+    <button class="sider-summarize-save-btn" id="sider-summarize-save-btn" title="Save">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+        <path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"/>
+        <polyline points="17 21 17 13 7 13 7 21"/>
+        <polyline points="7 3 7 8 15 8"/>
+      </svg>
+    </button>
+    <button class="sider-summarize-close-btn" id="sider-summarize-close-btn" title="Close">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+        <line x1="18" y1="6" x2="6" y2="18"/>
+        <line x1="6" y1="6" x2="18" y2="18"/>
+      </svg>
+    </button>
+  </div>
+</div>
+
 <div class="sider-chat-container" id="sider-chat-container" style="display: none;">
   <div class="sider-chat-messages" id="sider-chat-messages"></div>
 </div>
@@ -128,11 +164,36 @@
             <button class="sider-image-action-btn" data-action="math-solver" style="background: #f3f4f6; border: 1px solid #e5e7eb; border-radius: 6px; padding: 6px 12px; font-size: 10px; font-weight: 500; color: #111827; cursor: pointer; transition: all 0.2s; white-space: nowrap;">
               Math Solver
             </button>
-            <button class="sider-image-action-btn" data-action="translate-image" style="background: #f3f4f6; border: 1px solid #e5e7eb; border-radius: 6px; padding: 6px 12px; font-size: 10px; font-weight: 500; color: #111827; cursor: pointer; transition: all 0.2s; white-space: nowrap; display: flex; align-items: center; gap: 4px;">
-              <span>Translate</span>
-              <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <button class="sider-image-action-btn" data-action="translate-image" style="background: #f3f4f6; border: 1px solid #e5e7eb; border-radius: 6px; padding: 6px 12px; font-size: 10px; font-weight: 500; color: #111827; cursor: pointer; transition: all 0.2s; white-space: nowrap; display: flex; align-items: center; gap: 4px; position: relative;">
+              <span class="sider-translate-text">Translate</span>
+              <svg class="sider-translate-arrow" width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="cursor: pointer;">
                 <polyline points="6 9 12 15 18 9"/>
               </svg>
+              <div class="sider-translate-language-dropdown" id="sider-translate-language-dropdown" style="display: none;">
+                <div class="sider-translate-language-list">
+                  <div class="sider-translate-language-item" data-lang="en" data-lang-name="English">English</div>
+                  <div class="sider-translate-language-item" data-lang="es-co" data-lang-name="Spanish (Colombia)">Spanish (Colombia)</div>
+                  <div class="sider-translate-language-item" data-lang="es" data-lang-name="European Spanish">European Spanish</div>
+                  <div class="sider-translate-language-item" data-lang="es-mx" data-lang-name="Mexican Spanish">Mexican Spanish</div>
+                  <div class="sider-translate-language-item" data-lang="fr" data-lang-name="French">French</div>
+                  <div class="sider-translate-language-item" data-lang="ja" data-lang-name="Japanese">Japanese</div>
+                  <div class="sider-translate-language-item" data-lang="pt" data-lang-name="Portuguese">Portuguese</div>
+                  <div class="sider-translate-language-item" data-lang="pt-br" data-lang-name="Brazilian Portuguese">Brazilian Portuguese</div>
+                  <div class="sider-translate-language-item" data-lang="de" data-lang-name="German">German</div>
+                  <div class="sider-translate-language-item" data-lang="it" data-lang-name="Italian">Italian</div>
+                  <div class="sider-translate-language-item" data-lang="ru" data-lang-name="Russian">Russian</div>
+                  <div class="sider-translate-language-item" data-lang="ko" data-lang-name="Korean">Korean</div>
+                  <div class="sider-translate-language-item" data-lang="zh" data-lang-name="Chinese">Chinese</div>
+                  <div class="sider-translate-language-item" data-lang="ar" data-lang-name="Arabic">Arabic</div>
+                  <div class="sider-translate-language-item" data-lang="hi" data-lang-name="Hindi">Hindi</div>
+                  <div class="sider-translate-language-item" data-lang="nl" data-lang-name="Dutch">Dutch</div>
+                  <div class="sider-translate-language-item" data-lang="pl" data-lang-name="Polish">Polish</div>
+                  <div class="sider-translate-language-item" data-lang="tr" data-lang-name="Turkish">Turkish</div>
+                  <div class="sider-translate-language-item" data-lang="vi" data-lang-name="Vietnamese">Vietnamese</div>
+                  <div class="sider-translate-language-item" data-lang="th" data-lang-name="Thai">Thai</div>
+                  <div class="sider-translate-language-item" data-lang="id" data-lang-name="Indonesian">Indonesian</div>
+                </div>
+              </div>
             </button>
           </div>
         </div>
@@ -158,9 +219,6 @@
               <polyline points="6 9 12 15 18 9"/>
             </svg>
           </button>
-          <button class="sider-action-btn" data-action="summarize">
-            <span>Summarize</span>
-          </button>
           <button class="sider-action-btn" id="sider-more-actions-btn">
             <span>...</span>
           </button>
@@ -176,7 +234,7 @@
       ></textarea>
       <div class="sider-input-buttons">
         <div class="sider-input-buttons-left">
-          <button class="sider-bottom-action-btn" data-action="think">
+          <button class="sider-bottom-action-btn" data-action="think" disabled>
             <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
               <circle cx="12" cy="12" r="10"/>
               <line x1="12" y1="6" x2="12" y2="8"/>
@@ -185,7 +243,7 @@
             </svg>
             <span>Think</span>
           </button>
-          <button class="sider-bottom-action-btn" data-action="deep-research">
+          <button class="sider-bottom-action-btn" data-action="deep-research" disabled>
             <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
               <circle cx="11" cy="11" r="8"/>
               <path d="m21 21-4.35-4.35"/>
@@ -205,6 +263,11 @@
           <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
             <line x1="22" y1="2" x2="11" y2="13"/>
             <polygon points="22 2 15 22 11 13 2 9 22 2"/>
+          </svg>
+        </button>
+        <button class="sider-stop-btn" id="sider-stop-btn" title="Stop generating" style="display: none;">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <rect x="6" y="6" width="12" height="12" rx="2"/>
           </svg>
         </button>
       </div>
@@ -247,6 +310,44 @@
     </div>
     <div class="sider-chat-history-list" id="sider-chat-history-list">
       <!-- Conversations will be dynamically loaded here -->
+    </div>
+  </div>
+</div>
+
+<!-- Delete Confirmation Modal -->
+<div class="sider-delete-confirmation-modal" id="sider-delete-confirmation-modal" style="display: none;">
+  <div class="sider-delete-confirmation-content">
+    <div class="sider-delete-confirmation-header">
+      <h3 class="sider-delete-confirmation-title">Delete Conversation</h3>
+    </div>
+    <div class="sider-delete-confirmation-body">
+      <p class="sider-delete-confirmation-message">Are you sure you want to delete this conversation?</p>
+    </div>
+    <div class="sider-delete-confirmation-actions">
+      <button class="sider-delete-confirmation-btn sider-delete-confirmation-cancel">Cancel</button>
+      <button class="sider-delete-confirmation-btn sider-delete-confirmation-confirm">Delete</button>
+    </div>
+  </div>
+</div>
+
+<!-- Edit Title Modal -->
+<div class="sider-edit-title-modal" id="sider-edit-title-modal" style="display: none;">
+  <div class="sider-edit-title-content">
+    <div class="sider-edit-title-header">
+      <h3 class="sider-edit-title-title">Edit Title</h3>
+    </div>
+    <div class="sider-edit-title-body">
+      <input 
+        type="text" 
+        class="sider-edit-title-input" 
+        id="sider-edit-title-input" 
+        placeholder="Enter new title"
+        maxlength="100"
+      />
+    </div>
+    <div class="sider-edit-title-actions">
+      <button class="sider-edit-title-btn sider-edit-title-cancel">Cancel</button>
+      <button class="sider-edit-title-btn sider-edit-title-confirm">Save</button>
     </div>
   </div>
 </div>

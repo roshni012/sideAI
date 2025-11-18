@@ -271,6 +271,18 @@
           sendResponse({ content: pageContent });
         }
         return true;
+      } else if (request.action === 'getPageContent') {
+        // Get full page content for file upload
+        const pageContent = {
+          title: document.title,
+          url: window.location.href,
+          html: document.documentElement.outerHTML,
+          text: document.body.innerText || document.body.textContent || ''
+        };
+        if (sendResponse) {
+          sendResponse(pageContent);
+        }
+        return true;
       } else if (request.action === 'summarize') {
         // Extract page content for summarization
         const title = document.title;
@@ -341,4 +353,82 @@
       });
     }
   });
+  
+  // Initialize custom tooltips (hide native tooltips)
+  function initTooltips(container) {
+    if (!container) container = document;
+    
+    // Convert all title attributes to data-tooltip for custom styling
+    const elementsWithTitle = container.querySelectorAll('[title]');
+    elementsWithTitle.forEach(el => {
+      if (el.title && !el.dataset.tooltip) {
+        el.dataset.tooltip = el.title;
+      }
+    });
+    
+    // Use event delegation to hide native tooltips on hover
+    container.addEventListener('mouseenter', function(e) {
+      if (!e || !e.target) return;
+      // Handle text nodes - get the parent element
+      let element = e.target;
+      if (element.nodeType !== 1) {
+        element = element.parentElement;
+      }
+      if (!element || typeof element.closest !== 'function') return;
+      const target = element.closest('[data-tooltip]');
+      if (target && target.title) {
+        // Store original title and remove it to hide native tooltip
+        if (!target.dataset.originalTitle) {
+          target.dataset.originalTitle = target.title;
+        }
+        target.removeAttribute('title');
+      }
+    }, true);
+    
+    container.addEventListener('mouseleave', function(e) {
+      if (!e || !e.target) return;
+      // Handle text nodes - get the parent element
+      let element = e.target;
+      if (element.nodeType !== 1) {
+        element = element.parentElement;
+      }
+      if (!element || typeof element.closest !== 'function') return;
+      const target = element.closest('[data-original-title]');
+      if (target && target.dataset.originalTitle) {
+        // Restore original title
+        target.title = target.dataset.originalTitle;
+      }
+    }, true);
+    
+    // Watch for dynamically added elements
+    const observer = new MutationObserver(mutations => {
+      mutations.forEach(mutation => {
+        mutation.addedNodes.forEach(node => {
+          if (node.nodeType === 1) { // Element node
+            if (node.hasAttribute && node.hasAttribute('title') && !node.dataset.tooltip) {
+              node.dataset.tooltip = node.title;
+            }
+            // Check children
+            const childrenWithTitle = node.querySelectorAll ? node.querySelectorAll('[title]') : [];
+            childrenWithTitle.forEach(el => {
+              if (el.title && !el.dataset.tooltip) {
+                el.dataset.tooltip = el.title;
+              }
+            });
+          }
+        });
+      });
+    });
+    
+    observer.observe(container, { childList: true, subtree: true });
+  }
+  
+  // Initialize tooltips when DOM is ready
+  if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', () => {
+      initTooltips();
+    });
+  } else {
+    initTooltips();
+  }
 })();

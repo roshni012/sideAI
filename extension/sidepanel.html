@@ -158,36 +158,6 @@
       
       <input type="file" id="sider-ocr-file-input" style="display: none;" accept="image/*,application/pdf">
       
-      <div class="sider-summarize-card" id="sider-summarize-card" style="display: none;">
-        <button class="sider-summarize-close-btn" id="sider-summarize-close-btn" title="Close">
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-            <line x1="18" y1="6" x2="6" y2="18"/>
-            <line x1="6" y1="6" x2="18" y2="18"/>
-          </svg>
-        </button>
-        <div class="sider-summarize-card-left">
-          <div class="sider-summarize-icon">
-            <svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-              <circle cx="12" cy="12" r="10" fill="#8b5cf6"/>
-              <line x1="2" y1="12" x2="22" y2="12" stroke="#ffffff" stroke-width="2"/>
-              <path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z" fill="#ffffff" opacity="0.3"/>
-            </svg>
-          </div>
-          <span class="sider-summarize-site-name" id="sider-summarize-site-name"></span>
-        </div>
-        <div class="sider-summarize-card-right">
-          <button class="sider-summarize-btn" id="sider-summarize-btn" data-action="summarize">
-            Summarize
-          </button>
-          <button class="sider-summarize-copy-btn" id="sider-summarize-copy-btn" title="Copy URL">
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-              <rect x="9" y="9" width="13" height="13" rx="2" ry="2"/>
-              <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/>
-            </svg>
-          </button>
-        </div>
-      </div>
-      
       <!-- Chat footer loaded from chat-tab.html -->
       <div id="sider-chat-footer-container"></div>
       
@@ -895,6 +865,7 @@
 
   <script src="auth-service.js"></script>
   <script src="chat-service.js"></script>
+  <script src="image-service.js"></script>
   <script src="ai-modules.js"></script>
   <script src="login-modal.js"></script>
   <script src="tab-base.js"></script>
