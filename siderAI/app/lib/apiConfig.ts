@@ -31,6 +31,8 @@ export const API_ENDPOINTS = {
     REMOVE_BACKGROUND: '/api/images/remove-background',
     GENERATE: '/api/images/generate',
     UPSCALE: '/api/images/upscale',
+    HISTORY: '/api/images/history/generate',
+    OPTIMIZE_PROMPT: '/api/images/optimize_prompt',
   },
 } as const;
 
