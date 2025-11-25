@@ -55,6 +55,12 @@ import {
   Loader2,
   MoreVertical,
   Download,
+  Copy,
+  RotateCw,
+  Quote,
+  Share2,
+  Volume2,
+  SquarePlus,
 } from 'lucide-react';
 import UserProfileDropdown from './UserProfileDropdown';
 import DeepResearch from './DeepResearch';
@@ -84,6 +90,7 @@ interface Message {
   isGenerating?: boolean;
   images?: string[]; // Array of image preview URLs for user messages
   files?: Array<{ name: string; url: string; type: string }>; // Array of file info (PDFs, etc.) for user messages
+  model?: string; // Model name used for assistant messages
 }
 
 interface Model {
@@ -154,6 +161,38 @@ const getModelIcon = (modelId: string) => {
   return <Sparkles className={iconClass} />;
 };
 
+const getModelImagePath = (modelId: string): string | null => {
+  const imageMap: Record<string, string> = {
+    'webby-fusion': '/image/fusion.png',
+    'gpt-5-mini': '/image/gpt_5mini.png',
+    'gpt-5.1': '/image/chatgpt.png',
+    'gpt-4.1': '/image/chatgpt.png',
+    'gpt-5': '/image/chatgpt.png',
+    'claude-haiku-4.5': '/image/claude.png',
+    'claude-sonnet-4.5': '/image/claude.png',
+    'claude-3.5-haiku': '/image/claude.png',
+    'claude-3.7-sonnet': '/image/claude.png',
+    'claude-sonnet-4': '/image/claude.png',
+    'claude-opus-4.1': '/image/claude.png',
+    'gemini-2.5-flash': '/image/gemini.png',
+    'gemini-2.5-pro': '/image/gemini.png',
+    'deepseek-v3.1': '/image/deepseek.png',
+    'deepseek-v3': '/image/deepseek.png',
+    'grok-4': '/image/grok.png',
+    'kimi-k2': '/image/kimi.png',
+  };
+  return imageMap[modelId] || null;
+};
+
+const getSelectedModelImagePath = (modelName: string): string | null => {
+  const model = AVAILABLE_MODELS.find((m) => m.name === modelName) || 
+                OTHER_MODELS.find((m) => m.name === modelName);
+  if (model) {
+    return getModelImagePath(model.id);
+  }
+  return null;
+};
+
 interface UserData {
   name?: string;
   email?: string;
@@ -204,9 +243,18 @@ export default function Chat() {
     [availableModelNames]
   );
   const [isModelDropdownOpen, setIsModelDropdownOpen] = useState(false);
+  const [isModelDropdownOpen1, setIsModelDropdownOpen1] = useState(false);
   const [isOtherModelsHovered, setIsOtherModelsHovered] = useState(false);
   const [otherModelsDropdownPosition, setOtherModelsDropdownPosition] = useState({ top: 0, left: 0 });
   const otherModelsRef = useRef<HTMLButtonElement>(null);
+  // Panel 1 Other Models state
+  const [isOtherModelsHovered1, setIsOtherModelsHovered1] = useState(false);
+  const [otherModelsDropdownPosition1, setOtherModelsDropdownPosition1] = useState({ top: 0, left: 0 });
+  const otherModelsRef1 = useRef<HTMLButtonElement>(null);
+  // Panel 2 Other Models state
+  const [isOtherModelsHovered2, setIsOtherModelsHovered2] = useState(false);
+  const [otherModelsDropdownPosition2, setOtherModelsDropdownPosition2] = useState({ top: 0, left: 0 });
+  const otherModelsRef2 = useRef<HTMLButtonElement>(null);
   const [viewMode, setViewMode] = useState<'single' | 'double'>('single');
   const [inputValue, setInputValue] = useState('');
   const [messages, setMessages] = useState<Message[]>([]);
@@ -214,7 +262,7 @@ export default function Chat() {
   const [conversationId, setConversationId] = useState<string | null>(null);
   
   // Second panel state for double view
-  const [selectedModel2, setSelectedModel2] = useState('openai/gpt-5-mini');
+  const [selectedModel2, setSelectedModel2] = useState('gpt -5 mini');
   const [messages2, setMessages2] = useState<Message[]>([]);
   const [isGenerating2, setIsGenerating2] = useState(false);
   const [conversationId2, setConversationId2] = useState<string | null>(null);
@@ -236,8 +284,14 @@ export default function Chat() {
   const abortController1Ref = useRef<AbortController | null>(null);
   const abortController2Ref = useRef<AbortController | null>(null);
   const modelDropdownRef = useRef<HTMLDivElement>(null);
+  const modelDropdownRef1 = useRef<HTMLDivElement>(null);
+  const modelDropdownRef2 = useRef<HTMLDivElement>(null);
   const userProfileButtonRef = useRef<HTMLButtonElement>(null);
   const otherModelsDropdownRef = useRef<HTMLDivElement>(null);
+  // Panel 1 Other Models ref
+  const otherModelsDropdownRef1 = useRef<HTMLDivElement>(null);
+  // Panel 2 Other Models ref
+  const otherModelsDropdownRef2 = useRef<HTMLDivElement>(null);
   const [isAttachmentDropdownOpen, setIsAttachmentDropdownOpen] = useState(false);
   const attachmentButtonRef = useRef<HTMLButtonElement>(null);
   const attachmentDropdownRef = useRef<HTMLDivElement>(null);
@@ -410,6 +464,46 @@ export default function Chat() {
     };
   }, [isOtherModelsHovered]);
 
+  // Panel 1 Other Models position calculation
+  useEffect(() => {
+    const updateOtherModelsPosition1 = () => {
+      if (isOtherModelsHovered1 && otherModelsRef1.current && modelDropdownRef1.current) {
+        const buttonRect = otherModelsRef1.current.getBoundingClientRect();
+        const mainDropdownRect = modelDropdownRef1.current.getBoundingClientRect();
+        const viewportHeight = window.innerHeight;
+        const dropdownHeight = 256; // max-h-64 = 256px
+        let top = buttonRect.top;
+        if (buttonRect.top + dropdownHeight > viewportHeight) {
+          top = viewportHeight - dropdownHeight - 8;
+          if (top < 8) {
+            top = 8;
+          }
+        }
+        
+        const left = mainDropdownRect.right + 8;
+        setOtherModelsDropdownPosition1({
+          top: top,
+          left: left,
+        });
+      }
+    };
+
+    if (isOtherModelsHovered1) {
+      // Use requestAnimationFrame to ensure DOM is ready
+      requestAnimationFrame(() => {
+        updateOtherModelsPosition1();
+      });
+    }
+    
+    window.addEventListener('scroll', updateOtherModelsPosition1, true);
+    window.addEventListener('resize', updateOtherModelsPosition1);
+    
+    return () => {
+      window.removeEventListener('scroll', updateOtherModelsPosition1, true);
+      window.removeEventListener('resize', updateOtherModelsPosition1);
+    };
+  }, [isOtherModelsHovered1]);
+
   const agents = [
     { name: 'Deep Research', icon: FileText },
     { name: 'Web Creator', icon: Layout },
@@ -534,6 +628,18 @@ export default function Chat() {
         setIsModelDropdownOpen(false);
       }
       if (
+        modelDropdownRef1.current &&
+        !modelDropdownRef1.current.contains(event.target as Node)
+      ) {
+        setIsModelDropdownOpen1(false);
+      }
+      if (
+        modelDropdownRef2.current &&
+        !modelDropdownRef2.current.contains(event.target as Node)
+      ) {
+        setIsModelDropdownOpen2(false);
+      }
+      if (
         translateDropdownRef.current &&
         !translateDropdownRef.current.contains(event.target as Node)
       ) {
@@ -574,7 +680,7 @@ export default function Chat() {
       }
     };
 
-    const shouldAddListener = isModelDropdownOpen || isTranslateDropdownOpen !== null || isChatControlsOpen || isImageModelDropdownOpen || isLanguageDropdownOpen || openMenuId !== null;
+    const shouldAddListener = isModelDropdownOpen || isModelDropdownOpen1 || isModelDropdownOpen2 || isTranslateDropdownOpen !== null || isChatControlsOpen || isImageModelDropdownOpen || isLanguageDropdownOpen || openMenuId !== null;
     
     if (shouldAddListener) {
       document.addEventListener('mousedown', handleClickOutside);
@@ -584,7 +690,7 @@ export default function Chat() {
     return () => {
       document.removeEventListener('mousedown', handleClickOutside);
     };
-  }, [isModelDropdownOpen, isTranslateDropdownOpen, isChatControlsOpen, isImageModelDropdownOpen, isLanguageDropdownOpen, openMenuId]);
+  }, [isModelDropdownOpen, isModelDropdownOpen1, isModelDropdownOpen2, isTranslateDropdownOpen, isChatControlsOpen, isImageModelDropdownOpen, isLanguageDropdownOpen, openMenuId]);
 
   const handleAttachmentClick = () => {
     if (fileInputRef.current) {
@@ -1238,6 +1344,7 @@ export default function Chat() {
               content: msg.content || msg.text || '',
               isGenerating: false,
               images: extractImageUrls(msg),
+              model: msg.model,
             }));
             setMessages(loadedMessages);
           } else {
@@ -1476,6 +1583,7 @@ export default function Chat() {
       role: 'assistant',
       content: '',
       isGenerating: true,
+      model: model,
     };
     setMessagesState((prev) => [...prev, aiMessage]);
     setIsGeneratingState(true);
@@ -1861,6 +1969,7 @@ export default function Chat() {
         role: 'assistant',
         content: '',
         isGenerating: true,
+        model: selectedModel,
       };
       setMessages((prev) => [...prev, aiMessage]);
 
@@ -2173,6 +2282,7 @@ export default function Chat() {
       role: 'assistant',
       content: '',
       isGenerating: true,
+      model: selectedModel,
     };
     setMessages((prev) => [...prev, aiMessage]);
 
@@ -2605,6 +2715,42 @@ export default function Chat() {
     } else {
     const url = `/create/image/${slug}`;
     window.open(url, '_blank');
+    }
+  };
+
+  // Action button handlers for assistant messages
+  const handleCopyMessage = async (content: string) => {
+    try {
+      await navigator.clipboard.writeText(content);
+    } catch (err) {
+      console.error('Failed to copy:', err);
+    }
+  };
+
+  const handleAddToList = (messageId: string) => {
+    console.log('Add to list:', messageId);
+    // Implement add to list functionality
+  };
+
+  const handleRegenerate = (messageId: string) => {
+    console.log('Regenerate:', messageId);
+    // Implement regenerate functionality
+  };
+
+  const handleQuote = (content: string) => {
+    console.log('Quote:', content);
+    // Implement quote functionality
+  };
+
+  const handleShare = (messageId: string) => {
+    console.log('Share:', messageId);
+    // Implement share functionality
+  };
+
+  const handleReadAloud = (content: string) => {
+    if ('speechSynthesis' in window) {
+      const utterance = new SpeechSynthesisUtterance(content);
+      window.speechSynthesis.speak(utterance);
     }
   };
 
@@ -3118,30 +3264,42 @@ export default function Chat() {
               {/* Panel Header */}
               <div className="h-14 border-b border-gray-200 dark:border-gray-700 flex items-center justify-between px-4 bg-white dark:bg-gray-800">
                 <div className="flex items-center gap-2">
-                  <div className="w-5 h-5 rounded-full bg-gradient-to-br from-purple-500 to-pink-500 flex items-center justify-center flex-shrink-0">
-                    <Zap className="w-3 h-3 text-white" />
+                  <div className="w-5 h-5 rounded-full flex items-center justify-center flex-shrink-0 overflow-hidden">
+                    {getSelectedModelImagePath(selectedModel) ? (
+                      <img
+                        src={getSelectedModelImagePath(selectedModel)!}
+                        alt={selectedModel}
+                        className="w-full h-full object-contain rounded-full"
+                        width={20}
+                        height={20}
+                      />
+                    ) : (
+                      <Zap className="w-3 h-3 text-white" />
+                    )}
                   </div>
-                  <div ref={modelDropdownRef} className="relative">
+                  <div ref={modelDropdownRef1} className="relative">
                     <motion.button
                       whileHover={{ scale: 1.05 }}
                       whileTap={{ scale: 0.95 }}
-                      onClick={() => setIsModelDropdownOpen(!isModelDropdownOpen)}
+                      onClick={() => setIsModelDropdownOpen1(!isModelDropdownOpen1)}
                       className="px-3 py-1.5 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg font-medium text-sm flex items-center gap-2 hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors text-gray-900 dark:text-white shadow-sm"
                     >
-                      {selectedModel}
-                      {isModelDropdownOpen ? (
+                      {availableModels.find((m) => m.name === selectedModel)?.displayName || 
+                       OTHER_MODELS.find((m) => m.name === selectedModel)?.displayName || 
+                       selectedModel}
+                      {isModelDropdownOpen1 ? (
                         <ChevronUp className="w-3 h-3" />
                       ) : (
                         <ChevronDown className="w-3 h-3" />
                       )}
                     </motion.button>
                     {/* Model Dropdown for Panel 1 */}
-                    {isModelDropdownOpen && (
+                    {isModelDropdownOpen1 && (
                       <motion.div
-                        initial={{ opacity: 0, y: -10 }}
+                        initial={{ opacity: 0, y: 10 }}
                         animate={{ opacity: 1, y: 0 }}
-                        exit={{ opacity: 0, y: -10 }}
-                        className="absolute bottom-full left-0 mb-2 w-64 bg-white dark:bg-gray-800 rounded-lg shadow-xl border border-gray-200 dark:border-gray-700 z-50 max-h-96 overflow-y-auto"
+                        exit={{ opacity: 0, y: 10 }}
+                        className="absolute top-full left-0 mt-2 w-64 bg-white dark:bg-gray-800 rounded-lg shadow-xl border border-gray-200 dark:border-gray-700 z-50 max-h-64 overflow-y-auto"
                       >
                         <div className="p-2">
                           <div className="mb-4">
@@ -3152,21 +3310,39 @@ export default function Chat() {
                               .filter((model) => model.category === 'basic')
                               .map((model) => {
                                 const isSelected = selectedModel === model.name;
+                                const isDisabled = selectedModel2 === model.name;
                                 return (
                                   <motion.button
                                     key={model.id}
                                     onClick={() => {
-                                      setSelectedModel(model.name);
-                                      setIsModelDropdownOpen(false);
+                                      if (!isDisabled) {
+                                        setSelectedModel(model.name);
+                                        setIsModelDropdownOpen1(false);
+                                      }
                                     }}
+                                    disabled={isDisabled}
                                     className={`w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-left transition-colors ${
                                       isSelected
                                         ? 'bg-purple-100 dark:bg-purple-900/30 text-purple-700 dark:text-purple-300'
+                                        : isDisabled
+                                        ? 'text-gray-400 dark:text-gray-600 cursor-not-allowed opacity-50'
                                         : 'text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700'
                                     }`}
                                   >
-                                    <div className={`flex-shrink-0 ${isSelected ? 'text-purple-600 dark:text-purple-400' : 'text-gray-500 dark:text-gray-400'}`}>
-                                      {getModelIcon(model.id)}
+                                    <div className="flex-shrink-0">
+                                      {getModelImagePath(model.id) ? (
+                                        <img
+                                          src={getModelImagePath(model.id)!}
+                                          alt={model.displayName || model.name}
+                                          className="w-4 h-4 object-contain rounded flex-shrink-0"
+                                          width={16}
+                                          height={16}
+                                        />
+                                      ) : (
+                                        <div className={`${isSelected ? 'text-purple-600 dark:text-purple-400' : 'text-gray-500 dark:text-gray-400'}`}>
+                                          {getModelIcon(model.id)}
+                                        </div>
+                                      )}
                                     </div>
                                     <span className="text-sm font-medium flex-1">{model.displayName || model.name}</span>
                                     {isSelected && <Zap className="w-4 h-4 text-purple-600 dark:text-purple-400" />}
@@ -3182,27 +3358,167 @@ export default function Chat() {
                               .filter((model) => model.category === 'advanced')
                               .map((model) => {
                                 const isSelected = selectedModel === model.name;
+                                const isDisabled = selectedModel2 === model.name;
                                 return (
                                   <motion.button
                                     key={model.id}
                                     onClick={() => {
-                                      setSelectedModel(model.name);
-                                      setIsModelDropdownOpen(false);
+                                      if (!isDisabled) {
+                                        setSelectedModel(model.name);
+                                        setIsModelDropdownOpen1(false);
+                                      }
                                     }}
+                                    disabled={isDisabled}
                                     className={`w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-left transition-colors ${
                                       isSelected
                                         ? 'bg-purple-100 dark:bg-purple-900/30 text-purple-700 dark:text-purple-300'
+                                        : isDisabled
+                                        ? 'text-gray-400 dark:text-gray-600 cursor-not-allowed opacity-50'
                                         : 'text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700'
                                     }`}
                                   >
-                                    <div className={`flex-shrink-0 ${isSelected ? 'text-purple-600 dark:text-purple-400' : 'text-gray-500 dark:text-gray-400'}`}>
-                                      {getModelIcon(model.id)}
+                                    <div className="flex-shrink-0">
+                                      {getModelImagePath(model.id) ? (
+                                        <img
+                                          src={getModelImagePath(model.id)!}
+                                          alt={model.displayName || model.name}
+                                          className="w-4 h-4 object-contain rounded flex-shrink-0"
+                                          width={16}
+                                          height={16}
+                                        />
+                                      ) : (
+                                        <div className={`${isSelected ? 'text-purple-600 dark:text-purple-400' : 'text-gray-500 dark:text-gray-400'}`}>
+                                          {getModelIcon(model.id)}
+                                        </div>
+                                      )}
                                     </div>
                                     <span className="text-sm font-medium flex-1">{model.displayName || model.name}</span>
                                     {isSelected && <Zap className="w-4 h-4 text-purple-600 dark:text-purple-400" />}
                                   </motion.button>
                                 );
                               })}
+                          </div>
+
+                          {/* Other Models Option */}
+                          <div className="relative">
+                            <motion.button
+                              ref={otherModelsRef1}
+                              onMouseEnter={() => {
+                                if (otherModelsRef1.current && modelDropdownRef1.current) {
+                                  const buttonRect = otherModelsRef1.current.getBoundingClientRect();
+                                  const mainDropdownRect = modelDropdownRef1.current.getBoundingClientRect();
+                                  const viewportHeight = window.innerHeight;
+                                  const dropdownHeight = 256;
+                                  let top = buttonRect.top;
+                                  if (buttonRect.top + dropdownHeight > viewportHeight) {
+                                    top = viewportHeight - dropdownHeight - 8;
+                                    if (top < 8) {
+                                      top = 8;
+                                    }
+                                  }
+                                  const left = mainDropdownRect.right + 8;
+                                  setOtherModelsDropdownPosition1({ top, left });
+                                }
+                                setIsOtherModelsHovered1(true);
+                              }}
+                              onMouseLeave={() => setIsOtherModelsHovered1(false)}
+                              onClick={() => {
+                                setIsModelDropdownOpen(false);
+                              }}
+                              className="w-full flex items-center justify-between px-3 py-2.5 rounded-lg text-left transition-colors text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700"
+                            >
+                              <span className="text-sm font-medium">... Other Models</span>
+                              <ChevronRight className="w-4 h-4" />
+                            </motion.button>
+
+                            {/* Other Models Hover Dropdown */}
+                            {isOtherModelsHovered1 && otherModelsRef1.current && otherModelsDropdownPosition1.top > 0 && (
+                              <>
+                                {/* Invisible bridge to prevent hover loss */}
+                                {modelDropdownRef.current && (
+                                  <div
+                                    className="fixed z-[59] pointer-events-auto"
+                                    style={{
+                                      top: `${otherModelsDropdownPosition1.top}px`,
+                                      left: `${otherModelsDropdownPosition1.left}px`,
+                                      width: `${Math.max(8, otherModelsRef1.current.getBoundingClientRect().right - otherModelsDropdownPosition1.left + 8)}px`,
+                                      height: `${otherModelsRef1.current.getBoundingClientRect().height}px`,
+                                    }}
+                                    onMouseEnter={() => setIsOtherModelsHovered1(true)}
+                                  />
+                                )}
+                                <motion.div
+                                  ref={otherModelsDropdownRef1}
+                                  initial={{ opacity: 0, x: -10 }}
+                                  animate={{ opacity: 1, x: 0 }}
+                                  exit={{ opacity: 0, x: -10 }}
+                                  onMouseEnter={() => setIsOtherModelsHovered1(true)}
+                                  onMouseLeave={() => setIsOtherModelsHovered1(false)}
+                                  className="fixed w-64 bg-white dark:bg-gray-800 rounded-lg shadow-xl border border-gray-200 dark:border-gray-700 z-[60] max-h-64 overflow-y-auto"
+                                  style={{
+                                    top: `${otherModelsDropdownPosition1.top}px`,
+                                    left: `${otherModelsDropdownPosition1.left}px`,
+                                  }}
+                                >
+                                  <div className="p-2">
+                                    {/* Additional Other Models */}
+                                    {filteredOtherModels.length > 0 && (
+                                      <div>
+                                        {filteredOtherModels.map((model) => {
+                                          const isSelected = selectedModel === model.name;
+                                          const isDisabled = selectedModel2 === model.name;
+                                          return (
+                                            <motion.button
+                                              key={model.id}
+                                              onClick={() => {
+                                                if (!isDisabled) {
+                                                  setSelectedModel(model.name);
+                                                  setIsModelDropdownOpen1(false);
+                                                  setIsOtherModelsHovered1(false);
+                                                }
+                                              }}
+                                              disabled={isDisabled}
+                                              className={`w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-left transition-colors ${
+                                                isSelected
+                                                  ? 'bg-purple-100 dark:bg-purple-900/30 text-purple-700 dark:text-purple-300'
+                                                  : isDisabled
+                                                  ? 'text-gray-400 dark:text-gray-600 cursor-not-allowed opacity-50'
+                                                  : 'text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700'
+                                              }`}
+                                            >
+                                              <div className="flex-shrink-0">
+                                                {getModelImagePath(model.id) ? (
+                                                  <img
+                                                    src={getModelImagePath(model.id)!}
+                                                    alt={model.displayName || model.name}
+                                                    className="w-4 h-4 object-contain rounded flex-shrink-0"
+                                                    width={16}
+                                                    height={16}
+                                                  />
+                                                ) : (
+                                                  <div className={`${isSelected ? 'text-purple-600 dark:text-purple-400' : 'text-gray-500 dark:text-gray-400'}`}>
+                                                    {getModelIcon(model.id)}
+                                                  </div>
+                                                )}
+                                              </div>
+                                              <span className="text-sm font-medium flex-1">
+                                                {model.displayName || model.name}
+                                              </span>
+                                              {model.id === 'claude-opus-4.1' && (
+                                                <div className="flex items-center gap-1">
+                                                  <span className="text-xs text-gray-500 dark:text-gray-400">10</span>
+                                                  <Star className="w-3 h-3 text-purple-500" />
+                                                </div>
+                                              )}
+                                            </motion.button>
+                                          );
+                                        })}
+                                      </div>
+                                    )}
+                                  </div>
+                                </motion.div>
+                              </>
+                            )}
                           </div>
                         </div>
                       </motion.div>
@@ -3244,19 +3560,78 @@ export default function Chat() {
                       >
                         {message.role === 'assistant' ? (
                           <div className="flex items-start gap-2 max-w-[85%]">
-                            <div className="w-6 h-6 rounded-full bg-gradient-to-r from-indigo-600 via-purple-600 to-pink-600 flex items-center justify-center flex-shrink-0">
-                              <Sparkles className="w-3 h-3 text-white" />
+                            <div className="w-6 h-6 rounded-full flex items-center justify-center flex-shrink-0 overflow-hidden">
+                              {getSelectedModelImagePath(message.model || selectedModel) ? (
+                                <img
+                                  src={getSelectedModelImagePath(message.model || selectedModel)!}
+                                  alt={message.model || selectedModel}
+                                  className="w-full h-full object-contain rounded-full"
+                                  width={24}
+                                  height={24}
+                                />
+                              ) : (
+                                <Sparkles className="w-3 h-3 text-white" />
+                              )}
                             </div>
-                            <div className="flex-1">
+                            <div className="flex-1 group">
                               <div className="text-xs text-gray-600 dark:text-gray-400 mb-1">
-                                {selectedModel}
+                                {availableModels.find((m) => m.name === (message.model || selectedModel))?.displayName || 
+                                 OTHER_MODELS.find((m) => m.name === (message.model || selectedModel))?.displayName || 
+                                 message.model || selectedModel}
                               </div>
-                              <div className="bg-white dark:bg-gray-800 rounded-lg p-3 text-sm text-gray-900 dark:text-white shadow-sm">
+                              <div className="bg-white dark:bg-gray-800 rounded-lg p-3 text-sm text-gray-900 dark:text-white shadow-sm relative">
                                 {message.content}
                                 {message.isGenerating && (
                                   <span className="inline-block w-1.5 h-1.5 bg-gray-400 rounded-full ml-1 animate-pulse" />
                                 )}
                               </div>
+                              {/* Action Buttons */}
+                              {!message.isGenerating && (
+                                  <div className="absolute top-2 right-2 flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity bg-white dark:bg-gray-800 rounded-lg p-1 shadow-sm">
+                                    <button
+                                      onClick={() => handleCopyMessage(message.content)}
+                                      className="p-1.5 hover:bg-gray-100 dark:hover:bg-gray-700 rounded transition-colors"
+                                      title="Copy"
+                                    >
+                                      <Copy className="w-4 h-4 text-gray-500 dark:text-gray-400" />
+                                    </button>
+                                    <button
+                                      onClick={() => handleAddToList(message.id)}
+                                      className="p-1.5 hover:bg-gray-100 dark:hover:bg-gray-700 rounded transition-colors"
+                                      title="Add to list"
+                                    >
+                                      <SquarePlus className="w-4 h-4 text-gray-500 dark:text-gray-400" />
+                                    </button>
+                                    <button
+                                      onClick={() => handleRegenerate(message.id)}
+                                      className="p-1.5 hover:bg-gray-100 dark:hover:bg-gray-700 rounded transition-colors"
+                                      title="Regenerate"
+                                    >
+                                      <RotateCw className="w-4 h-4 text-gray-500 dark:text-gray-400" />
+                                    </button>
+                                    <button
+                                      onClick={() => handleQuote(message.content)}
+                                      className="p-1.5 hover:bg-gray-100 dark:hover:bg-gray-700 rounded transition-colors"
+                                      title="Quote"
+                                    >
+                                      <Quote className="w-4 h-4 text-gray-500 dark:text-gray-400" />
+                                    </button>
+                                    <button
+                                      onClick={() => handleShare(message.id)}
+                                      className="p-1.5 hover:bg-gray-100 dark:hover:bg-gray-700 rounded transition-colors"
+                                      title="Share"
+                                    >
+                                      <Share2 className="w-4 h-4 text-gray-500 dark:text-gray-400" />
+                                    </button>
+                                    <button
+                                      onClick={() => handleReadAloud(message.content)}
+                                      className="p-1.5 hover:bg-gray-100 dark:hover:bg-gray-700 rounded transition-colors"
+                                      title="Read aloud"
+                                    >
+                                      <Volume2 className="w-4 h-4 text-gray-500 dark:text-gray-400" />
+                                    </button>
+                                  </div>
+                                )}
                             </div>
                           </div>
                         ) : (
@@ -3312,10 +3687,20 @@ export default function Chat() {
                 {/* Panel Header */}
                 <div className="h-14 border-b border-gray-200 dark:border-gray-700 flex items-center justify-between px-4 bg-white dark:bg-gray-800">
                   <div className="flex items-center gap-2">
-                    <div className="w-5 h-5 rounded-full bg-gradient-to-br from-purple-500 to-pink-500 flex items-center justify-center flex-shrink-0">
-                      <Sparkles className="w-3 h-3 text-white" />
+                    <div className="w-5 h-5 rounded-full flex items-center justify-center flex-shrink-0 overflow-hidden">
+                      {getSelectedModelImagePath(selectedModel2) ? (
+                        <img
+                          src={getSelectedModelImagePath(selectedModel2)!}
+                          alt={selectedModel2}
+                          className="w-full h-full object-contain rounded-full"
+                          width={20}
+                          height={20}
+                        />
+                      ) : (
+                        <Sparkles className="w-3 h-3 text-white" />
+                      )}
                     </div>
-                    <div className="relative">
+                    <div ref={modelDropdownRef2} className="relative">
                       <motion.button
                         whileHover={{ scale: 1.05 }}
                         whileTap={{ scale: 0.95 }}
@@ -3334,10 +3719,10 @@ export default function Chat() {
                       {/* Model Dropdown for Panel 2 */}
                       {isModelDropdownOpen2 && (
                         <motion.div
-                          initial={{ opacity: 0, y: -10 }}
+                          initial={{ opacity: 0, y: 10 }}
                           animate={{ opacity: 1, y: 0 }}
-                          exit={{ opacity: 0, y: -10 }}
-                          className="absolute bottom-full left-0 mb-2 w-64 bg-white dark:bg-gray-800 rounded-lg shadow-xl border border-gray-200 dark:border-gray-700 z-50 max-h-96 overflow-y-auto"
+                          exit={{ opacity: 0, y: 10 }}
+                          className="absolute top-full left-0 mt-2 w-64 bg-white dark:bg-gray-800 rounded-lg shadow-xl border border-gray-200 dark:border-gray-700 z-50 max-h-64 overflow-y-auto"
                         >
                           <div className="p-2">
                             <div className="mb-4">
@@ -3348,21 +3733,39 @@ export default function Chat() {
                                 .filter((model) => model.category === 'basic')
                                 .map((model) => {
                                   const isSelected = selectedModel2 === model.name;
+                                  const isDisabled = selectedModel === model.name;
                                   return (
                                     <motion.button
                                       key={model.id}
                                       onClick={() => {
-                                        setSelectedModel2(model.name);
-                                        setIsModelDropdownOpen2(false);
+                                        if (!isDisabled) {
+                                          setSelectedModel2(model.name);
+                                          setIsModelDropdownOpen2(false);
+                                        }
                                       }}
+                                      disabled={isDisabled}
                                       className={`w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-left transition-colors ${
                                         isSelected
                                           ? 'bg-purple-100 dark:bg-purple-900/30 text-purple-700 dark:text-purple-300'
+                                          : isDisabled
+                                          ? 'text-gray-400 dark:text-gray-600 cursor-not-allowed opacity-50'
                                           : 'text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700'
                                       }`}
                                     >
-                                      <div className={`flex-shrink-0 ${isSelected ? 'text-purple-600 dark:text-purple-400' : 'text-gray-500 dark:text-gray-400'}`}>
-                                        {getModelIcon(model.id)}
+                                      <div className="flex-shrink-0">
+                                        {getModelImagePath(model.id) ? (
+                                          <img
+                                            src={getModelImagePath(model.id)!}
+                                            alt={model.displayName || model.name}
+                                            className="w-4 h-4 object-contain rounded flex-shrink-0"
+                                            width={16}
+                                            height={16}
+                                          />
+                                        ) : (
+                                          <div className={`${isSelected ? 'text-purple-600 dark:text-purple-400' : 'text-gray-500 dark:text-gray-400'}`}>
+                                            {getModelIcon(model.id)}
+                                          </div>
+                                        )}
                                       </div>
                                       <span className="text-sm font-medium flex-1">{model.displayName || model.name}</span>
                                       {isSelected && <Zap className="w-4 h-4 text-purple-600 dark:text-purple-400" />}
@@ -3378,27 +3781,167 @@ export default function Chat() {
                                 .filter((model) => model.category === 'advanced')
                                 .map((model) => {
                                   const isSelected = selectedModel2 === model.name;
+                                  const isDisabled = selectedModel === model.name;
                                   return (
                                     <motion.button
                                       key={model.id}
                                       onClick={() => {
-                                        setSelectedModel2(model.name);
-                                        setIsModelDropdownOpen2(false);
+                                        if (!isDisabled) {
+                                          setSelectedModel2(model.name);
+                                          setIsModelDropdownOpen2(false);
+                                        }
                                       }}
+                                      disabled={isDisabled}
                                       className={`w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-left transition-colors ${
                                         isSelected
                                           ? 'bg-purple-100 dark:bg-purple-900/30 text-purple-700 dark:text-purple-300'
+                                          : isDisabled
+                                          ? 'text-gray-400 dark:text-gray-600 cursor-not-allowed opacity-50'
                                           : 'text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700'
                                       }`}
                                     >
-                                      <div className={`flex-shrink-0 ${isSelected ? 'text-purple-600 dark:text-purple-400' : 'text-gray-500 dark:text-gray-400'}`}>
-                                        {getModelIcon(model.id)}
+                                      <div className="flex-shrink-0">
+                                        {getModelImagePath(model.id) ? (
+                                          <img
+                                            src={getModelImagePath(model.id)!}
+                                            alt={model.displayName || model.name}
+                                            className="w-4 h-4 object-contain rounded flex-shrink-0"
+                                            width={16}
+                                            height={16}
+                                          />
+                                        ) : (
+                                          <div className={`${isSelected ? 'text-purple-600 dark:text-purple-400' : 'text-gray-500 dark:text-gray-400'}`}>
+                                            {getModelIcon(model.id)}
+                                          </div>
+                                        )}
                                       </div>
                                       <span className="text-sm font-medium flex-1">{model.displayName || model.name}</span>
                                       {isSelected && <Zap className="w-4 h-4 text-purple-600 dark:text-purple-400" />}
                                     </motion.button>
                                   );
                                 })}
+                            </div>
+
+                            {/* Other Models Option */}
+                            <div className="relative">
+                              <motion.button
+                                ref={otherModelsRef2}
+                                onMouseEnter={() => {
+                                  if (otherModelsRef2.current && modelDropdownRef2.current) {
+                                    const buttonRect = otherModelsRef2.current.getBoundingClientRect();
+                                    const mainDropdownRect = modelDropdownRef2.current.getBoundingClientRect();
+                                    const viewportHeight = window.innerHeight;
+                                    const dropdownHeight = 256;
+                                    let top = buttonRect.top;
+                                    if (buttonRect.top + dropdownHeight > viewportHeight) {
+                                      top = viewportHeight - dropdownHeight - 8;
+                                      if (top < 8) {
+                                        top = 8;
+                                      }
+                                    }
+                                    const left = mainDropdownRect.right + 8;
+                                    setOtherModelsDropdownPosition2({ top, left });
+                                  }
+                                  setIsOtherModelsHovered2(true);
+                                }}
+                                onMouseLeave={() => setIsOtherModelsHovered2(false)}
+                                onClick={() => {
+                                  setIsModelDropdownOpen2(false);
+                                }}
+                                className="w-full flex items-center justify-between px-3 py-2.5 rounded-lg text-left transition-colors text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700"
+                              >
+                                <span className="text-sm font-medium">... Other Models</span>
+                                <ChevronRight className="w-4 h-4" />
+                              </motion.button>
+
+                              {/* Other Models Hover Dropdown */}
+                              {isOtherModelsHovered2 && otherModelsRef2.current && otherModelsDropdownPosition2.top > 0 && (
+                                <>
+                                  {/* Invisible bridge to prevent hover loss */}
+                                  {modelDropdownRef2.current && (
+                                    <div
+                                      className="fixed z-[59] pointer-events-auto"
+                                      style={{
+                                        top: `${otherModelsDropdownPosition2.top}px`,
+                                        left: `${otherModelsDropdownPosition2.left}px`,
+                                        width: `${Math.max(8, otherModelsRef2.current.getBoundingClientRect().right - otherModelsDropdownPosition2.left + 8)}px`,
+                                        height: `${otherModelsRef2.current.getBoundingClientRect().height}px`,
+                                      }}
+                                      onMouseEnter={() => setIsOtherModelsHovered2(true)}
+                                    />
+                                  )}
+                                  <motion.div
+                                    ref={otherModelsDropdownRef2}
+                                    initial={{ opacity: 0, x: -10 }}
+                                    animate={{ opacity: 1, x: 0 }}
+                                    exit={{ opacity: 0, x: -10 }}
+                                    onMouseEnter={() => setIsOtherModelsHovered2(true)}
+                                    onMouseLeave={() => setIsOtherModelsHovered2(false)}
+                                    className="fixed w-64 bg-white dark:bg-gray-800 rounded-lg shadow-xl border border-gray-200 dark:border-gray-700 z-[60] max-h-64 overflow-y-auto"
+                                    style={{
+                                      top: `${otherModelsDropdownPosition2.top}px`,
+                                      left: `${otherModelsDropdownPosition2.left}px`,
+                                    }}
+                                  >
+                                    <div className="p-2">
+                                      {/* Additional Other Models */}
+                                      {filteredOtherModels.length > 0 && (
+                                        <div>
+                                          {filteredOtherModels.map((model) => {
+                                            const isSelected = selectedModel2 === model.name;
+                                            const isDisabled = selectedModel === model.name;
+                                            return (
+                                              <motion.button
+                                                key={model.id}
+                                                onClick={() => {
+                                                  if (!isDisabled) {
+                                                    setSelectedModel2(model.name);
+                                                    setIsModelDropdownOpen2(false);
+                                                    setIsOtherModelsHovered2(false);
+                                                  }
+                                                }}
+                                                disabled={isDisabled}
+                                                className={`w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-left transition-colors ${
+                                                  isSelected
+                                                    ? 'bg-purple-100 dark:bg-purple-900/30 text-purple-700 dark:text-purple-300'
+                                                    : isDisabled
+                                                    ? 'text-gray-400 dark:text-gray-600 cursor-not-allowed opacity-50'
+                                                    : 'text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700'
+                                                }`}
+                                              >
+                                                <div className="flex-shrink-0">
+                                                  {getModelImagePath(model.id) ? (
+                                                    <img
+                                                      src={getModelImagePath(model.id)!}
+                                                      alt={model.displayName || model.name}
+                                                      className="w-4 h-4 object-contain rounded flex-shrink-0"
+                                                      width={16}
+                                                      height={16}
+                                                    />
+                                                  ) : (
+                                                    <div className={`${isSelected ? 'text-purple-600 dark:text-purple-400' : 'text-gray-500 dark:text-gray-400'}`}>
+                                                      {getModelIcon(model.id)}
+                                                    </div>
+                                                  )}
+                                                </div>
+                                                <span className="text-sm font-medium flex-1">
+                                                  {model.displayName || model.name}
+                                                </span>
+                                                {model.id === 'claude-opus-4.1' && (
+                                                  <div className="flex items-center gap-1">
+                                                    <span className="text-xs text-gray-500 dark:text-gray-400">10</span>
+                                                    <Star className="w-3 h-3 text-purple-500" />
+                                                  </div>
+                                                )}
+                                              </motion.button>
+                                            );
+                                          })}
+                                        </div>
+                                      )}
+                                    </div>
+                                  </motion.div>
+                                </>
+                              )}
                             </div>
                           </div>
                         </motion.div>
@@ -3440,19 +3983,76 @@ export default function Chat() {
                         >
                           {message.role === 'assistant' ? (
                             <div className="flex items-start gap-2 max-w-[85%]">
-                              <div className="w-6 h-6 rounded-full bg-gradient-to-r from-indigo-600 via-purple-600 to-pink-600 flex items-center justify-center flex-shrink-0">
-                                <Sparkles className="w-3 h-3 text-white" />
+                              <div className="w-6 h-6 rounded-full flex items-center justify-center flex-shrink-0 overflow-hidden">
+                                {getSelectedModelImagePath(message.model || selectedModel2) ? (
+                                  <img
+                                    src={getSelectedModelImagePath(message.model || selectedModel2)!}
+                                    alt={message.model || selectedModel2}
+                                    className="w-full h-full object-contain rounded-full"
+                                    width={24}
+                                    height={24}
+                                  />
+                                ) : (
+                                  <Sparkles className="w-3 h-3 text-white" />
+                                )}
                               </div>
                               <div className="flex-1">
                                 <div className="text-xs text-gray-600 dark:text-gray-400 mb-1">
-                                  {availableModels.find((m) => m.name === selectedModel2)?.displayName || 
-                         OTHER_MODELS.find((m) => m.name === selectedModel2)?.displayName || 
-                         selectedModel2}
+                                  {availableModels.find((m) => m.name === (message.model || selectedModel2))?.displayName || 
+                                   OTHER_MODELS.find((m) => m.name === (message.model || selectedModel2))?.displayName || 
+                                   message.model || selectedModel2}
                                 </div>
-                                <div className="bg-white dark:bg-gray-800 rounded-lg p-3 text-sm text-gray-900 dark:text-white shadow-sm">
+                                <div className="bg-white dark:bg-gray-800 rounded-lg p-3 text-sm text-gray-900 dark:text-white shadow-sm relative group">
                                   {message.content}
                                   {message.isGenerating && (
-                                    <span className="inline-block w-1.5 h-1.5 bg-gray-400 rounded-full ml-1 animate-pulse" />
+                                    <span className="inline-block w-2 h-2 bg-gray-400 rounded-full ml-1 animate-pulse" />
+                                  )}
+                                  {/* Action Buttons */}
+                                  {!message.isGenerating && (
+                                    <div className="flex justify-end items-center gap-1 mt-2 opacity-0 group-hover:opacity-100 transition-opacity">
+                                      <button
+                                        onClick={() => handleCopyMessage(message.content)}
+                                        className="p-1.5 hover:bg-gray-100 dark:hover:bg-gray-700 rounded transition-colors"
+                                        title="Copy"
+                                      >
+                                        <Copy className="w-4 h-4 text-gray-500 dark:text-gray-400" />
+                                      </button>
+                                      <button
+                                        onClick={() => handleAddToList(message.id)}
+                                        className="p-1.5 hover:bg-gray-100 dark:hover:bg-gray-700 rounded transition-colors"
+                                        title="Add to list"
+                                      >
+                                        <SquarePlus className="w-4 h-4 text-gray-500 dark:text-gray-400" />
+                                      </button>
+                                      <button
+                                        onClick={() => handleRegenerate(message.id)}
+                                        className="p-1.5 hover:bg-gray-100 dark:hover:bg-gray-700 rounded transition-colors"
+                                        title="Regenerate"
+                                      >
+                                        <RotateCw className="w-4 h-4 text-gray-500 dark:text-gray-400" />
+                                      </button>
+                                      <button
+                                        onClick={() => handleQuote(message.content)}
+                                        className="p-1.5 hover:bg-gray-100 dark:hover:bg-gray-700 rounded transition-colors"
+                                        title="Quote"
+                                      >
+                                        <Quote className="w-4 h-4 text-gray-500 dark:text-gray-400" />
+                                      </button>
+                                      <button
+                                        onClick={() => handleShare(message.id)}
+                                        className="p-1.5 hover:bg-gray-100 dark:hover:bg-gray-700 rounded transition-colors"
+                                        title="Share"
+                                      >
+                                        <Share2 className="w-4 h-4 text-gray-500 dark:text-gray-400" />
+                                      </button>
+                                      <button
+                                        onClick={() => handleReadAloud(message.content)}
+                                        className="p-1.5 hover:bg-gray-100 dark:hover:bg-gray-700 rounded transition-colors"
+                                        title="Read aloud"
+                                      >
+                                        <Volume2 className="w-4 h-4 text-gray-500 dark:text-gray-400" />
+                                      </button>
+                                    </div>
                                   )}
                                 </div>
                               </div>
@@ -3548,19 +4148,78 @@ export default function Chat() {
                   >
                     {message.role === 'assistant' ? (
                       <div className="flex items-start gap-3 max-w-[80%]">
-                        <div className="w-8 h-8 rounded-full bg-gradient-to-r from-indigo-600 via-purple-600 to-pink-600 flex items-center justify-center flex-shrink-0">
-                          <Sparkles className="w-4 h-4 text-white" />
+                        <div className="w-8 h-8 rounded-full bg-gradient-to-r from-indigo-600 via-purple-600 to-pink-600 flex items-center justify-center flex-shrink-0 overflow-hidden">
+                          {getSelectedModelImagePath(message.model || selectedModel) ? (
+                            <img
+                              src={getSelectedModelImagePath(message.model || selectedModel)!}
+                              alt={message.model || selectedModel}
+                              className="w-full h-full object-contain rounded-full"
+                              width={32}
+                              height={32}
+                            />
+                          ) : (
+                            <Sparkles className="w-4 h-4 text-white" />
+                          )}
                         </div>
-                        <div className="flex-1">
+                        <div className="flex-1 group">
                           <div className="text-sm text-gray-600 dark:text-gray-400 mb-1">
-                            {selectedModel}
+                            {availableModels.find((m) => m.name === (message.model || selectedModel))?.displayName || 
+                             OTHER_MODELS.find((m) => m.name === (message.model || selectedModel))?.displayName || 
+                             message.model || selectedModel}
                           </div>
-                          <div className="bg-white dark:bg-gray-800 rounded-lg p-4 text-gray-900 dark:text-white shadow-sm">
+                          <div className="bg-white dark:bg-gray-800 rounded-lg p-4 text-gray-900 dark:text-white shadow-sm relative">
                             {message.content}
                             {message.isGenerating && (
                               <span className="inline-block w-2 h-2 bg-gray-400 rounded-full ml-1 animate-pulse" />
                             )}
                           </div>
+                            {/* Action Buttons */}
+                            {!message.isGenerating && (
+                              <div className="flex justify-end items-center gap-1 mt-2 opacity-0 group-hover:opacity-100 transition-opacity">
+                                <button
+                                  onClick={() => handleCopyMessage(message.content)}
+                                  className="p-1.5 hover:bg-gray-100 dark:hover:bg-gray-700 rounded transition-colors"
+                                  title="Copy"
+                                >
+                                  <Copy className="w-4 h-4 text-gray-500 dark:text-gray-400" />
+                                </button>
+                                <button
+                                  onClick={() => handleAddToList(message.id)}
+                                  className="p-1.5 hover:bg-gray-100 dark:hover:bg-gray-700 rounded transition-colors"
+                                  title="Add to list"
+                                >
+                                  <SquarePlus className="w-4 h-4 text-gray-500 dark:text-gray-400" />
+                                </button>
+                                <button
+                                  onClick={() => handleRegenerate(message.id)}
+                                  className="p-1.5 hover:bg-gray-100 dark:hover:bg-gray-700 rounded transition-colors"
+                                  title="Regenerate"
+                                >
+                                  <RotateCw className="w-4 h-4 text-gray-500 dark:text-gray-400" />
+                                </button>
+                                <button
+                                  onClick={() => handleQuote(message.content)}
+                                  className="p-1.5 hover:bg-gray-100 dark:hover:bg-gray-700 rounded transition-colors"
+                                  title="Quote"
+                                >
+                                  <Quote className="w-4 h-4 text-gray-500 dark:text-gray-400" />
+                                </button>
+                                <button
+                                  onClick={() => handleShare(message.id)}
+                                  className="p-1.5 hover:bg-gray-100 dark:hover:bg-gray-700 rounded transition-colors"
+                                  title="Share"
+                                >
+                                  <Share2 className="w-4 h-4 text-gray-500 dark:text-gray-400" />
+                                </button>
+                                <button
+                                  onClick={() => handleReadAloud(message.content)}
+                                  className="p-1.5 hover:bg-gray-100 dark:hover:bg-gray-700 rounded transition-colors"
+                                  title="Read aloud"
+                                >
+                                  <Volume2 className="w-4 h-4 text-gray-500 dark:text-gray-400" />
+                                </button>
+                              </div>
+                            )}
                         </div>
                       </div>
                     ) : (
@@ -3629,8 +4288,18 @@ export default function Chat() {
                   onClick={() => setIsModelDropdownOpen(!isModelDropdownOpen)}
                     className="px-4 py-2 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg font-medium text-sm flex items-center gap-2 hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors text-gray-900 dark:text-white shadow-sm"
                 >
-                  <div className="w-5 h-5 rounded-full bg-gradient-to-br from-purple-500 to-pink-500 flex items-center justify-center flex-shrink-0">
-                    <Zap className="w-3 h-3 text-white" />
+                  <div className="w-5 h-5 rounded-full flex items-center justify-center flex-shrink-0 overflow-hidden">
+                    {getSelectedModelImagePath(selectedModel) ? (
+                      <img
+                        src={getSelectedModelImagePath(selectedModel)!}
+                        alt={selectedModel}
+                        className="w-full h-full object-contain rounded-full"
+                        width={20}
+                        height={20}
+                      />
+                    ) : (
+                      <Zap className="w-3 h-3 text-white" />
+                    )}
                   </div>
                   {availableModels.find((m) => m.name === selectedModel)?.displayName || 
                    OTHER_MODELS.find((m) => m.name === selectedModel)?.displayName || 
@@ -3678,14 +4347,20 @@ export default function Chat() {
                                 : 'text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700'
                             }`}
                           >
-                                <div
-                                  className={`flex-shrink-0 ${
-                                    isSelected
-                                      ? 'text-purple-600 dark:text-purple-400'
-                                      : 'text-gray-500 dark:text-gray-400'
-                                  }`}
-                                >
-                                  {getModelIcon(model.id)}
+                                <div className="flex-shrink-0">
+                                  {getModelImagePath(model.id) ? (
+                                    <img
+                                      src={getModelImagePath(model.id)!}
+                                      alt={model.displayName || model.name}
+                                      className="w-4 h-4 object-contain rounded flex-shrink-0"
+                                      width={16}
+                                      height={16}
+                                    />
+                                  ) : (
+                                    <div className={`${isSelected ? 'text-purple-600 dark:text-purple-400' : 'text-gray-500 dark:text-gray-400'}`}>
+                                      {getModelIcon(model.id)}
+                                    </div>
+                                  )}
                                 </div>
                                 <span className="text-sm font-medium flex-1">
                                   {model.displayName || model.name}
@@ -3720,14 +4395,20 @@ export default function Chat() {
                                     : 'text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700'
                                 }`}
                               >
-                                <div
-                                  className={`flex-shrink-0 ${
-                                    isSelected
-                                      ? 'text-purple-600 dark:text-purple-400'
-                                      : 'text-gray-500 dark:text-gray-400'
-                                  }`}
-                                >
-                                  {getModelIcon(model.id)}
+                                <div className="flex-shrink-0">
+                                  {getModelImagePath(model.id) ? (
+                                    <img
+                                      src={getModelImagePath(model.id)!}
+                                      alt={model.displayName || model.name}
+                                      className="w-4 h-4 object-contain rounded flex-shrink-0"
+                                      width={16}
+                                      height={16}
+                                    />
+                                  ) : (
+                                    <div className={`${isSelected ? 'text-purple-600 dark:text-purple-400' : 'text-gray-500 dark:text-gray-400'}`}>
+                                      {getModelIcon(model.id)}
+                                    </div>
+                                  )}
                                 </div>
                                 <span className="text-sm font-medium flex-1">
                                   {model.displayName || model.name}
@@ -3804,14 +4485,20 @@ export default function Chat() {
                                             : 'text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700'
                                         }`}
                                       >
-                                        <div
-                                          className={`flex-shrink-0 ${
-                                            isSelected
-                                              ? 'text-purple-600 dark:text-purple-400'
-                                              : 'text-gray-500 dark:text-gray-400'
-                                          }`}
-                                        >
-                                          {getModelIcon(model.id)}
+                                        <div className="flex-shrink-0">
+                                          {getModelImagePath(model.id) ? (
+                                            <img
+                                              src={getModelImagePath(model.id)!}
+                                              alt={model.displayName || model.name}
+                                              className="w-4 h-4 object-contain rounded flex-shrink-0"
+                                              width={16}
+                                              height={16}
+                                            />
+                                          ) : (
+                                            <div className={`${isSelected ? 'text-purple-600 dark:text-purple-400' : 'text-gray-500 dark:text-gray-400'}`}>
+                                              {getModelIcon(model.id)}
+                                            </div>
+                                          )}
                                         </div>
                                         <span className="text-sm font-medium flex-1">
                                           {model.displayName || model.name}
