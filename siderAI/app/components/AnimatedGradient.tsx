@@ -47,7 +47,12 @@ export default function AnimatedGradient({
 
       // Enhanced liquid motion - smoother scale animation
       gsap.to(gradientRef.current, {
-        scale: [1, 1.15, 1.05, 1.1],
+       keyframes: [
+          { scale: 1 },
+          { scale: 1.15 },
+          { scale: 1.05 },
+          { scale: 1.1 },
+        ],
         duration: duration * 0.8,
         repeat: -1,
         yoyo: true,
