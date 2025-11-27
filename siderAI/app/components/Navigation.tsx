@@ -1,14 +1,16 @@
 'use client';
 
-import { useState, useEffect, useRef } from 'react';
+import { useState, useEffect, useRef, type MouseEvent } from 'react';
 import { Menu, X, Sparkles } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useGSAP } from '@gsap/react';
 import gsap from 'gsap';
+import { useRouter } from 'next/navigation';
 import LoginDialog from './LoginDialog';
 import SignUpDialog from './SignUpDialog';
 
-export default function Navigation() {
+export default function Navigation({ isAuthenticated = false }: { isAuthenticated?: boolean }) {
+  const router = useRouter();
   const [isScrolled, setIsScrolled] = useState(false);
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const [isLoginDialogOpen, setIsLoginDialogOpen] = useState(false);
@@ -73,6 +75,16 @@ export default function Navigation() {
                 <motion.a
                   key={i}
                   href={link.href}
+                  onClick={(e: MouseEvent<HTMLAnchorElement>) => {
+                    if (link.href === '/chat') {
+                      e.preventDefault();
+                      if (isAuthenticated) {
+                        router.push(link.href);
+                      } else {
+                        setIsLoginDialogOpen(true);
+                      }
+                    }
+                  }}
                   initial={{ opacity: 0, y: -10 }}
                   animate={{ opacity: 1, y: 0 }}
                   transition={{ delay: 0.3 + i * 0.1 }}

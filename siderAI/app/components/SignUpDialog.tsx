@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useRef, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { motion, AnimatePresence } from 'framer-motion';
 import { X, User, Mail, Lock } from 'lucide-react';
@@ -22,9 +22,32 @@ export default function SignUpDialog({
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [loading, setLoading] = useState(false);
+  const [toast, setToast] = useState<{ message: string; type: 'success' | 'error' } | null>(null);
+  const toastTimerRef = useRef<number | null>(null);
+
+  useEffect(() => {
+    return () => {
+      if (toastTimerRef.current) {
+        clearTimeout(toastTimerRef.current);
+      }
+    };
+  }, []);
 
   const handleBackdropClick = (e: React.MouseEvent<HTMLDivElement>) => {
     if (e.target === e.currentTarget) onClose();
+  };
+
+  const showToast = (message: string, type: 'success' | 'error', onDone?: () => void) => {
+    if (toastTimerRef.current) {
+      clearTimeout(toastTimerRef.current);
+      toastTimerRef.current = null;
+    }
+    setToast({ message, type });
+    toastTimerRef.current = window.setTimeout(() => {
+      setToast(null);
+      toastTimerRef.current = null;
+      if (onDone) onDone();
+    }, 3000);
   };
 
   const handleSignUp = async (e: React.FormEvent) => {
@@ -32,15 +55,14 @@ export default function SignUpDialog({
     setLoading(true);
     try {
       await signupUser(username, email, password);
-      console.log('Signup successful. Redirecting to login...');
-      
-      // Don't store token on signup - user needs to login first
-      // Close signup dialog and switch to login dialog
-      onClose();
-      onSwitchToLogin();
+      console.log('Signup successful. Showing toast and switching to login...');
+      showToast('Signup successful', 'success', () => {
+        onClose();
+        onSwitchToLogin();
+      });
     } catch (err) {
       console.error('Signup error:', err);
-      alert('Signup failed');
+      showToast('Signup failed', 'error');
     } finally {
       setLoading(false);
     }
@@ -177,6 +199,22 @@ export default function SignUpDialog({
           </motion.div>
         </>
       )}
+      {/* Toast popup */}
+      <AnimatePresence>
+        {toast && (
+          <motion.div
+            initial={{ opacity: 0, y: -8 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0, y: -8 }}
+            transition={{ duration: 0.2 }}
+            className={`fixed left-1/2 transform -translate-x-1/2 top-6 z-[10000] rounded-md px-4 py-2 shadow-lg ${
+              toast.type === 'success' ? 'bg-green-600 text-white' : 'bg-red-600 text-white'
+            }`}
+          >
+            {toast.message}
+          </motion.div>
+        )}
+      </AnimatePresence>
     </AnimatePresence>
   );
 }

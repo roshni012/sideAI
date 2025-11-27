@@ -3562,7 +3562,7 @@ export default function Chat() {
                                       message.model || selectedModel}
                                   </div>
                                   <div className="bg-white dark:bg-gray-800 rounded-lg p-3 text-sm text-gray-900 dark:text-white shadow-sm relative">
-                                    {message.content}
+                                    <MarkdownRenderer content={message.content} />
                                     {message.isGenerating && (
                                       <span className="inline-block w-1.5 h-1.5 bg-gray-400 rounded-full ml-1 animate-pulse" />
                                     )}
@@ -3989,7 +3989,7 @@ export default function Chat() {
                                     </div>
                                     <div className="group">
                                       <div className="bg-white dark:bg-gray-800 rounded-lg p-3 text-sm text-gray-900 dark:text-white shadow-sm">
-                                        {message.content}
+                                        <MarkdownRenderer content={message.content} />
 
                                         {message.isGenerating && (
                                           <span className="inline-block w-2 h-2 bg-gray-400 rounded-full ml-1 animate-pulse" />
