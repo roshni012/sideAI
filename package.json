@@ -3,9 +3,9 @@
   "version": "1.0.0",
   "private": true,
   "scripts": {
-    "build": "cd siderAI && npm ci && npm run build",
+    "build": "cd siderAI && npm install && npm run build",
     "start": "cd siderAI && npm start",
-    "postinstall": "cd siderAI && npm ci"
+    "postinstall": "cd siderAI && npm install"
   },
   "engines": {
     "node": ">=18.0.0",
