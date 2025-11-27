@@ -69,6 +69,7 @@ import WebCreator from './WebCreator';
 import AIWriter from './AIWriter';
 import AISlides from './AISlides';
 import { getApiUrl, API_ENDPOINTS } from '../lib/apiConfig';
+import MarkdownRenderer from './MarkdownRenderer';
 
 interface DropdownPosition {
   top: number;
@@ -4161,7 +4162,7 @@ export default function Chat() {
                                     message.model || selectedModel}
                                 </div>
                                 <div className="bg-white dark:bg-gray-800 rounded-lg p-4 text-gray-900 dark:text-white shadow-sm relative">
-                                  {message.content}
+                                <MarkdownRenderer content={message.content} />
                                   {message.isGenerating && (
                                     <span className="inline-block w-2 h-2 bg-gray-400 rounded-full ml-1 animate-pulse" />
                                   )}
