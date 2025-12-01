@@ -137,6 +137,16 @@ export async function loginWithGoogle(): Promise<void> {
       const { token, user } = event.data;
       if (token) {
         localStorage.setItem('authToken', token);
+          try {
+            window.postMessage({
+              type: 'SIDER_AUTH_SYNC',
+              source: 'app',
+              token,
+              refreshToken: null,
+              user
+            }, '*');
+          } catch (pmErr) {
+          }
       }
       if (user) {
         localStorage.setItem('user', JSON.stringify(user));
@@ -160,5 +170,24 @@ export async function loginWithGoogle(): Promise<void> {
       window.removeEventListener('message', messageListener);
     }
   }, 500);
+}
+
+export async function syncAuthFromExtension(): Promise<boolean> {
+  try {
+    if (typeof window === 'undefined') return false;
+    await new Promise(resolve => setTimeout(resolve, 100));
+    const bridge = (window as any).SiderStorageBridge;
+    if (!bridge) {
+      return false;
+    }
+
+    const result = await bridge.syncToLocalStorage();
+    if (result.token) {
+      return true;
+    }
+    return false;
+  } catch (err) {
+    return false;
+  }
 }
 

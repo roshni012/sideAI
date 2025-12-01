@@ -71,14 +71,6 @@
       siteNameSpan.style.visibility = 'visible';
       siteNameSpan.style.opacity = '1';
       
-      console.log('Summarize card updated:', { 
-        siteDomain, 
-        siteName, 
-        displayName, 
-        faviconUrl,
-        hasFavicon: !!faviconUrl 
-      });
-      
       // Update favicon/logo
       const faviconImg = document.getElementById('sider-summarize-favicon');
       const iconSvg = document.getElementById('sider-summarize-icon-svg');
@@ -115,7 +107,6 @@
       // Only show card if explicitly requested (on page reload)
       if (showCard) {
         summarizeCard.style.display = 'flex';
-        console.log('Summarize card shown on page reload');
       }
     } else if (showCard) {
       console.warn('Summarize card element not found when trying to show it. Chat tab HTML may not be loaded yet.');
@@ -788,7 +779,6 @@
   async function processOCR(imageDataUrl) {
     // Prevent multiple simultaneous OCR calls
     if (isProcessingOCR) {
-      console.log('⚠️ OCR is already processing, skipping duplicate call');
       return;
     }
     
@@ -1164,22 +1154,16 @@
   function handleProfileMenuAction(action) {
     switch (action) {
       case 'whats-new':
-        console.log('What\'s new clicked');
         break;
       case 'rewards':
-        console.log('Rewards center clicked');
         break;
       case 'account':
-        console.log('My account clicked');
         break;
       case 'wisebase':
-        console.log('My wisebase clicked');
         break;
       case 'help':
-        console.log('Help center clicked');
         break;
       case 'feedback':
-        console.log('Feedback clicked');
         break;
       case 'logout':
         if (window.SiderAuthService) {
@@ -1189,7 +1173,6 @@
         }
         break;
       default:
-        console.log('Unknown action:', action);
     }
   }
   
@@ -1292,7 +1275,6 @@
       localStorage.removeItem('google_client_id');
       if (chrome && chrome.storage && chrome.storage.local) {
         chrome.storage.local.remove(['google_client_id'], () => {
-          console.log('✅ Cleaned up google_client_id from storage');
         });
       }
     } catch (error) {
@@ -1765,7 +1747,6 @@
             switchToTab(action);
           }
           
-          console.log('More Options action:', action);
           moreOptionsPopup.style.display = 'none';
         });
       });
@@ -1788,9 +1769,6 @@
     
     if (footerUpgrade) {
       footerUpgrade.addEventListener('click', () => {
-        // Handle upgrade action
-        console.log('Upgrade clicked');
-        // You can add navigation to upgrade page or open upgrade modal
       });
     }
     
@@ -1798,8 +1776,6 @@
     const footerSparkle = document.querySelector('.sider-footer-sparkle-wrapper');
     if (footerSparkle) {
       footerSparkle.addEventListener('click', () => {
-        // Handle sparkle icon click (e.g., show credits info)
-        console.log('Sparkle icon clicked');
       });
     }
     
@@ -1812,8 +1788,6 @@
     
     if (footerHeartBtn) {
       footerHeartBtn.addEventListener('click', () => {
-        // Handle favorites action
-        console.log('Favorites clicked');
       });
     }
     
@@ -1847,6 +1821,15 @@
           creditsElement.textContent = changes.sider_credits.newValue || '0';
         }
       }
+      
+      if (changes.authToken) {
+        if (changes.authToken.newValue === undefined || changes.authToken.newValue === null) {
+          localStorage.removeItem('authToken');
+          localStorage.removeItem('refreshToken');
+          localStorage.removeItem('user');
+          updateUIForAuthStatus();
+        }
+      }
     });
     
     // Summarize button
@@ -1873,7 +1856,6 @@
         setTimeout(() => {
           summarizeSaveBtn.setAttribute('title', originalTitle || 'Save');
         }, 2000);
-        console.log('Save button clicked - save functionality to be implemented');
       });
     }
     
@@ -2003,7 +1985,6 @@
     
     // Prevent concurrent calls
     if (isUpdatingUI) {
-      console.log('updateUIForAuthStatus already in progress, skipping...');
       return;
     }
     
@@ -2036,7 +2017,6 @@
             const fetchCurrentUserInfo = () => {
               if (window.SiderAuthService && window.SiderAuthService.getCurrentUserInfo) {
                 isFetchingUserInfo = true;
-                console.log('🔄 Fetching current user info on extension open...');
                 window.SiderAuthService.getCurrentUserInfo().then((userInfoResult) => {
                   isFetchingUserInfo = false;
                 if (userInfoResult.success && userInfoResult.data) {
@@ -2057,11 +2037,8 @@
                     sider_user_email: userInfoResult.data.email || '',
                     sider_user_logged_in: true
                   }, () => {
-                    console.log('✅ User info fetched and saved on extension open:', userInfoResult.data.username);
-                    // Update profile icon and dropdown with fresh data
                     updateProfileIcon(true);
                     updateProfileDropdown(true);
-                    // Update welcome message with fresh data
                     updateWelcomeMessage(true);
                   });
                 } else {
@@ -2338,7 +2315,6 @@
     if (namespace === 'local') {
       // Only trigger UI update for actual auth-related changes
       if (changes.sider_access_token || changes.sider_refresh_token || changes.sider_user_logged_in) {
-        console.log('Auth state changed, updating UI...', Object.keys(changes));
         updateUIForAuthStatus();
       }
     }

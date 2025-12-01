@@ -54,7 +54,6 @@ export default function LoginDialog({
     setLoading(true);
     try {
       const res = await loginUser(email, password);
-      console.log('Login success - full response:', res);
       
       // Check multiple possible token fields in body
       let token = 
@@ -75,17 +74,10 @@ export default function LoginDialog({
           '';
       }
       
-      console.log('Extracted token:', token ? 'Token found' : 'No token found');
-      console.log('Response keys:', Object.keys(res || {}));
-      if (res?._headers) {
-        console.log('Response headers:', Array.from(res._headers.entries()));
-      }
-      
       if (token) {
         localStorage.setItem('authToken', token);
-        console.log('Token stored in localStorage');
       } else {
-        console.warn('No token found in response. Response structure:', JSON.stringify(res, null, 2));
+        console.error('📱 LoginDialog: No token found in response!');
       }
       
       // Store user data
@@ -201,8 +193,11 @@ export default function LoginDialog({
                   onClick={loginWithGoogle}
                   className="w-full relative px-4 py-3 bg-gradient-to-r from-indigo-600 to-purple-600 text-white rounded-lg font-medium flex items-center justify-center gap-3 shadow-lg"
                 >
-                  <svg className="w-5 h-5 bg-white rounded-full p-1" viewBox="0 0 24 24">
-                    <path fill="#4285F4" d="M22.56 12.25..."></path>
+                  <svg viewBox="0 0 488 512" className="w-5 h-5">
+                    <path fill="#4285F4" d="M488 261.8c0-17.4-1.5-34.1-4.3-50.2H250v95.1h134c-5.8 31-23.4 57.2-50 74.7v61.9h81c47.3-43.5 73-107.8 73-181.5z" />
+                    <path fill="#34A853" d="M250 500c67.5 0 124.2-22.5 165.6-61.3l-81-61.9c-22.5 15-51.9 24-84.6 24-65.1 0-120.1-43.4-139.8-101.8H25v63.8C66.9 449.2 152.7 500 250 500z" />
+                    <path fill="#FBBC04" d="M110.2 299.8c-10.2-30-10.2-62.3 0-92.3V143.8H25c-43.8 87.4-43.8 195 0 282.4l85.2-63.8.0-.0z" />
+                    <path fill="#EA4335" d="M250 97.8c35.3 0 67 12.2 92 32.3l69-69C363.1 21.1 312.7 0 250 0 152.3 0 66.9 50.8 25 143.8l85.2 63.7C129.9 141.2 184.9 97.8 250 97.8z" />
                   </svg>
                   <span>Continue with Google</span>
                 </motion.button>

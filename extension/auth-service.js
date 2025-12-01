@@ -89,32 +89,28 @@
 
           // API returns { code: 0, data: { access_token, refresh_token, token_type }, msg: "" }
           if (data.code === 0 && data.data && data.data.access_token) {
-            console.log('✅ Login successful, received tokens:', {
-              hasAccessToken: !!data.data.access_token,
-              hasRefreshToken: !!data.data.refresh_token,
-              tokenType: data.data.token_type
-            });
             
-            // Save tokens to localStorage (like siderAI project)
             try {
-              // Store access_token as 'authToken' (matching siderAI convention)
-              localStorage.setItem('authToken', data.data.access_token);
+              if (typeof chrome !== 'undefined' && chrome.storage && chrome.storage.sync) {
+                chrome.storage.sync.set({
+                  authToken: data.data.access_token,
+                  refreshToken: data.data.refresh_token || null,
+                  sider_user_email: email.trim(),
+                  sider_user_name: email.trim().split('@')[0]
+                }, () => {});
+              }
               
-              // Also save to chrome.storage for content scripts to access
               if (typeof chrome !== 'undefined' && chrome.storage && chrome.storage.local) {
                 chrome.storage.local.set({
                   authToken: data.data.access_token,
                   refreshToken: data.data.refresh_token || null
-                }, () => {
-                  console.log('✅ Tokens also saved to chrome.storage.local');
-                });
+                }, () => {});
               }
-              console.log('✅ Token stored in localStorage as "authToken"');
+              localStorage.setItem('authToken', data.data.access_token);
               
               // Store refresh_token if available
               if (data.data.refresh_token) {
                 localStorage.setItem('refreshToken', data.data.refresh_token);
-                console.log('✅ Refresh token stored in localStorage');
               }
               
               // Verify tokens were actually saved
@@ -151,7 +147,6 @@
                 sider_user_email: email.trim(),
                 sider_user_logged_in: true
               });
-              console.log('✅ Basic user info saved (will be updated by updateUIForAuthStatus)');
             } catch (userError) {
               console.error('⚠️ Failed to save basic user info:', userError);
             }
@@ -250,7 +245,6 @@
           });
       
           const data = await response.json();
-          console.log('Google signin response:', response.status, data);
       
           if (!response.ok) {
             return {
@@ -276,8 +270,6 @@
       
 
       async refreshToken() {
-        // UI only - just return success
-        console.log('Refresh token UI action (no logic)');
         return { success: true, data: {} };
       },
   
@@ -303,7 +295,6 @@
           // Always use cached data - no API calls
           const cached = await this.getCachedUser();
           if (cached.success && cached.data) {
-            console.log('✅ Using cached user profile (no API call)');
             return { success: true, data: cached.data, cached: true };
           }
 
@@ -327,7 +318,6 @@
                 };
                 // Save as full profile for future cache
                 this.saveUserInfo(userData);
-                console.log('✅ User profile loaded from storage (no API call)');
                 resolve({ success: true, data: userData, cached: true });
               } else {
                 resolve({ success: false, error: 'No user data found in storage' });
@@ -358,43 +348,30 @@
           }
 
           try {
-            console.log('💾 Saving tokens to localStorage...', {
-              hasAccessToken: !!accessToken,
-              hasRefreshToken: !!refreshToken,
-              accessTokenLength: accessToken.length,
-              accessTokenPreview: accessToken.substring(0, 20) + '...'
-            });
-
-            // Store access_token as 'authToken' (matching siderAI convention)
             localStorage.setItem('authToken', accessToken);
-            
-            // Store refresh_token if available
+
             if (refreshToken) {
               localStorage.setItem('refreshToken', refreshToken);
             }
 
-            // Also save to chrome.storage for content scripts to access
+            if (typeof chrome !== 'undefined' && chrome.storage && chrome.storage.sync) {
+              chrome.storage.sync.set({
+                authToken: accessToken,
+                refreshToken: refreshToken || null
+              }, () => {});
+            }
+
             if (typeof chrome !== 'undefined' && chrome.storage && chrome.storage.local) {
               chrome.storage.local.set({
                 authToken: accessToken,
                 refreshToken: refreshToken || null
-              }, () => {
-                console.log('✅ Tokens also saved to chrome.storage.local');
-              });
+              }, () => {});
             }
 
-            // Verify tokens were saved
             const savedToken = localStorage.getItem('authToken');
             const savedRefreshToken = localStorage.getItem('refreshToken');
 
-            console.log('🔍 Verification result:', {
-              hasAccessToken: !!savedToken,
-              hasRefreshToken: !!savedRefreshToken,
-              tokenMatch: savedToken === accessToken
-            });
-
             if (savedToken && savedToken === accessToken) {
-              console.log('✅ Tokens successfully saved and verified in localStorage');
               resolve();
             } else {
               const error = new Error('Tokens were not saved correctly to localStorage');
@@ -424,13 +401,65 @@
           }
 
           try {
-            const authToken = localStorage.getItem('authToken');
-            const refreshToken = localStorage.getItem('refreshToken');
-
-            console.log('🔍 Retrieved tokens from localStorage:', {
-              hasAccessToken: !!authToken,
-              hasRefreshToken: !!refreshToken
-            });
+            let authToken = localStorage.getItem('authToken');
+            let refreshToken = localStorage.getItem('refreshToken');
+            
+            if (!authToken && typeof chrome !== 'undefined' && chrome.storage && chrome.storage.local) {
+              chrome.storage.local.get(['authToken', 'refreshToken'], (result) => {
+                if (result.authToken) {
+                  authToken = result.authToken;
+                  refreshToken = result.refreshToken;
+                  
+                  localStorage.setItem('authToken', authToken);
+                  if (refreshToken) {
+                    localStorage.setItem('refreshToken', refreshToken);
+                  }
+                  
+                  resolve({
+                    accessToken: authToken,
+                    refreshToken: refreshToken,
+                    expiry: null
+                  });
+                } else {
+                  if (chrome.storage.sync) {
+                    chrome.storage.sync.get(['authToken', 'refreshToken'], (syncResult) => {
+                      if (syncResult.authToken) {
+                        authToken = syncResult.authToken;
+                        refreshToken = syncResult.refreshToken;
+                        
+                        localStorage.setItem('authToken', authToken);
+                        if (refreshToken) {
+                          localStorage.setItem('refreshToken', refreshToken);
+                        }
+                        chrome.storage.local.set({
+                          authToken: authToken,
+                          refreshToken: refreshToken || null
+                        });
+                        
+                        resolve({
+                          accessToken: authToken,
+                          refreshToken: refreshToken,
+                          expiry: null
+                        });
+                      } else {
+                        resolve({
+                          accessToken: null,
+                          refreshToken: null,
+                          expiry: null
+                        });
+                      }
+                    });
+                  } else {
+                    resolve({
+                      accessToken: null,
+                      refreshToken: null,
+                      expiry: null
+                    });
+                  }
+                }
+              });
+              return;
+            }
 
             resolve({
               accessToken: authToken,
@@ -461,7 +490,6 @@
             };
             
             localStorage.setItem('user', JSON.stringify(userData));
-            console.log('✅ User info saved to localStorage:', userData);
             
             // Also save to chrome.storage.local for backward compatibility
             if (chrome && chrome.storage && chrome.storage.local) {
@@ -491,11 +519,14 @@
       async clearAuth() {
         return new Promise((resolve) => {
           try {
-            // Clear localStorage (matching siderAI convention)
             localStorage.removeItem('authToken');
             localStorage.removeItem('refreshToken');
             localStorage.removeItem('user');
             localStorage.removeItem('google_client_id');
+            
+            if (chrome && chrome.storage && chrome.storage.sync) {
+              chrome.storage.sync.remove(['authToken', 'refreshToken', 'sider_user_email', 'sider_user_name', 'sider_user_profile']);
+            }
             
             // Also clear chrome.storage.local for backward compatibility
             if (chrome && chrome.storage && chrome.storage.local) {
@@ -531,7 +562,6 @@
               submitText.textContent = 'Log in';
             }
             
-            console.log('✅ Auth cleared from localStorage');
             resolve();
           } catch (error) {
             console.error('❌ Error clearing auth:', error);
@@ -575,31 +605,8 @@
         };
       },
 
-      // Helper function to verify tokens are saved (can be called from console)
       async verifyTokens() {
-        console.log('🔍 Verifying tokens in localStorage...');
         const tokens = await this.getTokens();
-        console.log('📦 Current tokens:', {
-          hasAccessToken: !!tokens.accessToken,
-          hasRefreshToken: !!tokens.refreshToken,
-          accessTokenPreview: tokens.accessToken ? tokens.accessToken.substring(0, 30) + '...' : 'null'
-        });
-        
-        // Check user data
-        try {
-          const userData = localStorage.getItem('user');
-          if (userData) {
-            console.log('📦 User data:', JSON.parse(userData));
-          } else {
-            console.log('📦 No user data found');
-          }
-        } catch (error) {
-          console.error('❌ Error reading user data:', error);
-        }
-        
-        // Show all localStorage keys
-        console.log('📦 All localStorage keys:', Object.keys(localStorage));
-        
         return tokens;
       }
     };
@@ -611,5 +618,50 @@
     if (typeof self !== 'undefined' && typeof window === 'undefined') {
       self.SiderAuthService = AuthService;
     }
+
+    try {
+      if (typeof window !== 'undefined' && window.addEventListener) {
+        window.addEventListener('message', (event) => {
+          try {
+            const msg = event?.data;
+            if (!msg || msg.type !== 'SIDER_AUTH_SYNC' || msg.source !== 'app') return;
+            if (msg.token) {
+              localStorage.setItem('authToken', msg.token);
+            }
+            if (msg.refreshToken) {
+              localStorage.setItem('refreshToken', msg.refreshToken);
+            }
+            if (msg.user) {
+              try { localStorage.setItem('user', JSON.stringify(msg.user)); } catch(e){}
+            }
+
+            if (typeof chrome !== 'undefined' && chrome.storage && chrome.storage.local) {
+              chrome.storage.local.set({
+                authToken: msg.token || null,
+                refreshToken: msg.refreshToken || null,
+                sider_user_profile: msg.user || null,
+                sider_user_logged_in: !!msg.token
+              }, () => {});
+            }
+          } catch (err) {
+            console.warn('⚠️ Error handling SIDER_AUTH_SYNC message in extension:', err);
+          }
+        }, false);
+      }
+    } catch (err) {
+      console.warn('⚠️ Failed to attach message listener for auth sync in extension:', err);
+    }
+    
+    try {
+      chrome.storage.onChanged.addListener((changes, areaName) => {
+        if (changes.authToken) {
+          if (changes.authToken.newValue === undefined || changes.authToken.newValue === null) {
+            localStorage.removeItem('authToken');
+            localStorage.removeItem('refreshToken');
+            localStorage.removeItem('user');
+          }
+        }
+      });
+    } catch (err) {}
   })();
   
