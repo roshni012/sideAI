@@ -29,6 +29,15 @@
       "js": ["auth-service.js", "chat-service.js", "ai-modules.js", "toolbar.js", "image-preview.js", "login-modal.js", "content.js"],
       "css": ["ai-modules.css", "toolbar.css", "image-preview.css", "login-modal.css", "content.css"],
       "run_at": "document_idle"
+    },
+    {
+      "matches": [
+        "http://localhost:3000/*",
+        "http://127.0.0.1:3000/*",
+        "https://webby-sider-frontend-c9d47226052c.herokuapp.com/*"
+      ],
+      "js": ["auth-sync-bridge.js"],
+      "run_at": "document_start"
     }
   ],
   "action": {
