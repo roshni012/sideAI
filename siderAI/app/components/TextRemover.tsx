@@ -8,33 +8,11 @@ import {
   Image as ImageIcon,
   Plus,
   ArrowRight,
-  Folder,
-  MessageCircle,
-  Settings as SettingsIcon,
-  Grid3x3,
-  FileText,
-  Home,
-  Square,
-  Type,
-  Eraser,
-  ScanSearch,
-  Maximize2,
-  Layers,
-  Palette,
   Loader2,
 } from 'lucide-react';
 import UserProfileDropdown from './UserProfileDropdown';
+import Sidebar from './Sidebar';
 import { getApiUrl, API_ENDPOINTS } from '../lib/apiConfig';
-
-const sidebarTools = [
-  { name: 'AI Image Generator', slug: 'ai-image-generator', icon: Palette },
-  { name: 'Background Remover', slug: 'background-remover', icon: Square },
-  { name: 'Text Remover', slug: 'text-remover', icon: Type },
-  { name: 'Photo Eraser', slug: 'photo-eraser', icon: Eraser },
-  { name: 'Inpaint', slug: 'inpaint', icon: ScanSearch },
-  { name: 'Image Upscaler', slug: 'image-upscaler', icon: Maximize2 },
-  { name: 'Background Changer', slug: 'background-changer', icon: Layers },
-];
 
 export default function TextRemover() {
   const searchParams = useSearchParams();
@@ -88,7 +66,7 @@ export default function TextRemover() {
     setIsUploading(true);
     const objectURL = URL.createObjectURL(file);
     setUploadedImage(objectURL); // Show preview immediately
-    
+
     try {
       const authToken = localStorage.getItem('authToken');
       if (!authToken || !authToken.trim()) {
@@ -127,16 +105,16 @@ export default function TextRemover() {
       const data = await response.json();
       const uploadedFileId = data?.data?.fileID || data?.data?.id;
       const uploadedCdnURL = data?.data?.cdnURL || data?.data?.signedCDNURL;
-      
+
       setFileId(uploadedFileId);
       setCdnURL(uploadedCdnURL);
-      
+
       // Use CDN URL if available, otherwise keep object URL
       if (uploadedCdnURL) {
         setUploadedImage(uploadedCdnURL);
         URL.revokeObjectURL(objectURL);
       }
-      
+
       console.log('File uploaded successfully:', {
         fileId: uploadedFileId,
         filename: file.name,
@@ -181,84 +159,11 @@ export default function TextRemover() {
   return (
     <div className="flex h-screen bg-gray-50 dark:bg-gray-900 overflow-hidden">
       {/* Left Sidebar */}
-      <aside className="relative w-64 bg-white dark:bg-gray-800 border-r border-gray-200 dark:border-gray-700 flex flex-col">
-        {/* Logo */}
-        <div className="p-4 border-b border-gray-200 dark:border-gray-700">
-          <div className="flex items-center justify-between">
-            <div className="flex items-center gap-2">
-              <Sparkles className="w-6 h-6 text-indigo-600 dark:text-indigo-400" />
-              <span className="text-xl font-bold bg-gradient-to-r from-indigo-600 via-purple-600 to-pink-600 bg-clip-text text-transparent">
-                Webby Sider
-              </span>
-            </div>
-            <div className="flex items-center gap-2">
-              <Grid3x3 className="w-5 h-5 text-gray-600 dark:text-gray-400" />
-              <FileText className="w-5 h-5 text-gray-600 dark:text-gray-400" />
-            </div>
-          </div>
-        </div>
-
-        {/* Navigation */}
-        <div className="flex-1 overflow-y-auto p-4 space-y-2">
-          <motion.button
-            whileHover={{ scale: 1.02 }}
-            whileTap={{ scale: 0.98 }}
-            onClick={() => (window.location.href = '/chat')}
-            className="w-full flex items-center gap-2 px-3 py-2 rounded-lg text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors text-left"
-          >
-            <Home className="w-4 h-4" />
-            <span className="text-sm">← Home</span>
-          </motion.button>
-
-          {sidebarTools.map((item, index) => {
-            const Icon = item.icon;
-            const isActive = item.slug === 'text-remover';
-            return (
-              <motion.button
-                key={item.slug}
-                initial={{ opacity: 0, x: -20 }}
-                animate={{ opacity: 1, x: 0 }}
-                transition={{ delay: index * 0.05 }}
-                onClick={() => {
-                  window.location.href = `/create/image/${item.slug}`;
-                }}
-                className={`w-full flex items-center gap-2 px-3 py-2 rounded-lg transition-colors text-left ${
-                  isActive
-                    ? 'bg-blue-50 dark:bg-blue-900/20 text-blue-600 dark:text-blue-400'
-                    : 'text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700'
-                }`}
-              >
-                <Icon className="w-4 h-4" />
-                <span className="text-sm">{item.name}</span>
-              </motion.button>
-            );
-          })}
-        </div>
-
-
-        {/* Footer Icons */}
-        <div className="p-4 border-t border-gray-200 dark:border-gray-700 flex items-center justify-around">
-          <motion.button
-            ref={userProfileButtonRef}
-            onClick={handleUserProfileClick}
-            whileHover={{ scale: 1.1 }}
-            whileTap={{ scale: 0.9 }}
-            className="relative p-2 rounded-full bg-gradient-to-r from-orange-400 to-orange-500 flex items-center justify-center transition-all hover:shadow-lg w-9"
-          >
-            <span className="text-white font-semibold text-sm">P</span>
-          </motion.button>
-          {[Folder, MessageCircle, SettingsIcon].map((Icon, i) => (
-            <motion.button
-              key={i}
-              whileHover={{ scale: 1.1 }}
-              whileTap={{ scale: 0.9 }}
-              className="p-2 text-gray-600 dark:text-gray-400 hover:text-indigo-600 dark:hover:text-indigo-400 transition-colors"
-            >
-              <Icon className="w-5 h-5" />
-            </motion.button>
-          ))}
-        </div>
-      </aside>
+      <Sidebar
+        activeSlug="text-remover"
+        userProfileButtonRef={userProfileButtonRef}
+        handleUserProfileClick={handleUserProfileClick}
+      />
 
       {/* Main Content */}
       <main className="flex-1 flex flex-col overflow-hidden relative">
@@ -274,11 +179,10 @@ export default function TextRemover() {
                 onDrop={handleDrop}
                 onDragOver={handleDragOver}
                 onClick={() => !uploadedImage && !isUploading && fileInputRef.current?.click()}
-                className={`border-2 border-dashed border-gray-300 dark:border-gray-600 rounded-xl bg-purple-50/30 dark:bg-purple-900/10 min-h-[300px] transition-all duration-200 group ${
-                  uploadedImage
-                    ? 'p-4 cursor-default'
-                    : 'p-16 cursor-pointer hover:border-purple-500 dark:hover:border-purple-500 hover:bg-purple-100/50 dark:hover:bg-purple-900/20 hover:shadow-lg'
-                }`}
+                className={`border-2 border-dashed border-gray-300 dark:border-gray-600 rounded-xl bg-purple-50/30 dark:bg-purple-900/10 min-h-[300px] transition-all duration-200 group ${uploadedImage
+                  ? 'p-4 cursor-default'
+                  : 'p-16 cursor-pointer hover:border-purple-500 dark:hover:border-purple-500 hover:bg-purple-100/50 dark:hover:bg-purple-900/20 hover:shadow-lg'
+                  }`}
                 style={{ marginTop: '15%' }}
               >
                 <input
@@ -305,7 +209,7 @@ export default function TextRemover() {
                       alt="Uploaded"
                       className="max-w-full max-h-[600px] w-auto h-auto object-contain rounded-lg"
                     />
-                
+
                   </motion.div>
                 ) : (
                   <div className="flex flex-col items-center justify-center text-center h-full min-h-[300px]">

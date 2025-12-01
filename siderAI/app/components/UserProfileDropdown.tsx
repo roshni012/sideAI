@@ -67,7 +67,7 @@ export default function UserProfileDropdown({
     if (userData?.email) {
       return userData.email.charAt(0).toUpperCase();
     }
-    return 'U';
+    return '';
   };
 
   const getUserName = () => {

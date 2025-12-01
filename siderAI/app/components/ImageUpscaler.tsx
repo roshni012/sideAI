@@ -7,35 +7,16 @@ import {
   Sparkles,
   Image as ImageIcon,
   Plus,
-  Folder,
-  MessageCircle,
-  Settings as SettingsIcon,
-  Grid3x3,
-  FileText,
-  Home,
-  Square,
-  Type,
-  Eraser,
-  ScanSearch,
-  Maximize2,
-  Layers,
-  Palette,
   Loader2,
+  ImagePlus,
 } from 'lucide-react';
+import Sidebar from './Sidebar';
 import UserProfileDropdown from './UserProfileDropdown';
 import { getApiUrl, API_ENDPOINTS } from '../lib/apiConfig';
 
-const sidebarTools = [
-  { name: 'AI Image Generator', slug: 'ai-image-generator', icon: Palette },
-  { name: 'Background Remover', slug: 'background-remover', icon: Square },
-  { name: 'Text Remover', slug: 'text-remover', icon: Type },
-  { name: 'Photo Eraser', slug: 'photo-eraser', icon: Eraser },
-  { name: 'Inpaint', slug: 'inpaint', icon: ScanSearch },
-  { name: 'Image Upscaler', slug: 'image-upscaler', icon: Maximize2 },
-  { name: 'Background Changer', slug: 'background-changer', icon: Layers },
-];
 
-const magnificationOptions = [ '4X'];
+
+const magnificationOptions = ['4X'];
 
 export default function ImageUpscaler() {
   const searchParams = useSearchParams();
@@ -91,7 +72,7 @@ export default function ImageUpscaler() {
     setIsUploading(true);
     const objectURL = URL.createObjectURL(file);
     setUploadedImage(objectURL); // Show preview immediately
-    
+
     try {
       const authToken = localStorage.getItem('authToken');
       if (!authToken || !authToken.trim()) {
@@ -130,16 +111,16 @@ export default function ImageUpscaler() {
       const data = await response.json();
       const uploadedFileId = data?.data?.fileID || data?.data?.id;
       const uploadedCdnURL = data?.data?.cdnURL || data?.data?.signedCDNURL;
-      
+
       setFileId(uploadedFileId);
       setCdnURL(uploadedCdnURL);
-      
+
       // Use CDN URL if available, otherwise keep object URL
       if (uploadedCdnURL) {
         setUploadedImage(uploadedCdnURL);
         URL.revokeObjectURL(objectURL);
       }
-      
+
       console.log('File uploaded successfully:', {
         fileId: uploadedFileId,
         filename: file.name,
@@ -240,84 +221,11 @@ export default function ImageUpscaler() {
   return (
     <div className="flex h-screen bg-gray-50 dark:bg-gray-900 overflow-hidden">
       {/* Left Sidebar */}
-      <aside className="relative w-64 bg-white dark:bg-gray-800 border-r border-gray-200 dark:border-gray-700 flex flex-col">
-        {/* Logo */}
-        <div className="p-4 border-b border-gray-200 dark:border-gray-700">
-          <div className="flex items-center justify-between">
-            <div className="flex items-center gap-2">
-              <Sparkles className="w-6 h-6 text-indigo-600 dark:text-indigo-400" />
-              <span className="text-xl font-bold bg-gradient-to-r from-indigo-600 via-purple-600 to-pink-600 bg-clip-text text-transparent">
-                Webby Sider
-              </span>
-            </div>
-            <div className="flex items-center gap-2">
-              <Grid3x3 className="w-5 h-5 text-gray-600 dark:text-gray-400" />
-              <FileText className="w-5 h-5 text-gray-600 dark:text-gray-400" />
-            </div>
-          </div>
-        </div>
-
-        {/* Navigation */}
-        <div className="flex-1 overflow-y-auto p-4 space-y-2">
-          <motion.button
-            whileHover={{ scale: 1.02 }}
-            whileTap={{ scale: 0.98 }}
-            onClick={() => (window.location.href = '/chat')}
-            className="w-full flex items-center gap-2 px-3 py-2 rounded-lg text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors text-left"
-          >
-            <Home className="w-4 h-4" />
-            <span className="text-sm">← Home</span>
-          </motion.button>
-
-          {sidebarTools.map((item, index) => {
-            const Icon = item.icon;
-            const isActive = item.slug === 'image-upscaler';
-            return (
-              <motion.button
-                key={item.slug}
-                initial={{ opacity: 0, x: -20 }}
-                animate={{ opacity: 1, x: 0 }}
-                transition={{ delay: index * 0.05 }}
-                onClick={() => {
-                  window.location.href = `/create/image/${item.slug}`;
-                }}
-                className={`w-full flex items-center gap-2 px-3 py-2 rounded-lg transition-colors text-left ${
-                  isActive
-                    ? 'bg-blue-50 dark:bg-blue-900/20 text-blue-600 dark:text-blue-400'
-                    : 'text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700'
-                }`}
-              >
-                <Icon className="w-4 h-4" />
-                <span className="text-sm">{item.name}</span>
-              </motion.button>
-            );
-          })}
-        </div>
-
-
-        {/* Footer Icons */}
-        <div className="p-4 border-t border-gray-200 dark:border-gray-700 flex items-center justify-around">
-          <motion.button
-            ref={userProfileButtonRef}
-            onClick={handleUserProfileClick}
-            whileHover={{ scale: 1.1 }}
-            whileTap={{ scale: 0.9 }}
-            className="relative p-2 rounded-full bg-gradient-to-r from-orange-400 to-orange-500 flex items-center justify-center transition-all hover:shadow-lg w-9"
-          >
-            <span className="text-white font-semibold text-sm">P</span>
-          </motion.button>
-          {[Folder, MessageCircle, SettingsIcon].map((Icon, i) => (
-            <motion.button
-              key={i}
-              whileHover={{ scale: 1.1 }}
-              whileTap={{ scale: 0.9 }}
-              className="p-2 text-gray-600 dark:text-gray-400 hover:text-indigo-600 dark:hover:text-indigo-400 transition-colors"
-            >
-              <Icon className="w-5 h-5" />
-            </motion.button>
-          ))}
-        </div>
-      </aside>
+      <Sidebar
+        activeSlug="image-upscaler"
+        userProfileButtonRef={userProfileButtonRef}
+        handleUserProfileClick={handleUserProfileClick}
+      />
 
       {/* Main Content */}
       <main className="flex-1 flex flex-col overflow-hidden relative">
@@ -333,11 +241,10 @@ export default function ImageUpscaler() {
                 onDrop={handleDrop}
                 onDragOver={handleDragOver}
                 onClick={() => !uploadedImage && !isUploading && fileInputRef.current?.click()}
-                className={`border-2 border-dashed border-gray-300 dark:border-gray-600 rounded-xl bg-purple-50/30 dark:bg-purple-900/10 min-h-[300px] transition-all duration-200 group ${
-                  uploadedImage
-                    ? 'p-4 cursor-default'
-                    : 'p-16 cursor-pointer hover:border-purple-500 dark:hover:border-purple-500 hover:bg-purple-100/50 dark:hover:bg-purple-900/20 hover:shadow-lg'
-                }`}
+                className={`border-2 border-dashed border-gray-300 dark:border-gray-600 rounded-xl bg-purple-50/30 dark:bg-purple-900/10 min-h-[300px] transition-all duration-200 group ${uploadedImage
+                  ? 'p-4 cursor-default'
+                  : 'p-16 cursor-pointer hover:border-purple-500 dark:hover:border-purple-500 hover:bg-purple-100/50 dark:hover:bg-purple-900/20 hover:shadow-lg'
+                  }`}
                 style={{ marginTop: '15%' }}
               >
                 <input
@@ -421,7 +328,7 @@ export default function ImageUpscaler() {
                         alt="Upscaled"
                         className="max-w-full max-h-full w-auto h-auto object-contain rounded-lg"
                       />
-                     
+
                     </div>
                   </div>
                 </motion.div>
@@ -435,60 +342,7 @@ export default function ImageUpscaler() {
             </div>
           )}
 
-          {/* Image Preview and Controls Section */}
-          {uploadedImage && (
-            <div className="w-full max-w-5xl mb-8">
-              <div className="flex items-center gap-6">
-                {/* Image Preview */}
-                <div className="flex-1">
-                  {/* eslint-disable-next-line @next/next/no-img-element */}
-                  <img
-                    src={uploadedImage}
-                    alt="Preview"
-                    className="w-full h-auto rounded-lg border border-gray-200 dark:border-gray-700"
-                  />
-                </div>
 
-                {/* Magnification and Confirm Controls */}
-                <div className="flex flex-col gap-4 items-start">
-                  <div className="flex flex-col gap-2">
-                    <label className="text-sm text-gray-600 dark:text-gray-400">
-                      image magnification:
-                    </label>
-                    <div className="flex gap-2">
-                      {magnificationOptions.map((option) => (
-                        <motion.button
-                          key={option}
-                          whileHover={{ scale: 1.05 }}
-                          whileTap={{ scale: 0.95 }}
-                          onClick={() => setSelectedMagnification(option)}
-                          className={`px-4 py-2 rounded-lg font-medium text-sm transition-colors ${
-                            selectedMagnification === option
-                              ? 'bg-gray-200 dark:bg-gray-700 text-gray-900 dark:text-white'
-                              : 'bg-gray-100 dark:bg-gray-800 text-gray-600 dark:text-gray-400 hover:bg-gray-200 dark:hover:bg-gray-700'
-                          }`}
-                        >
-                          {option}
-                        </motion.button>
-                      ))}
-                    </div>
-                  </div>
-
-                  {/* Confirm Button */}
-                  <motion.button
-                    whileHover={{ scale: 1.05 }}
-                    whileTap={{ scale: 0.95 }}
-                    onClick={handleConfirm}
-                    disabled={!cdnURL || isProcessing}
-                    className="px-6 py-2.5 bg-gradient-to-r from-purple-500 to-purple-600 text-white rounded-lg font-semibold text-sm flex items-center gap-2 hover:from-purple-600 hover:to-purple-700 transition-all disabled:opacity-50 disabled:cursor-not-allowed shadow-lg"
-                  >
-                    <Sparkles className="w-4 h-4 text-white" />
-                    {isProcessing ? 'Processing...' : 'Confirm'}
-                  </motion.button>
-                </div>
-              </div>
-            </div>
-          )}
 
           {processedImage && (
             <div className="w-full max-w-5xl mb-8">
@@ -540,17 +394,28 @@ export default function ImageUpscaler() {
                         whileTap={{ scale: 0.95 }}
                         onClick={() => setSelectedMagnification(option)}
                         disabled={!uploadedImage}
-                        className={`px-4 py-2 rounded-lg font-medium text-sm transition-colors disabled:opacity-50 disabled:cursor-not-allowed ${
-                          selectedMagnification === option
-                            ? 'bg-gray-200 dark:bg-gray-700 text-gray-900 dark:text-white'
-                            : 'bg-white dark:bg-gray-700 text-gray-600 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-600'
-                        }`}
+                        className={`px-4 py-2 rounded-lg font-medium text-sm transition-colors disabled:opacity-50 disabled:cursor-not-allowed ${selectedMagnification === option
+                          ? 'bg-gray-200 dark:bg-gray-700 text-gray-900 dark:text-white'
+                          : 'bg-white dark:bg-gray-700 text-gray-600 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-600'
+                          }`}
                       >
                         {option}
                       </motion.button>
                     ))}
                   </div>
                 </div>
+
+                {/* Re-upload Button */}
+                <motion.button
+                  whileHover={{ scale: 1.05 }}
+                  whileTap={{ scale: 0.95 }}
+                  onClick={() => fileInputRef.current?.click()}
+                  disabled={isProcessing}
+                  className="p-2.5 bg-white dark:bg-gray-700 text-gray-700 dark:text-gray-300 rounded-lg shadow-sm border border-gray-200 dark:border-gray-600 hover:bg-gray-50 dark:hover:bg-gray-600 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                  title="Upload again"
+                >
+                  <ImagePlus className="w-5 h-5" />
+                </motion.button>
 
                 {/* Confirm Button */}
                 <motion.button

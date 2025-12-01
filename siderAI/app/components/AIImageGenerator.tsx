@@ -40,6 +40,7 @@ import {
 } from 'lucide-react';
 import UserProfileDropdown from './UserProfileDropdown';
 import { getApiUrl, API_ENDPOINTS } from '../lib/apiConfig';
+import Sidebar from './Sidebar';
 
 interface AIImageGeneratorProps {
   tool: string;
@@ -68,16 +69,6 @@ const toolConfig: Record<string, { name: string; icon: LucideIcon }> = {
   'image-upscaler': { name: 'Image Upscaler', icon: Maximize2 },
   'background-changer': { name: 'Background Changer', icon: Layers },
 };
-
-const sidebarTools = [
-  { name: 'AI Image Generator', slug: 'ai-image-generator', icon: Palette },
-  { name: 'Background Remover', slug: 'background-remover', icon: Square },
-  { name: 'Text Remover', slug: 'text-remover', icon: Type },
-  { name: 'Photo Eraser', slug: 'photo-eraser', icon: Eraser },
-  { name: 'Inpaint', slug: 'inpaint', icon: ScanSearch },
-  { name: 'Image Upscaler', slug: 'image-upscaler', icon: Maximize2 },
-  { name: 'Background Changer', slug: 'background-changer', icon: Layers },
-];
 
 const examplePrompts = ['😊 Cute cat', '🐙 Cooking delicious octopus', 'purple monster'];
 
@@ -218,15 +209,15 @@ export default function AIImageGenerator({ tool }: AIImageGeneratorProps) {
   // Calculate Control Bar position based on Bottom Panel height
   useEffect(() => {
     const updateControlBarPosition = () => {
-        if (bottomPanelRef.current) {
-          const height = bottomPanelRef.current.offsetHeight;
-          setControlBarBottom(height - 12);
-        }
+      if (bottomPanelRef.current) {
+        const height = bottomPanelRef.current.offsetHeight;
+        setControlBarBottom(height - 12);
+      }
     };
 
     updateControlBarPosition();
     window.addEventListener('resize', updateControlBarPosition);
-    
+
     return () => {
       window.removeEventListener('resize', updateControlBarPosition);
     };
@@ -337,7 +328,7 @@ export default function AIImageGenerator({ tool }: AIImageGeneratorProps) {
 
       // Debug: Log the response to see its structure
       console.log('API Response:', data);
-      
+
       const imageUrls: string[] | undefined =
         data?.data?.image_urls || data?.data?.images || data?.image_urls || data?.images;
 
@@ -435,12 +426,12 @@ export default function AIImageGenerator({ tool }: AIImageGeneratorProps) {
   const fetchHistory = async () => {
     try {
       setHistoryLoading(true);
-  
+
       const authToken = localStorage.getItem('authToken');
       if (!authToken) {
         throw new Error('Login required');
       }
-  
+
       const response = await fetch(
         `${getApiUrl(API_ENDPOINTS.IMAGES.HISTORY)}`,
         {
@@ -449,12 +440,12 @@ export default function AIImageGenerator({ tool }: AIImageGeneratorProps) {
           },
         }
       );
-  
+
       const data = await response.json();
       if (!response.ok) {
         throw new Error(data?.detail || 'Failed to load history');
       }
-  
+
       setHistoryItems(data?.data || []);
     } catch (e) {
       console.error('History load error', e);
@@ -529,86 +520,16 @@ export default function AIImageGenerator({ tool }: AIImageGeneratorProps) {
     setOptimizedPrompt('');
     setOptimizeError(null);
     setIsOptimizePromptOpen(true);
-  };  
+  };
 
   return (
     <div className="flex h-screen bg-gray-50 dark:bg-gray-900 overflow-hidden">
       {/* Left Sidebar */}
-      <aside className="relative w-64 bg-white dark:bg-gray-800 border-r border-gray-200 dark:border-gray-700 flex flex-col">
-        {/* Logo */}
-        <div className="p-4 border-b border-gray-200 dark:border-gray-700">
-          <div className="flex items-center justify-between">
-            <div className="flex items-center gap-2">
-              <Sparkles className="w-6 h-6 text-indigo-600 dark:text-indigo-400" />
-              <span className="text-xl font-bold bg-gradient-to-r from-indigo-600 via-purple-600 to-pink-600 bg-clip-text text-transparent">
-                Webby Sider
-              </span>
-            </div>
-            <div className="flex items-center gap-2">
-              <Grid3x3 className="w-5 h-5 text-gray-600 dark:text-gray-400" />
-              <FileText className="w-5 h-5 text-gray-600 dark:text-gray-400" />
-            </div>
-          </div>
-        </div>
-
-        {/* Navigation */}
-        <div className="flex-1 overflow-y-auto p-4 space-y-2">
-          <motion.button
-            whileHover={{ scale: 1.02 }}
-            whileTap={{ scale: 0.98 }}
-            onClick={() => router.push("/chat")}
-            className="w-full flex items-center gap-2 px-3 py-2 rounded-lg text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors text-left"
-          >
-            <Home className="w-4 h-4" />
-            <span className="text-sm">← Home</span>
-          </motion.button>
-
-          {sidebarTools.map((item, index) => {
-            const Icon = item.icon;
-            const isActive = tool === item.slug;
-            return (
-              <motion.button
-                key={item.slug}
-                initial={{ opacity: 0, x: -20 }}
-                animate={{ opacity: 1, x: 0 }}
-                transition={{ delay: index * 0.05 }}
-                onClick={() => router.push(`/create/image/${item.slug}`)}
-                className={`w-full flex items-center gap-2 px-3 py-2 rounded-lg transition-colors text-left ${
-                  isActive
-                    ? "bg-blue-50 dark:bg-blue-900/20 text-blue-600 dark:text-blue-400"
-                    : "text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700"
-                }`}
-              >
-                <Icon className="w-4 h-4" />
-                <span className="text-sm">{item.name}</span>
-              </motion.button>
-            );
-          })}
-        </div>
-
-        {/* Footer Icons */}
-        <div className="p-4 border-t border-gray-200 dark:border-gray-700 flex items-center justify-around">
-          <motion.button
-            ref={userProfileButtonRef}
-            onClick={handleUserProfileClick}
-            whileHover={{ scale: 1.1 }}
-            whileTap={{ scale: 0.9 }}
-            className="relative p-2 rounded-full bg-gradient-to-r from-orange-400 to-orange-500 flex items-center justify-center transition-all hover:shadow-lg w-9"
-          >
-            <span className="text-white font-semibold text-sm">U</span>
-          </motion.button>
-          {[Folder, MessageCircle, SettingsIcon].map((Icon, i) => (
-            <motion.button
-              key={i}
-              whileHover={{ scale: 1.1 }}
-              whileTap={{ scale: 0.9 }}
-              className="p-2 text-gray-600 dark:text-gray-400 hover:text-indigo-600 dark:hover:text-indigo-400 transition-colors"
-            >
-              <Icon className="w-5 h-5" />
-            </motion.button>
-          ))}
-        </div>
-      </aside>
+      <Sidebar
+        activeSlug={tool}
+        userProfileButtonRef={userProfileButtonRef}
+        handleUserProfileClick={handleUserProfileClick}
+      />
 
       {/* Main Content */}
       <main className="flex-1 flex flex-col overflow-hidden relative">
@@ -678,9 +599,8 @@ export default function AIImageGenerator({ tool }: AIImageGeneratorProps) {
                               title="Regenerate"
                             >
                               <RotateCw
-                                className={`w-4 h-4 ${
-                                  isGenerating ? "animate-spin" : ""
-                                }`}
+                                className={`w-4 h-4 ${isGenerating ? "animate-spin" : ""
+                                  }`}
                               />
                             </motion.button>
                           </div>
@@ -834,11 +754,10 @@ export default function AIImageGenerator({ tool }: AIImageGeneratorProps) {
                                     setSelectedModel(model.name);
                                     setIsModelDropdownOpen(false);
                                   }}
-                                  className={`w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-left transition-colors ${
-                                    isSelected
-                                      ? "bg-purple-100 dark:bg-purple-900/30 text-purple-700 dark:text-purple-300"
-                                      : "text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700"
-                                  }`}
+                                  className={`w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-left transition-colors ${isSelected
+                                    ? "bg-purple-100 dark:bg-purple-900/30 text-purple-700 dark:text-purple-300"
+                                    : "text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700"
+                                    }`}
                                 >
                                   <div className="flex-shrink-0">
                                     {getModelImagePath(model.id) ? (
@@ -849,11 +768,10 @@ export default function AIImageGenerator({ tool }: AIImageGeneratorProps) {
                                       />
                                     ) : (
                                       <div
-                                        className={`${
-                                          isSelected
-                                            ? "text-purple-600 dark:text-purple-400"
-                                            : "text-gray-500 dark:text-gray-400"
-                                        }`}
+                                        className={`${isSelected
+                                          ? "text-purple-600 dark:text-purple-400"
+                                          : "text-gray-500 dark:text-gray-400"
+                                          }`}
                                       >
                                         {getImageModelIcon(model.id)}
                                       </div>
@@ -886,11 +804,10 @@ export default function AIImageGenerator({ tool }: AIImageGeneratorProps) {
                                     setSelectedModel(model.name);
                                     setIsModelDropdownOpen(false);
                                   }}
-                                  className={`w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-left transition-colors ${
-                                    isSelected
-                                      ? "bg-purple-100 dark:bg-purple-900/30 text-purple-700 dark:text-purple-300"
-                                      : "text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700"
-                                  }`}
+                                  className={`w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-left transition-colors ${isSelected
+                                    ? "bg-purple-100 dark:bg-purple-900/30 text-purple-700 dark:text-purple-300"
+                                    : "text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700"
+                                    }`}
                                 >
                                   <div className="flex-shrink-0">
                                     {getModelImagePath(model.id) ? (
@@ -901,11 +818,10 @@ export default function AIImageGenerator({ tool }: AIImageGeneratorProps) {
                                       />
                                     ) : (
                                       <div
-                                        className={`${
-                                          isSelected
-                                            ? "text-purple-600 dark:text-purple-400"
-                                            : "text-gray-500 dark:text-gray-400"
-                                        }`}
+                                        className={`${isSelected
+                                          ? "text-purple-600 dark:text-purple-400"
+                                          : "text-gray-500 dark:text-gray-400"
+                                          }`}
                                       >
                                         {getImageModelIcon(model.id)}
                                       </div>
@@ -1355,11 +1271,10 @@ export default function AIImageGenerator({ tool }: AIImageGeneratorProps) {
                         <button
                           key={style.id}
                           onClick={() => setSelectedArtStyle(style.id)}
-                          className={`relative aspect-square rounded-lg overflow-hidden border-2 transition-all ${
-                            selectedArtStyle === style.id
-                              ? "border-purple-600 dark:border-purple-400 ring-2 ring-purple-200 dark:ring-purple-800"
-                              : "border-gray-200 dark:border-gray-700 hover:border-gray-300 dark:hover:border-gray-600"
-                          }`}
+                          className={`relative aspect-square rounded-lg overflow-hidden border-2 transition-all ${selectedArtStyle === style.id
+                            ? "border-purple-600 dark:border-purple-400 ring-2 ring-purple-200 dark:ring-purple-800"
+                            : "border-gray-200 dark:border-gray-700 hover:border-gray-300 dark:hover:border-gray-600"
+                            }`}
                         >
                           {style.image ? (
                             <img
@@ -1400,11 +1315,10 @@ export default function AIImageGenerator({ tool }: AIImageGeneratorProps) {
                       <button
                         key={num}
                         onClick={() => setNumImages(num)}
-                        className={`flex-1 py-2 px-4 rounded-lg font-medium text-sm transition-all ${
-                          numImages === num
-                            ? "bg-purple-600 dark:bg-purple-500 text-white"
-                            : "bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-gray-600"
-                        }`}
+                        className={`flex-1 py-2 px-4 rounded-lg font-medium text-sm transition-all ${numImages === num
+                          ? "bg-purple-600 dark:bg-purple-500 text-white"
+                          : "bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-gray-600"
+                          }`}
                       >
                         {num}
                       </button>
@@ -1494,16 +1408,14 @@ export default function AIImageGenerator({ tool }: AIImageGeneratorProps) {
                   </span>
                   <button
                     onClick={() => setShowExamplePrompts(!showExamplePrompts)}
-                    className={`relative w-11 h-6 rounded-full transition-colors ${
-                      showExamplePrompts
-                        ? "bg-purple-600 dark:bg-purple-500"
-                        : "bg-gray-300 dark:bg-gray-600"
-                    }`}
+                    className={`relative w-11 h-6 rounded-full transition-colors ${showExamplePrompts
+                      ? "bg-purple-600 dark:bg-purple-500"
+                      : "bg-gray-300 dark:bg-gray-600"
+                      }`}
                   >
                     <div
-                      className={`absolute top-0.5 left-0.5 w-5 h-5 bg-white rounded-full transition-transform ${
-                        showExamplePrompts ? "translate-x-5" : "translate-x-0"
-                      }`}
+                      className={`absolute top-0.5 left-0.5 w-5 h-5 bg-white rounded-full transition-transform ${showExamplePrompts ? "translate-x-5" : "translate-x-0"
+                        }`}
                     />
                   </button>
                 </div>
@@ -1515,16 +1427,14 @@ export default function AIImageGenerator({ tool }: AIImageGeneratorProps) {
                   </span>
                   <button
                     onClick={() => setKeepPrompt(!keepPrompt)}
-                    className={`relative w-11 h-6 rounded-full transition-colors ${
-                      keepPrompt
-                        ? "bg-purple-600 dark:bg-purple-500"
-                        : "bg-gray-300 dark:bg-gray-600"
-                    }`}
+                    className={`relative w-11 h-6 rounded-full transition-colors ${keepPrompt
+                      ? "bg-purple-600 dark:bg-purple-500"
+                      : "bg-gray-300 dark:bg-gray-600"
+                      }`}
                   >
                     <div
-                      className={`absolute top-0.5 left-0.5 w-5 h-5 bg-white rounded-full transition-transform ${
-                        keepPrompt ? "translate-x-5" : "translate-x-0"
-                      }`}
+                      className={`absolute top-0.5 left-0.5 w-5 h-5 bg-white rounded-full transition-transform ${keepPrompt ? "translate-x-5" : "translate-x-0"
+                        }`}
                     />
                   </button>
                 </div>
