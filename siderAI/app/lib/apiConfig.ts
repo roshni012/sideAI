@@ -31,8 +31,13 @@ export const API_ENDPOINTS = {
     REMOVE_BACKGROUND: '/api/images/remove-background',
     GENERATE: '/api/images/generate',
     UPSCALE: '/api/images/upscale',
+    EDIT: '/api/images/edit',
     HISTORY: '/api/images/history/generate',
     OPTIMIZE_PROMPT: '/api/images/optimize_prompt',
+  },
+  // Feature endpoints
+  FEATURES: {
+    TRANSLATE_TEXT: '/api/features/translate/text',
   },
 } as const;
 

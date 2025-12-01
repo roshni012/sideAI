@@ -8,33 +8,13 @@ import {
   Image as ImageIcon,
   Plus,
   ArrowRight,
-  Folder,
-  MessageCircle,
-  Settings as SettingsIcon,
-  Grid3x3,
-  FileText,
-  Home,
-  Square,
-  Type,
-  Eraser,
-  ScanSearch,
-  Maximize2,
-  Layers,
-  Palette,
   Loader2,
 } from 'lucide-react';
+import Sidebar from './Sidebar';
 import UserProfileDropdown from './UserProfileDropdown';
 import { getApiUrl, API_ENDPOINTS } from '../lib/apiConfig';
 
-const sidebarTools = [
-  { name: 'AI Image Generator', slug: 'ai-image-generator', icon: Palette },
-  { name: 'Background Remover', slug: 'background-remover', icon: Square },
-  { name: 'Text Remover', slug: 'text-remover', icon: Type },
-  { name: 'Photo Eraser', slug: 'photo-eraser', icon: Eraser },
-  { name: 'Inpaint', slug: 'inpaint', icon: ScanSearch },
-  { name: 'Image Upscaler', slug: 'image-upscaler', icon: Maximize2 },
-  { name: 'Background Changer', slug: 'background-changer', icon: Layers },
-];
+
 
 export default function BackgroundChanger() {
   const searchParams = useSearchParams();
@@ -88,7 +68,7 @@ export default function BackgroundChanger() {
     setIsUploading(true);
     const objectURL = URL.createObjectURL(file);
     setUploadedImage(objectURL); // Show preview immediately
-    
+
     try {
       const authToken = localStorage.getItem('authToken');
       if (!authToken || !authToken.trim()) {
@@ -127,16 +107,16 @@ export default function BackgroundChanger() {
       const data = await response.json();
       const uploadedFileId = data?.data?.fileID || data?.data?.id;
       const uploadedCdnURL = data?.data?.cdnURL || data?.data?.signedCDNURL;
-      
+
       setFileId(uploadedFileId);
       setCdnURL(uploadedCdnURL);
-      
+
       // Use CDN URL if available, otherwise keep object URL
       if (uploadedCdnURL) {
         setUploadedImage(uploadedCdnURL);
         URL.revokeObjectURL(objectURL);
       }
-      
+
       console.log('File uploaded successfully:', {
         fileId: uploadedFileId,
         filename: file.name,
@@ -168,97 +148,79 @@ export default function BackgroundChanger() {
     e.preventDefault();
   };
 
-  const handleChange = () => {
+  const handleChange = async () => {
     if (!uploadedImage || !prompt.trim()) return;
+
     setIsProcessing(true);
-    // TODO: Implement background change API call
-    setTimeout(() => {
-      setProcessedImage(uploadedImage); // Placeholder - replace with actual processed image
+
+    try {
+      const authToken = localStorage.getItem('authToken');
+      if (!authToken || !authToken.trim()) {
+        console.error('Authentication required. Please login first.');
+        setIsProcessing(false);
+        return;
+      }
+
+      const requestBody = {
+        image_url: cdnURL || uploadedImage,
+        instruction: `Change the background to: ${prompt.trim()}`,
+        model: 'instruct-pix2pix', // Default model
+        image_guidance_scale: 1.5,
+        num_inference_steps: 100
+      };
+
+      const response = await fetch(getApiUrl(API_ENDPOINTS.IMAGES.EDIT), {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${authToken.trim()}`,
+          'Content-Type': 'application/json',
+          'accept': 'application/json',
+        },
+        body: JSON.stringify(requestBody),
+      });
+
+      if (!response.ok) {
+        const errorData = await response.json().catch(() => ({ detail: 'Failed to change background' }));
+        console.error('Error changing background:', errorData);
+        alert(`Error: ${errorData.detail || errorData.msg || 'Failed to change background'}`);
+        setIsProcessing(false);
+        return;
+      }
+
+      const data = await response.json();
+
+      // The API returns: { code, msg, data: { edited_image_url, original_image_url, instruction, model } }
+      if (data.code === 0 && data.data?.edited_image_url) {
+        // Replace the original image with the edited one
+        setUploadedImage(data.data.edited_image_url);
+        setCdnURL(data.data.edited_image_url);
+        setProcessedImage(data.data.edited_image_url);
+
+        // Clear the prompt
+        setPrompt('');
+
+        // Show success message
+        console.log('Background changed successfully:', data.data);
+      } else {
+        console.error('Unexpected response format:', data);
+        alert('Failed to change background. Please try again.');
+      }
+    } catch (error) {
+      console.error('Error calling background change API:', error);
+      alert('An error occurred while changing the background. Please try again.');
+    } finally {
       setIsProcessing(false);
-    }, 2000);
+    }
   };
 
   return (
     <div className="flex h-screen bg-gray-50 dark:bg-gray-900 overflow-hidden">
       {/* Left Sidebar */}
-      <aside className="relative w-64 bg-white dark:bg-gray-800 border-r border-gray-200 dark:border-gray-700 flex flex-col">
-        {/* Logo */}
-        <div className="p-4 border-b border-gray-200 dark:border-gray-700">
-          <div className="flex items-center justify-between">
-            <div className="flex items-center gap-2">
-              <Sparkles className="w-6 h-6 text-indigo-600 dark:text-indigo-400" />
-              <span className="text-xl font-bold bg-gradient-to-r from-indigo-600 via-purple-600 to-pink-600 bg-clip-text text-transparent">
-                Webby Sider
-              </span>
-            </div>
-            <div className="flex items-center gap-2">
-              <Grid3x3 className="w-5 h-5 text-gray-600 dark:text-gray-400" />
-              <FileText className="w-5 h-5 text-gray-600 dark:text-gray-400" />
-            </div>
-          </div>
-        </div>
-
-        {/* Navigation */}
-        <div className="flex-1 overflow-y-auto p-4 space-y-2">
-          <motion.button
-            whileHover={{ scale: 1.02 }}
-            whileTap={{ scale: 0.98 }}
-            onClick={() => (window.location.href = '/chat')}
-            className="w-full flex items-center gap-2 px-3 py-2 rounded-lg text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors text-left"
-          >
-            <Home className="w-4 h-4" />
-            <span className="text-sm">← Home</span>
-          </motion.button>
-
-          {sidebarTools.map((item, index) => {
-            const Icon = item.icon;
-            const isActive = item.slug === 'background-changer';
-            return (
-              <motion.button
-                key={item.slug}
-                initial={{ opacity: 0, x: -20 }}
-                animate={{ opacity: 1, x: 0 }}
-                transition={{ delay: index * 0.05 }}
-                onClick={() => {
-                  window.location.href = `/create/image/${item.slug}`;
-                }}
-                className={`w-full flex items-center gap-2 px-3 py-2 rounded-lg transition-colors text-left ${
-                  isActive
-                    ? 'bg-blue-50 dark:bg-blue-900/20 text-blue-600 dark:text-blue-400'
-                    : 'text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700'
-                }`}
-              >
-                <Icon className="w-4 h-4" />
-                <span className="text-sm">{item.name}</span>
-              </motion.button>
-            );
-          })}
-        </div>
-
-
-        {/* Footer Icons */}
-        <div className="p-4 border-t border-gray-200 dark:border-gray-700 flex items-center justify-around">
-          <motion.button
-            ref={userProfileButtonRef}
-            onClick={handleUserProfileClick}
-            whileHover={{ scale: 1.1 }}
-            whileTap={{ scale: 0.9 }}
-            className="relative p-2 rounded-full bg-gradient-to-r from-orange-400 to-orange-500 flex items-center justify-center transition-all hover:shadow-lg w-9"
-          >
-            <span className="text-white font-semibold text-sm">P</span>
-          </motion.button>
-          {[Folder, MessageCircle, SettingsIcon].map((Icon, i) => (
-            <motion.button
-              key={i}
-              whileHover={{ scale: 1.1 }}
-              whileTap={{ scale: 0.9 }}
-              className="p-2 text-gray-600 dark:text-gray-400 hover:text-indigo-600 dark:hover:text-indigo-400 transition-colors"
-            >
-              <Icon className="w-5 h-5" />
-            </motion.button>
-          ))}
-        </div>
-      </aside>
+      <Sidebar
+        activeSlug="background-changer"
+        userProfileButtonRef={userProfileButtonRef}
+        handleUserProfileClick={handleUserProfileClick}
+      />
 
       {/* Main Content */}
       <main className="flex-1 flex flex-col overflow-hidden relative">
@@ -274,11 +236,9 @@ export default function BackgroundChanger() {
                 onDrop={handleDrop}
                 onDragOver={handleDragOver}
                 onClick={() => !uploadedImage && !isUploading && fileInputRef.current?.click()}
-                className={`border-2 border-dashed border-gray-300 dark:border-gray-600 rounded-xl bg-purple-50/30 dark:bg-purple-900/10 min-h-[300px] transition-all duration-200 group ${
-                  uploadedImage
-                    ? 'p-4 cursor-default'
-                    : 'p-16 cursor-pointer hover:border-purple-500 dark:hover:border-purple-500 hover:bg-purple-100/50 dark:hover:bg-purple-900/20 hover:shadow-lg'
-                }`}
+                className={`border-2 border-dashed border-gray-300 dark:border-gray-600 rounded-xl bg-purple-50/30 dark:bg-purple-900/10 transition-all duration-200 group overflow-hidden relative
+                  h-[300px] md:h-[400px]
+                  ${uploadedImage ? 'p-4 cursor-default' : 'flex flex-col items-center justify-center cursor-pointer hover:border-purple-500 dark:hover:border-purple-500 hover:bg-purple-100/50 dark:hover:bg-purple-900/20 hover:shadow-lg'}`}
               >
                 <input
                   ref={fileInputRef}
@@ -288,7 +248,7 @@ export default function BackgroundChanger() {
                   className="hidden"
                 />
                 {isUploading ? (
-                  <div className="flex flex-col items-center justify-center gap-3 w-full h-full min-h-[300px]">
+                  <div className="flex flex-col items-center justify-center gap-3 w-full h-full">
                     <Loader2 className="w-8 h-8 text-indigo-500 animate-spin" />
                     <span className="text-sm text-gray-500 dark:text-gray-400">Uploading...</span>
                   </div>
@@ -296,13 +256,13 @@ export default function BackgroundChanger() {
                   <motion.div
                     initial={{ opacity: 0, scale: 0.95 }}
                     animate={{ opacity: 1, scale: 1 }}
-                    className="relative w-full h-full min-h-[300px] flex items-center justify-center"
+                    className="relative w-full h-full flex items-center justify-center"
                   >
                     {/* eslint-disable-next-line @next/next/no-img-element */}
                     <img
                       src={uploadedImage}
                       alt="Uploaded"
-                      className="max-w-full max-h-[600px] w-auto h-auto object-contain rounded-lg"
+                      className="max-w-full max-h-full w-auto h-auto object-contain rounded-lg"
                     />
                     {/* Overlay for re-upload */}
                     <div className="absolute inset-0 bg-black/0 hover:bg-black/5 transition-colors rounded-xl flex items-center justify-center opacity-0 hover:opacity-100 group-hover:opacity-100">
@@ -318,7 +278,7 @@ export default function BackgroundChanger() {
                     </div>
                   </motion.div>
                 ) : (
-                  <div className="flex flex-col items-center justify-center text-center h-full min-h-[300px]">
+                  <div className="flex flex-col items-center justify-center text-center">
                     <div className="w-20 h-20 rounded-full bg-purple-100 dark:bg-purple-900/30 flex items-center justify-center mb-4 group-hover:bg-purple-200 dark:group-hover:bg-purple-900/50 group-hover:scale-110 transition-transform duration-200 relative">
                       <ImageIcon className="w-10 h-10 text-purple-600 dark:text-purple-400 group-hover:text-purple-700 dark:group-hover:text-purple-300 transition-colors" />
                       <Plus className="w-6 h-6 text-purple-600 dark:text-purple-400 absolute -bottom-1 -right-1 bg-white dark:bg-gray-800 rounded-full p-1 group-hover:text-purple-700 dark:group-hover:text-purple-300 transition-colors" />
@@ -336,67 +296,52 @@ export default function BackgroundChanger() {
           </div>
 
           {/* Example/Preview Section */}
-          {!uploadedImage && (
-            <div className="w-full max-w-2xl mb-8">
-              <div className="flex items-center gap-4 justify-center">
-                {/* Before Image */}
-                <motion.div
-                  initial={{ opacity: 0, x: -20 }}
-                  animate={{ opacity: 1, x: 0 }}
-                  className="w-48"
-                >
-                  <div className="border border-gray-200 dark:border-gray-700 rounded-lg overflow-hidden bg-white dark:bg-gray-800">
-                    <div className="aspect-square bg-gray-100 dark:bg-gray-700 flex items-center justify-center relative">
-                      {/* eslint-disable-next-line @next/next/no-img-element */}
-                      <img
-                        src="/individuals-a.png"
-                        alt="Original Image"
-                        className="max-w-full max-h-full w-auto h-auto object-contain rounded-lg"
-                      />
-                      <div className="absolute top-2 left-2 bg-gray-100 dark:bg-gray-700 rounded-md px-2 py-1">
-                        <p className="text-xs text-gray-600 dark:text-gray-400 font-medium">Original Image</p>
-                      </div>
-                    </div>
-                  </div>
-                </motion.div>
+          {
+            !uploadedImage && (
+              <div className="w-full max-w-2xl mb-8">
+                <div className="flex items-center gap-4 justify-center">
+                  {/* Before Image */}
+                  <motion.div
+                    initial={{ opacity: 0, x: -20 }}
+                    animate={{ opacity: 1, x: 0 }}
+                    className="w-48"
+                  > <img
+                      src="/individuals-a.png"
+                      alt="Original Image"
+                      className="max-w-full max-h-full w-auto h-auto object-contain rounded-lg"
+                    />
+                  </motion.div>
 
-                {/* Arrow */}
-                <motion.div
-                  initial={{ opacity: 0 }}
-                  animate={{ opacity: 1 }}
-                  transition={{ delay: 0.2 }}
-                  className="flex-shrink-0"
-                >
-                  <div className="flex items-center gap-2 text-gray-400 dark:text-gray-500">
-                    <div className="border-t-2 border-dashed border-gray-300 dark:border-gray-600 w-6"></div>
-                    <ArrowRight className="w-5 h-5" />
-                    <div className="border-t-2 border-dashed border-gray-300 dark:border-gray-600 w-6"></div>
-                  </div>
-                </motion.div>
-
-                {/* After Image */}
-                <motion.div
-                  initial={{ opacity: 0, x: 20 }}
-                  animate={{ opacity: 1, x: 0 }}
-                  className="w-48"
-                >
-                  <div className="border border-gray-200 dark:border-gray-700 rounded-lg overflow-hidden bg-white dark:bg-gray-800">
-                    <div className="aspect-square bg-white dark:bg-gray-800 flex items-center justify-center relative">
-                      {/* eslint-disable-next-line @next/next/no-img-element */}
-                      <img
-                        src="/background replace.jpeg"
-                        alt="Background Changed"
-                        className="max-w-full max-h-full w-auto h-auto object-contain rounded-lg"
-                      />
-                      <div className="absolute top-2 right-2 bg-gray-100 dark:bg-gray-700 rounded-md px-2 py-1">
-                        <p className="text-xs text-gray-600 dark:text-gray-400 font-medium">Background Changed</p>
-                      </div>
+                  {/* Arrow */}
+                  <motion.div
+                    initial={{ opacity: 0 }}
+                    animate={{ opacity: 1 }}
+                    transition={{ delay: 0.2 }}
+                    className="flex-shrink-0"
+                  >
+                    <div className="flex items-center gap-2 text-gray-400 dark:text-gray-500">
+                      <div className="border-t-2 border-dashed border-gray-300 dark:border-gray-600 w-6"></div>
+                      <ArrowRight className="w-5 h-5" />
+                      <div className="border-t-2 border-dashed border-gray-300 dark:border-gray-600 w-6"></div>
                     </div>
-                  </div>
-                </motion.div>
+                  </motion.div>
+
+                  {/* After Image */}
+                  <motion.div
+                    initial={{ opacity: 0, x: 20 }}
+                    animate={{ opacity: 1, x: 0 }}
+                    className="w-48"
+                  >
+                    <img
+                      src="/background replace.jpeg"
+                      alt="Background Changed"
+                      className="max-w-full max-h-full w-auto h-auto object-contain rounded-lg"
+                    />
+                  </motion.div>
+                </div>
               </div>
-            </div>
-          )}
+            )
+          }
 
           {/* Tool Controls Footer */}
           <motion.div
@@ -404,7 +349,23 @@ export default function BackgroundChanger() {
             animate={{ opacity: 1, y: 0 }}
             className="fixed bottom-0 left-64 right-0 bg-gray-100 dark:bg-gray-800 border-t border-gray-200 dark:border-gray-700 px-6 py-4 z-50"
           >
-            <div className="max-w-7xl mx-auto flex items-center justify-between gap-6">
+            <div className="max-w-7xl mx-auto flex items-center justify-between gap-4">
+              {/* Re-upload Button */}
+              {uploadedImage && (
+                <motion.button
+                  whileHover={{ scale: 1.05 }}
+                  whileTap={{ scale: 0.95 }}
+                  onClick={() => fileInputRef.current?.click()}
+                  className="p-2.5 bg-white dark:bg-gray-700 border border-gray-200 dark:border-gray-600 rounded-lg text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-600 transition-colors shadow-sm flex-shrink-0"
+                  title="Upload new image"
+                >
+                  <div className="relative">
+                    <ImageIcon className="w-5 h-5" />
+                    <Plus className="w-3 h-3 absolute -top-1 -right-1 bg-white dark:bg-gray-700 rounded-full" />
+                  </div>
+                </motion.button>
+              )}
+
               {/* Left: Text Input */}
               <div className="flex-1">
                 <input

@@ -14,7 +14,7 @@ import {
   Upload,
   X,
 } from 'lucide-react';
-import UserProfileDropdown from './UserProfileDropdown';
+import Sidebar from './Sidebar';
 
 export default function ImageTranslator() {
   const router = useRouter();
@@ -121,80 +121,11 @@ export default function ImageTranslator() {
   return (
     <div className="flex h-screen bg-gray-50 dark:bg-gray-900 overflow-hidden">
       {/* Sidebar */}
-      <aside className="relative w-64 bg-white dark:bg-gray-800 border-r border-gray-200 dark:border-gray-700 flex flex-col">
-        {/* Logo */}
-        <div className="p-4 border-b border-gray-200 dark:border-gray-700">
-          <div className="flex items-center gap-2">
-            <Sparkles className="w-6 h-6 text-indigo-600 dark:text-indigo-400" />
-            <span className="text-xl font-bold bg-gradient-to-r from-indigo-600 via-purple-600 to-pink-600 bg-clip-text text-transparent">
-              Webby Sider
-            </span>
-          </div>
-        </div>
-
-        {/* Navigation */}
-        <div className="flex-1 overflow-y-auto p-4">
-          <div className="space-y-1">
-            <motion.button
-              whileHover={{ scale: 1.02 }}
-              whileTap={{ scale: 0.98 }}
-              onClick={() => router.push('/chat')}
-              className="w-full flex items-center gap-3 px-3 py-2 rounded-lg text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors"
-            >
-              <Home className="w-5 h-5" />
-              <span>Home</span>
-            </motion.button>
-
-            <motion.button
-              whileHover={{ scale: 1.02 }}
-              whileTap={{ scale: 0.98 }}
-              onClick={() => router.push('/translator/text-translator')}
-              className="w-full flex items-center gap-3 px-3 py-2 rounded-lg text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors"
-            >
-              <Languages className="w-5 h-5" />
-              <span>AI Translator</span>
-            </motion.button>
-
-            <motion.button
-              whileHover={{ scale: 1.02 }}
-              whileTap={{ scale: 0.98 }}
-              className="w-full flex items-center gap-3 px-3 py-2 rounded-lg bg-gray-100 dark:bg-gray-700 text-gray-900 dark:text-white transition-colors"
-            >
-              <ImageIcon className="w-5 h-5 text-orange-500" />
-              <span>Image Translator</span>
-            </motion.button>
-          </div>
-        </div>
-
-        {/* Footer Icons */}
-        <div className="p-4 border-t border-gray-200 dark:border-gray-700 flex items-center justify-around">
-          <motion.button
-            ref={userProfileButtonRef}
-            whileHover={{ scale: 1.1 }}
-            whileTap={{ scale: 0.9 }}
-            onClick={handleUserProfileClick}
-            className="w-8 h-8 rounded-full bg-orange-500 text-white flex items-center justify-center text-sm font-semibold"
-          >
-            P
-          </motion.button>
-          <motion.button
-            whileHover={{ scale: 1.1 }}
-            whileTap={{ scale: 0.9 }}
-            className="w-8 h-8 rounded-full bg-gray-200 dark:bg-gray-700 text-gray-600 dark:text-gray-400 flex items-center justify-center"
-          >
-            <Clipboard className="w-4 h-4" />
-          </motion.button>
-        </div>
-
-        {/* User Profile Dropdown */}
-        {isUserProfileOpen && (
-          <UserProfileDropdown
-            isOpen={isUserProfileOpen}
-            onClose={() => setIsUserProfileOpen(false)}
-            position={userProfilePosition}
-          />
-        )}
-      </aside>
+      <Sidebar
+        activeSlug="image-translator"
+        userProfileButtonRef={userProfileButtonRef}
+        handleUserProfileClick={handleUserProfileClick}
+      />
 
       {/* Main Content */}
       <main className="flex-1 flex flex-col overflow-hidden">
