@@ -63,6 +63,7 @@ import {
   SquarePlus,
 } from 'lucide-react';
 import UserProfileDropdown from './UserProfileDropdown';
+import HoverSidebar from './HoverSidebar';
 import DeepResearch from './DeepResearch';
 import ScholarResearch from './ScholarResearch';
 import WebCreator from './WebCreator';
@@ -71,11 +72,7 @@ import AISlides from './AISlides';
 import { getApiUrl, API_ENDPOINTS } from '../lib/apiConfig';
 import MarkdownRenderer from './MarkdownRenderer';
 
-interface DropdownPosition {
-  top: number;
-  left: number;
-  direction: 'up' | 'down';
-}
+
 
 interface CompletionRequestBody {
   cid: string | null;
@@ -186,25 +183,22 @@ const getModelImagePath = (modelId: string): string | null => {
 };
 
 const getSelectedModelImagePath = (modelName: string): string | null => {
-  const model = AVAILABLE_MODELS.find((m) => m.name === modelName) || 
-                OTHER_MODELS.find((m) => m.name === modelName);
+  const model = AVAILABLE_MODELS.find((m) => m.name === modelName) ||
+    OTHER_MODELS.find((m) => m.name === modelName);
   if (model) {
     return getModelImagePath(model.id);
   }
   return null;
 };
 
-interface UserData {
-  name?: string;
-  email?: string;
-  username?: string;
-}
+
 
 // Helper function to get initial activeView from pathname
-const getInitialActiveView = (pathname: string | null): 'chat' | 'deep-research' | 'scholar-research' | 'web-creator' | 'ai-writer' | 'ai-slides' => {
+const getInitialActiveView = (pathname: string | null): 'chat' | 'deep-research' | 'scholar-research' | 'web-creator' | 'ai-writer' | 'ai-slides' | 'ai-inbox' => {
   if (!pathname) return 'chat';
   if (pathname.startsWith('/wisebase/scholar-research')) return 'scholar-research';
   if (pathname.startsWith('/wisebase/deep-research')) return 'deep-research';
+  if (pathname.startsWith('/wisebase/ai-inbox')) return 'ai-inbox';
   if (pathname.startsWith('/agents/web-creator')) return 'web-creator';
   if (pathname.startsWith('/agents/ai-writer')) return 'ai-writer';
   if (pathname.startsWith('/agents/ai-slides')) return 'ai-slides';
@@ -214,7 +208,7 @@ const getInitialActiveView = (pathname: string | null): 'chat' | 'deep-research'
 export default function Chat() {
   const router = useRouter();
   const pathname = usePathname();
-  
+
   // Get pathname synchronously from window if available (for immediate initialization)
   const getPathnameSync = () => {
     if (typeof window !== 'undefined') {
@@ -222,12 +216,10 @@ export default function Chat() {
     }
     return pathname;
   };
-  
-  const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(false);
-  const [hoveredItem, setHoveredItem] = useState<string | null>(null);
-  const [tooltipPositions, setTooltipPositions] = useState<Record<string, { top: number; left: number }>>({});
+
+
   const [selectedModel, setSelectedModel] = useState('webby fusion');
-  const [activeView, setActiveView] = useState<'chat' | 'deep-research' | 'scholar-research' | 'web-creator' | 'ai-writer' | 'ai-slides'>(() => {
+  const [activeView, setActiveView] = useState<'chat' | 'deep-research' | 'scholar-research' | 'web-creator' | 'ai-writer' | 'ai-slides' | 'ai-inbox'>(() => {
     const syncPathname = getPathnameSync();
     return getInitialActiveView(syncPathname);
   });
@@ -261,7 +253,7 @@ export default function Chat() {
   const [messages, setMessages] = useState<Message[]>([]);
   const [isGenerating, setIsGenerating] = useState(false);
   const [conversationId, setConversationId] = useState<string | null>(null);
-  
+
   // Second panel state for double view
   const [selectedModel2, setSelectedModel2] = useState('gpt -5 mini');
   const [messages2, setMessages2] = useState<Message[]>([]);
@@ -269,16 +261,7 @@ export default function Chat() {
   const [conversationId2, setConversationId2] = useState<string | null>(null);
   const [isModelDropdownOpen2, setIsModelDropdownOpen2] = useState(false);
   const [isPanel2Open, setIsPanel2Open] = useState(true);
-  const [isMoreHovered, setIsMoreHovered] = useState(false);
-  const [dropdownPosition, setDropdownPosition] = useState<DropdownPosition>({
-    top: 0,
-    left: 0,
-    direction: 'down',
-  });
-  const [isUserProfileOpen, setIsUserProfileOpen] = useState(false);
-  const [userProfilePosition, setUserProfilePosition] = useState({ top: 0, left: 0 });
-  const [userData, setUserData] = useState<UserData | null>(null);
-  const moreButtonRef = useRef<HTMLDivElement>(null);
+
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const chatContainerRef = useRef<HTMLDivElement>(null);
   const abortControllerRef = useRef<AbortController | null>(null);
@@ -287,7 +270,7 @@ export default function Chat() {
   const modelDropdownRef = useRef<HTMLDivElement>(null);
   const modelDropdownRef1 = useRef<HTMLDivElement>(null);
   const modelDropdownRef2 = useRef<HTMLDivElement>(null);
-  const userProfileButtonRef = useRef<HTMLButtonElement>(null);
+
   const otherModelsDropdownRef = useRef<HTMLDivElement>(null);
   // Panel 1 Other Models ref
   const otherModelsDropdownRef1 = useRef<HTMLDivElement>(null);
@@ -354,7 +337,7 @@ export default function Chat() {
   );
   const currentImageItem =
     selectedImageIndex !== null ? imagePreviewItems[selectedImageIndex] : null;
-  
+
   // Chat history data structure
   interface ChatHistoryItem {
     id: string;
@@ -363,7 +346,7 @@ export default function Chat() {
     timestamp: Date;
     starred: boolean;
   }
-  
+
   const [chatHistory, setChatHistory] = useState<ChatHistoryItem[]>([]);
 
   // Languages list for translate dropdown
@@ -390,46 +373,7 @@ export default function Chat() {
     { code: 'cs', name: 'Czech' },
   ];
 
-  useEffect(() => {
-    const updatePosition = () => {
-      if (isMoreHovered && moreButtonRef.current) {
-        const rect = moreButtonRef.current.getBoundingClientRect();
-        const dropdownHeight = 360; // estimated dropdown height
-        const viewportHeight = window.innerHeight;
-        
-        // Calculate button center
-        const buttonCenterY = rect.top + rect.height / 2;
-        
-        // Calculate dropdown top position to center it vertically with the button
-        const dropdownTop = buttonCenterY - dropdownHeight / 2;
-        
-        // Check if dropdown would go outside viewport
-        const wouldGoAbove = dropdownTop < 0;
-        const wouldGoBelow = dropdownTop + dropdownHeight > viewportHeight;
-        
-        let finalTop = dropdownTop;
-        if (wouldGoAbove) {
-          finalTop = 8; // Position near top with small margin
-        } else if (wouldGoBelow) {
-          finalTop = viewportHeight - dropdownHeight - 8; // Position near bottom with small margin
-        }
 
-        setDropdownPosition({
-          top: finalTop,
-          left: rect.right + 8,
-          direction: 'down',
-        });
-      }
-    };
-
-    updatePosition();
-    window.addEventListener('scroll', updatePosition, true);
-    window.addEventListener('resize', updatePosition);
-    return () => {
-      window.removeEventListener('scroll', updatePosition, true);
-      window.removeEventListener('resize', updatePosition);
-    };
-  }, [isMoreHovered]);
 
   useEffect(() => {
     const updateOtherModelsPosition = () => {
@@ -445,7 +389,7 @@ export default function Chat() {
             top = 8;
           }
         }
-        
+
         const left = mainDropdownRect.left - 8;
         setOtherModelsDropdownPosition({
           top: top,
@@ -455,10 +399,10 @@ export default function Chat() {
     };
 
     updateOtherModelsPosition();
-    
+
     window.addEventListener('scroll', updateOtherModelsPosition, true);
     window.addEventListener('resize', updateOtherModelsPosition);
-    
+
     return () => {
       window.removeEventListener('scroll', updateOtherModelsPosition, true);
       window.removeEventListener('resize', updateOtherModelsPosition);
@@ -480,7 +424,7 @@ export default function Chat() {
             top = 8;
           }
         }
-        
+
         const left = mainDropdownRect.right + 8;
         setOtherModelsDropdownPosition1({
           top: top,
@@ -495,29 +439,17 @@ export default function Chat() {
         updateOtherModelsPosition1();
       });
     }
-    
+
     window.addEventListener('scroll', updateOtherModelsPosition1, true);
     window.addEventListener('resize', updateOtherModelsPosition1);
-    
+
     return () => {
       window.removeEventListener('scroll', updateOtherModelsPosition1, true);
       window.removeEventListener('resize', updateOtherModelsPosition1);
     };
   }, [isOtherModelsHovered1]);
 
-  const agents = [
-    { name: 'Deep Research', icon: FileText },
-    { name: 'Web Creator', icon: Layout },
-    { name: 'AI Writer', icon: PenTool },
-    { name: 'AI Slides', icon: Presentation },
-  ];
 
-  const wisebaseItems = [
-    { name: 'Demo: Introduction...', icon: FileText, color: 'bg-purple-100 dark:bg-purple-900/30', isActive: true },
-    { name: 'Demo: Research on...', icon: Folder, color: 'bg-orange-100 dark:bg-orange-900/30' },
-    { name: 'Demo: NVIDIA Busin...', icon: BarChart3, color: 'bg-green-100 dark:bg-green-900/30' },
-    { name: 'AI Inbox', icon: MessageCircle, color: 'bg-gray-100 dark:bg-gray-700/30' },
-  ];
 
   const suggestedPrompts = [
     'Write a Shakespearean-style sonnet about smartphones',
@@ -550,17 +482,7 @@ export default function Chat() {
     }
   }, [pathname, activeView]);
 
-  useEffect(() => {
-    // Get user data from localStorage
-    const storedUser = localStorage.getItem('user');
-    if (storedUser) {
-      try {
-        setUserData(JSON.parse(storedUser));
-      } catch {
-        // Handle parse error
-      }
-    }
-  }, []);
+
 
   // Sync activeView with pathname
   useEffect(() => {
@@ -572,50 +494,14 @@ export default function Chat() {
       setActiveView('ai-writer');
     } else if (pathname === '/wisebase/ai-slides') {
       setActiveView('ai-slides');
+    } else if (pathname === '/wisebase/ai-inbox') {
+      setActiveView('ai-inbox');
     } else if (pathname === '/chat' || pathname === '/') {
       setActiveView('chat');
     }
   }, [pathname]);
 
-  const getUserInitial = () => {
-    if (userData?.name) {
-      return userData.name.charAt(0).toUpperCase();
-    }
-    if (userData?.username) {
-      return userData.username.charAt(0).toUpperCase();
-    }
-    if (userData?.email) {
-      return userData.email.charAt(0).toUpperCase();
-    }
-    return 'U';
-  };
 
-  const handleUserProfileClick = () => {
-    if (userProfileButtonRef.current) {
-      const rect = userProfileButtonRef.current.getBoundingClientRect();
-      const dropdownWidth = 320;
-      const dropdownHeight = 400;
-      const viewportWidth = window.innerWidth;
-
-      // Position dropdown above the button
-      let top = rect.top - dropdownHeight - 8;
-      let left = rect.left - dropdownWidth + rect.width;
-
-      // Adjust if dropdown would go outside viewport
-      if (top < 8) {
-        top = rect.bottom + 8;
-      }
-      if (left < 8) {
-        left = 8;
-      }
-      if (left + dropdownWidth > viewportWidth - 8) {
-        left = viewportWidth - dropdownWidth - 8;
-      }
-
-      setUserProfilePosition({ top, left });
-      setIsUserProfileOpen(!isUserProfileOpen);
-    }
-  };
 
   // Models are now hardcoded in AVAILABLE_MODELS constant
 
@@ -670,7 +556,7 @@ export default function Chat() {
       ) {
         setIsLanguageDropdownOpen(false);
       }
-      
+
       if (openMenuId !== null && !deleteConfirmOpen) {
         const clickedInsideMenu = Object.values(menuRefs.current).some(
           (menuRef) => menuRef && menuRef.contains(event.target as Node)
@@ -682,11 +568,11 @@ export default function Chat() {
     };
 
     const shouldAddListener = isModelDropdownOpen || isModelDropdownOpen1 || isModelDropdownOpen2 || isTranslateDropdownOpen !== null || isChatControlsOpen || isImageModelDropdownOpen || isLanguageDropdownOpen || openMenuId !== null;
-    
+
     if (shouldAddListener) {
       document.addEventListener('mousedown', handleClickOutside);
     }
-    
+
     // Always return a cleanup function
     return () => {
       document.removeEventListener('mousedown', handleClickOutside);
@@ -710,20 +596,20 @@ export default function Chat() {
     const files = e.target.files;
     if (files && files.length > 0) {
       const fileArray = Array.from(files);
-      
+
       const newPreviews = fileArray.map((file) => ({
         file,
         preview: URL.createObjectURL(file),
         isUploading: true,
         isImage: file.type.startsWith('image/'),
       }));
-      
+
       // Add previews immediately with uploading state
       setFilePreviews((prev) => [...prev, ...newPreviews]);
-      
+
       console.log('Files selected:', fileArray.length, 'Image files:', newPreviews.length);
       console.log('New previews created:', newPreviews);
-      
+
       // Upload files immediately using upload-directly API
       const authToken = localStorage.getItem('authToken');
       if (!authToken || !authToken.trim()) {
@@ -782,7 +668,7 @@ export default function Chat() {
           }
         })
       );
-      
+
       // Update file previews with uploaded data
       setFilePreviews((prev) => {
         const updated = prev.map((prevPreview) => {
@@ -808,7 +694,7 @@ export default function Chat() {
     const preview = filePreviews[index];
     // Revoke object URL to free memory
     URL.revokeObjectURL(preview.preview);
-    
+
     setFilePreviews((prev) => prev.filter((_, i) => i !== index));
   };
 
@@ -823,22 +709,22 @@ export default function Chat() {
       .filter((p) => p.isImage)
       .map((p) => p.cdnURL)
       .filter((url): url is string => !!url);
-    
+
     // Store object URLs for cleanup later
     const objectUrlsToCleanup = filePreviews
       .filter(p => !p.cdnURL)
       .map(p => p.preview);
-    
+
     // Clear file previews immediately when button is clicked
     if (filePreviews.length > 0) {
       setFilePreviews([]);
     }
-    
+
     if (viewMode === 'double') {
       if (isGenerating || isGenerating2) return;
       const abortController1 = new AbortController();
       const abortController2 = new AbortController();
-        sendMessageToPanel(1, message, selectedModel, conversationId, setConversationId, setMessages, setIsGenerating, abortController1, fileIds, imagePreviews, imageUrls, undefined).finally(() => {
+      sendMessageToPanel(1, message, selectedModel, conversationId, setConversationId, setMessages, setIsGenerating, abortController1, fileIds, imagePreviews, imageUrls, undefined).finally(() => {
         // Revoke object URLs after message is sent (with delay)
         setTimeout(() => {
           objectUrlsToCleanup.forEach((url) => {
@@ -874,22 +760,22 @@ export default function Chat() {
       .filter((p) => p.isImage)
       .map((p) => p.cdnURL)
       .filter((url): url is string => !!url);
-    
+
     // Store object URLs for cleanup later
     const objectUrlsToCleanup = filePreviews
       .filter(p => !p.cdnURL)
       .map(p => p.preview);
-    
+
     // Clear file previews immediately when button is clicked
     if (filePreviews.length > 0) {
       setFilePreviews([]);
     }
-    
+
     if (viewMode === 'double') {
       if (isGenerating || isGenerating2) return;
       const abortController1 = new AbortController();
       const abortController2 = new AbortController();
-        sendMessageToPanel(1, message, selectedModel, conversationId, setConversationId, setMessages, setIsGenerating, abortController1, fileIds, imagePreviews, imageUrls, undefined).finally(() => {
+      sendMessageToPanel(1, message, selectedModel, conversationId, setConversationId, setMessages, setIsGenerating, abortController1, fileIds, imagePreviews, imageUrls, undefined).finally(() => {
         // Revoke object URLs after message is sent (with delay)
         setTimeout(() => {
           objectUrlsToCleanup.forEach((url) => {
@@ -926,22 +812,22 @@ export default function Chat() {
       .filter((p) => p.isImage)
       .map((p) => p.cdnURL)
       .filter((url): url is string => !!url);
-    
+
     // Store object URLs for cleanup later
     const objectUrlsToCleanup = filePreviews
       .filter(p => !p.cdnURL)
       .map(p => p.preview);
-    
+
     // Clear file previews immediately when button is clicked
     if (filePreviews.length > 0) {
       setFilePreviews([]);
     }
-    
+
     if (viewMode === 'double') {
       if (isGenerating || isGenerating2) return;
       const abortController1 = new AbortController();
       const abortController2 = new AbortController();
-        sendMessageToPanel(1, message, selectedModel, conversationId, setConversationId, setMessages, setIsGenerating, abortController1, fileIds, imagePreviews, imageUrls, undefined).finally(() => {
+      sendMessageToPanel(1, message, selectedModel, conversationId, setConversationId, setMessages, setIsGenerating, abortController1, fileIds, imagePreviews, imageUrls, undefined).finally(() => {
         // Revoke object URLs after message is sent (with delay)
         setTimeout(() => {
           objectUrlsToCleanup.forEach((url) => {
@@ -1059,14 +945,14 @@ export default function Chat() {
       if (response.ok) {
         const data = await response.json();
         console.log('Conversation title updated:', data);
-        
+
         // Update chat history with new title
         setChatHistory((prev) =>
           prev.map((chat) =>
             chat.id === conversationToEdit ? { ...chat, title: editTitleValue.trim() } : chat
           )
         );
-        
+
         setEditTitleModalOpen(false);
         setConversationToEdit(null);
         setEditTitleValue('');
@@ -1109,10 +995,10 @@ export default function Chat() {
       if (response.ok) {
         const data = await response.json();
         console.log('Conversation deleted:', data);
-        
+
         // Update chat history by removing the deleted chat
         setChatHistory((prev) => prev.filter((chat) => chat.id !== chatId));
-        
+
         // If the deleted conversation is currently open, clear it
         if (conversationId === chatId) {
           setConversationId(null);
@@ -1163,10 +1049,10 @@ export default function Chat() {
       if (response.ok) {
         const data = await response.json();
         console.log('All conversations deleted:', data);
-        
+
         // Clear chat history
         setChatHistory([]);
-        
+
         // Clear current conversation if open
         setConversationId(null);
         setMessages([]);
@@ -1187,11 +1073,11 @@ export default function Chat() {
 
   const getFilteredChatHistory = () => {
     let filtered = chatHistory;
-    
+
     if (chatHistoryTab === 'starred') {
       filtered = filtered.filter((chat) => chat.starred);
     }
-    
+
     if (chatHistorySearch.trim()) {
       const searchLower = chatHistorySearch.toLowerCase();
       filtered = filtered.filter(
@@ -1200,7 +1086,7 @@ export default function Chat() {
           chat.preview.toLowerCase().includes(searchLower)
       );
     }
-    
+
     return filtered.sort((a, b) => b.timestamp.getTime() - a.timestamp.getTime());
   };
 
@@ -1253,7 +1139,7 @@ export default function Chat() {
     if (messages.length > 0 && conversationId) {
       const firstUserMessage = messages.find((msg) => msg.role === 'user');
       const lastAssistantMessage = messages.filter((msg) => msg.role === 'assistant').pop();
-      
+
       if (firstUserMessage) {
         const existingChatIndex = chatHistory.findIndex((chat) => chat.id === conversationId);
         const chatItem: ChatHistoryItem = {
@@ -1403,18 +1289,18 @@ export default function Chat() {
         } else if (data.conversations && Array.isArray(data.conversations)) {
           conversations = data.conversations;
         }
-        
+
         if (conversations.length > 0) {
           const mappedHistory: ChatHistoryItem[] = conversations.map((conv: any) => {
             const id = conv.id || conv.conversation_id || conv._id || '';
             const title = conv.title || conv.name || 'New Chat';
             const preview = conv.preview || conv.last_message || conv.lastMessage || conv.description || title || 'No preview';
-            const timestamp = conv.created_at ? new Date(conv.created_at) : 
-                            (conv.createdAt ? new Date(conv.createdAt) : 
-                            (conv.updated_at ? new Date(conv.updated_at) : 
-                            (conv.updatedAt ? new Date(conv.updatedAt) : new Date())));
+            const timestamp = conv.created_at ? new Date(conv.created_at) :
+              (conv.createdAt ? new Date(conv.createdAt) :
+                (conv.updated_at ? new Date(conv.updated_at) :
+                  (conv.updatedAt ? new Date(conv.updatedAt) : new Date())));
             const starred = conv.starred || conv.is_starred || false;
-            
+
             return {
               id,
               title,
@@ -1423,7 +1309,7 @@ export default function Chat() {
               starred,
             };
           });
-          
+
           mappedHistory.sort((a, b) => b.timestamp.getTime() - a.timestamp.getTime());
           setChatHistory(mappedHistory);
         } else {
@@ -1444,7 +1330,7 @@ export default function Chat() {
   // Upload files to the API
   const uploadFiles = async (files: File[], abortController: AbortController): Promise<string[]> => {
     if (files.length === 0) return [];
-    
+
     const authToken = localStorage.getItem('authToken');
     if (!authToken || !authToken.trim()) {
       throw new Error('Authentication required. Please login first.');
@@ -1484,13 +1370,13 @@ export default function Chat() {
               errorData = { detail: `Failed to upload file: ${file.name} (Status: ${response.status})` };
             }
           }
-          
+
           if (response.status === 401 || errorData.detail === 'Authentication required') {
             localStorage.removeItem('authToken');
             localStorage.removeItem('user');
             throw new Error('Session expired. Please login again.');
           }
-          
+
           // Log the full error for debugging
           console.error('File upload error details:', {
             status: response.status,
@@ -1502,13 +1388,13 @@ export default function Chat() {
             fileType: file.type,
             url: getApiUrl(API_ENDPOINTS.FILES.UPLOAD)
           });
-          
+
           // Show more detailed error message
           const errorMessage = errorData.detail || errorData.message || errorData.error || errorText || `Failed to upload file: ${file.name} (Status: ${response.status})`;
           throw new Error(errorMessage);
         }
 
-          const data = await response.json();
+        const data = await response.json();
         // Extract file ID from response structure: { code: 0, msg: "", data: { id: "...", ... } }
         const fileId = data?.data?.id || data?.id || data?.file_id || data?.data?.file_id;
         if (fileId) {
@@ -1592,11 +1478,11 @@ export default function Chat() {
 
     try {
       const authToken = localStorage.getItem('authToken');
-      
+
       if (!authToken || !authToken.trim()) {
         throw new Error('Authentication required. Please login first.');
       }
-      
+
       const headers: HeadersInit = {
         'Content-Type': 'application/json',
         'Authorization': `Bearer ${authToken.trim()}`,
@@ -1619,7 +1505,7 @@ export default function Chat() {
           if (!conversationResponse.ok) {
             const errorData = await conversationResponse.json().catch(() => ({ detail: 'Failed to create conversation' }));
             if (conversationResponse.status === 422 && errorData.detail) {
-              const errorMsg = Array.isArray(errorData.detail) 
+              const errorMsg = Array.isArray(errorData.detail)
                 ? errorData.detail.map((e: { msg?: string; message?: string }) => e.msg || e.message).join(', ')
                 : errorData.detail;
               throw new Error(`Validation error: ${errorMsg}`);
@@ -1629,13 +1515,13 @@ export default function Chat() {
 
           const conversationData = await conversationResponse.json();
           currentConversationId = conversationData?.data?.id || conversationData?.id || conversationData?.conversation_id || conversationData?.data?.conversation_id || null;
-          
+
           if (currentConversationId) {
             setConversationIdState(currentConversationId);
           } else {
             throw new Error('Failed to get conversation ID from response');
-        }
-      } catch (error) {
+          }
+        } catch (error) {
           // Don't throw if request was aborted
           if (error instanceof Error && error.name === 'AbortError') {
             return;
@@ -1649,7 +1535,7 @@ export default function Chat() {
       // Step 3: Send message using appropriate API
       let response;
       let responseData;
-      
+
       // If images are present, use /api/chat/send with image_url
       if (imageUrls && imageUrls.length > 0) {
         const requestBody = {
@@ -1659,14 +1545,14 @@ export default function Chat() {
           stream: false,
           image_url: imageUrls[0], // Use first image URL
         };
-        
+
         console.log('Sending message with images using send API:', {
           message: messageText,
           model: model || 'gpt-4o-mini',
           conversation_id: currentConversationId,
           image_url: imageUrls[0],
         });
-        
+
         response = await fetch(getApiUrl(API_ENDPOINTS.CHAT.SEND), {
           method: 'POST',
           headers,
@@ -1694,7 +1580,7 @@ export default function Chat() {
         }
 
         responseData = await response.json();
-        
+
         // Check again if request was aborted after response
         if (abortController.signal.aborted) {
           setIsGeneratingState(false);
@@ -1703,7 +1589,7 @@ export default function Chat() {
           );
           return;
         }
-        
+
         // Check one more time before processing response
         if (abortController.signal.aborted) {
           setIsGeneratingState(false);
@@ -1712,11 +1598,11 @@ export default function Chat() {
           );
           return;
         }
-        
+
         // Handle send API response: { code: 0, msg: "", data: { text: "...", conversation_id: "...", tokens_used: ... } }
         if (responseData.code === 0 && responseData.data) {
           const { text, conversation_id: cid, tokens_used } = responseData.data;
-          
+
           // Check again before updating state
           if (abortController.signal.aborted) {
             setIsGeneratingState(false);
@@ -1725,12 +1611,12 @@ export default function Chat() {
             );
             return;
           }
-          
+
           // Update conversation ID if provided
           if (cid) {
             setConversationIdState(cid);
           }
-          
+
           // Update message with response text (only if message still exists - wasn't removed by stop)
           setMessagesState((prev) => {
             const messageExists = prev.find((msg) => msg.id === aiMessageId);
@@ -1744,7 +1630,7 @@ export default function Chat() {
                 : msg
             );
           });
-          
+
           console.log('Message completed:', { cid, tokens_used });
           setIsGeneratingState(false);
 
@@ -1764,7 +1650,7 @@ export default function Chat() {
           ],
           ...(fileIds && fileIds.length > 0 ? { file_ids: fileIds } : {}),
         };
-        
+
         console.log('Sending message without images using completions API:', {
           message: messageText,
           model: model || 'gpt-4o-mini',
@@ -1772,7 +1658,7 @@ export default function Chat() {
           file_ids: fileIds && fileIds.length > 0 ? fileIds : 'none',
           file_count: fileIds ? fileIds.length : 0
         });
-        
+
         response = await fetch(getApiUrl(API_ENDPOINTS.CHAT.COMPLETIONS), {
           method: 'POST',
           headers,
@@ -1800,7 +1686,7 @@ export default function Chat() {
         }
 
         responseData = await response.json();
-        
+
         // Check again if request was aborted after response
         if (abortController.signal.aborted) {
           setIsGeneratingState(false);
@@ -1809,7 +1695,7 @@ export default function Chat() {
           );
           return;
         }
-        
+
         // Check one more time before processing response
         if (abortController.signal.aborted) {
           setIsGeneratingState(false);
@@ -1818,11 +1704,11 @@ export default function Chat() {
           );
           return;
         }
-        
+
         // Handle completions API response: { code: 0, msg: "", data: { id, text, cid, tokens_used, model, parent_message_id } }
         if (responseData.code === 0 && responseData.data) {
           const { text, cid, id, tokens_used, model: responseModel, parent_message_id } = responseData.data;
-          
+
           // Check again before updating state
           if (abortController.signal.aborted) {
             setIsGeneratingState(false);
@@ -1831,12 +1717,12 @@ export default function Chat() {
             );
             return;
           }
-          
+
           // Update conversation ID if provided
           if (cid) {
             setConversationIdState(cid);
           }
-          
+
           // Update message with response text (only if message still exists - wasn't removed by stop)
           setMessagesState((prev) => {
             const messageExists = prev.find((msg) => msg.id === aiMessageId);
@@ -1850,7 +1736,7 @@ export default function Chat() {
                 : msg
             );
           });
-          
+
           console.log('Message completed:', { id, cid, tokens_used, model: responseModel, parent_message_id });
           setIsGeneratingState(false);
 
@@ -1869,7 +1755,7 @@ export default function Chat() {
       }
       console.error('Error sending message:', error);
       const errorMessage = error instanceof Error ? error.message : 'Sorry, an error occurred. Please try again.';
-      
+
       setMessagesState((prev) =>
         prev.map((msg) =>
           msg.id === aiMessageId
@@ -1883,13 +1769,13 @@ export default function Chat() {
 
   const handleSuggestedPrompt = async (promptText: string) => {
     if (!promptText.trim()) return;
-    
+
     if (viewMode === 'double') {
       // Send to both panels
       if (isGenerating || isGenerating2) return;
-      
+
       const messageText = promptText.trim();
-      
+
       // Abort previous requests if any
       if (abortController1Ref.current) {
         abortController1Ref.current.abort();
@@ -1897,12 +1783,12 @@ export default function Chat() {
       if (abortController2Ref.current) {
         abortController2Ref.current.abort();
       }
-      
+
       const abortController1 = new AbortController();
       const abortController2 = new AbortController();
       abortController1Ref.current = abortController1;
       abortController2Ref.current = abortController2;
-      
+
       // Send to panel 1
       sendMessageToPanel(
         1,
@@ -1918,7 +1804,7 @@ export default function Chat() {
       ).finally(() => {
         abortController1Ref.current = null;
       });
-      
+
       // Send to panel 2
       if (isPanel2Open) {
         sendMessageToPanel(
@@ -1970,11 +1856,11 @@ export default function Chat() {
       try {
         // Get auth token from localStorage
         const authToken = localStorage.getItem('authToken');
-        
+
         if (!authToken || !authToken.trim()) {
           throw new Error('Authentication required. Please login first.');
         }
-        
+
         const headers: HeadersInit = {
           'Content-Type': 'application/json',
           'Authorization': `Bearer ${authToken.trim()}`,
@@ -1997,7 +1883,7 @@ export default function Chat() {
             if (!conversationResponse.ok) {
               const errorData = await conversationResponse.json().catch(() => ({ detail: 'Failed to create conversation' }));
               if (conversationResponse.status === 422 && errorData.detail) {
-                const errorMsg = Array.isArray(errorData.detail) 
+                const errorMsg = Array.isArray(errorData.detail)
                   ? errorData.detail.map((e: { msg?: string; message?: string }) => e.msg || e.message).join(', ')
                   : errorData.detail;
                 throw new Error(`Validation error: ${errorMsg}`);
@@ -2007,7 +1893,7 @@ export default function Chat() {
 
             const conversationData = await conversationResponse.json();
             currentConversationId = conversationData?.data?.id || conversationData?.id || conversationData?.conversation_id || conversationData?.data?.conversation_id || null;
-            
+
             if (currentConversationId) {
               setConversationId(currentConversationId);
             } else {
@@ -2036,7 +1922,7 @@ export default function Chat() {
             }
           ],
         };
-        
+
         const response = await fetch(getApiUrl(API_ENDPOINTS.CHAT.COMPLETIONS), {
           method: 'POST',
           headers,
@@ -2051,16 +1937,16 @@ export default function Chat() {
 
         // Step 3: Handle JSON response
         const responseData = await response.json();
-        
+
         // Extract data from response structure: { code: 0, msg: "", data: { id, text, cid, tokens_used, model, parent_message_id } }
         if (responseData.code === 0 && responseData.data) {
           const { text, cid, id, tokens_used, model: responseModel, parent_message_id } = responseData.data;
-          
+
           // Update conversation ID if provided
           if (cid) {
             setConversationId(cid);
           }
-          
+
           // Update message with response text
           setMessages((prev) =>
             prev.map((msg) =>
@@ -2069,9 +1955,9 @@ export default function Chat() {
                 : msg
             )
           );
-          
+
           console.log('Message completed:', { id, cid, tokens_used, model: responseModel, parent_message_id });
-          
+
           // Call GET APIs after successful chat completion
           const finalCid = cid || currentConversationId;
           if (finalCid) {
@@ -2083,7 +1969,7 @@ export default function Chat() {
         } else {
           throw new Error(responseData.msg || 'Invalid response format');
         }
-        
+
         setIsGenerating(false);
       } catch (error) {
         if (error instanceof Error && error.name === 'AbortError') {
@@ -2101,14 +1987,14 @@ export default function Chat() {
 
   const handleSendMessage = async () => {
     if (!inputValue.trim()) return;
-    
+
     if (viewMode === 'double') {
       // Send to both panels
       if (isGenerating || isGenerating2) return;
-      
+
       const messageText = inputValue.trim();
       setInputValue('');
-      
+
       // Abort previous requests if any
       if (abortController1Ref.current) {
         abortController1Ref.current.abort();
@@ -2116,12 +2002,12 @@ export default function Chat() {
       if (abortController2Ref.current) {
         abortController2Ref.current.abort();
       }
-      
+
       const abortController1 = new AbortController();
       const abortController2 = new AbortController();
       abortController1Ref.current = abortController1;
       abortController2Ref.current = abortController2;
-      
+
       // Get file IDs, image previews, and image URLs from filePreviews before clearing
       const fileIds = filePreviews.map(preview => preview.fileId).filter((id): id is string => !!id);
       // Use CDN URLs if available, otherwise use object URLs
@@ -2132,7 +2018,7 @@ export default function Chat() {
         .filter((p) => p.isImage)
         .map((p) => p.cdnURL)
         .filter((url): url is string => !!url);
-      
+
       // Extract PDF file information
       const pdfFiles = filePreviews
         .filter((p) => !p.isImage && p.cdnURL)
@@ -2141,17 +2027,17 @@ export default function Chat() {
           url: p.cdnURL!,
           type: p.file.type,
         }));
-      
+
       // Store object URLs for cleanup later (only those without CDN URLs)
       const objectUrlsToCleanup = filePreviews
         .filter(p => !p.cdnURL)
         .map(p => p.preview);
-      
+
       // Clear file previews immediately when send is clicked
       if (filePreviews.length > 0) {
         setFilePreviews([]);
       }
-      
+
       // Send to panel 1
       sendMessageToPanel(
         1,
@@ -2175,7 +2061,7 @@ export default function Chat() {
           });
         }, 1000);
       });
-      
+
       // Send to panel 2
       if (isPanel2Open) {
         sendMessageToPanel(
@@ -2199,168 +2085,168 @@ export default function Chat() {
       // Single view - original logic
       if (isGenerating) return;
 
-    // Get file IDs, image previews, and image URLs from filePreviews before clearing
-    const fileIds = filePreviews.map(preview => preview.fileId).filter((id): id is string => !!id);
-    // Use CDN URLs if available, otherwise use object URLs
-    const imagePreviews = filePreviews
-      .filter((p) => p.isImage)
-      .map((p) => p.cdnURL || p.preview);
-    const imageUrls = filePreviews
-      .filter((p) => p.isImage)
-      .map((p) => p.cdnURL)
-      .filter((url): url is string => !!url);
-    
-    // Extract PDF file information
-    const pdfFiles = filePreviews
-      .filter((p) => !p.isImage && p.cdnURL)
-      .map((p) => ({
-        name: p.file.name,
-        url: p.cdnURL!,
-        type: p.file.type,
-      }));
-    
-    // Only store CDN URLs in messages (not blob URLs that get revoked)
-    // Filter out invalid/empty URLs
-    const validImageUrls = imagePreviews?.filter((url): url is string => {
-      if (!url || typeof url !== 'string') return false;
-      // Only include CDN URLs (http/https), exclude blob URLs
-      return url.startsWith('http://') || url.startsWith('https://');
-    });
+      // Get file IDs, image previews, and image URLs from filePreviews before clearing
+      const fileIds = filePreviews.map(preview => preview.fileId).filter((id): id is string => !!id);
+      // Use CDN URLs if available, otherwise use object URLs
+      const imagePreviews = filePreviews
+        .filter((p) => p.isImage)
+        .map((p) => p.cdnURL || p.preview);
+      const imageUrls = filePreviews
+        .filter((p) => p.isImage)
+        .map((p) => p.cdnURL)
+        .filter((url): url is string => !!url);
 
-    if (validImageUrls && validImageUrls.length > 0) {
-      console.log('Storing images in user message:', validImageUrls);
-    }
+      // Extract PDF file information
+      const pdfFiles = filePreviews
+        .filter((p) => !p.isImage && p.cdnURL)
+        .map((p) => ({
+          name: p.file.name,
+          url: p.cdnURL!,
+          type: p.file.type,
+        }));
 
-    // Filter PDF files to only include CDN URLs
-    const validPdfFiles = pdfFiles.filter((file) => {
-      return file.url && (file.url.startsWith('http://') || file.url.startsWith('https://'));
-    });
+      // Only store CDN URLs in messages (not blob URLs that get revoked)
+      // Filter out invalid/empty URLs
+      const validImageUrls = imagePreviews?.filter((url): url is string => {
+        if (!url || typeof url !== 'string') return false;
+        // Only include CDN URLs (http/https), exclude blob URLs
+        return url.startsWith('http://') || url.startsWith('https://');
+      });
 
-    if (validPdfFiles && validPdfFiles.length > 0) {
-      console.log('Storing PDF files in user message:', validPdfFiles);
-    }
-
-    const userMessage: Message = {
-      id: Date.now().toString(),
-      role: 'user',
-      content: inputValue.trim(),
-      images: validImageUrls && validImageUrls.length > 0 ? validImageUrls : undefined,
-      files: validPdfFiles && validPdfFiles.length > 0 ? validPdfFiles : undefined,
-    };
-
-    setMessages((prev) => [...prev, userMessage]);
-    const messageText = inputValue.trim();
-    setInputValue('');
-    setIsGenerating(true);
-    
-    // Store object URLs for cleanup later (only those that aren't CDN URLs)
-    const objectUrlsToCleanup = filePreviews
-      .filter(p => !p.cdnURL)
-      .map(p => p.preview);
-    
-    // Clear file previews immediately when send is clicked
-    if (filePreviews.length > 0) {
-      setFilePreviews([]);
-    }
-
-    // Create AI message placeholder
-    const aiMessageId = (Date.now() + 1).toString();
-    const aiMessage: Message = {
-      id: aiMessageId,
-      role: 'assistant',
-      content: '',
-      isGenerating: true,
-      model: selectedModel,
-    };
-    setMessages((prev) => [...prev, aiMessage]);
-
-    // Abort previous request if any
-    if (abortControllerRef.current) {
-      abortControllerRef.current.abort();
-    }
-    abortControllerRef.current = new AbortController();
-
-    try {
-      // Get auth token from localStorage
-      const authToken = localStorage.getItem('authToken');
-      
-      if (!authToken || !authToken.trim()) {
-        throw new Error('Authentication required. Please login first.');
+      if (validImageUrls && validImageUrls.length > 0) {
+        console.log('Storing images in user message:', validImageUrls);
       }
-      
-      const headers: HeadersInit = {
-          'Content-Type': 'application/json',
-        'Authorization': `Bearer ${authToken.trim()}`,
+
+      // Filter PDF files to only include CDN URLs
+      const validPdfFiles = pdfFiles.filter((file) => {
+        return file.url && (file.url.startsWith('http://') || file.url.startsWith('https://'));
+      });
+
+      if (validPdfFiles && validPdfFiles.length > 0) {
+        console.log('Storing PDF files in user message:', validPdfFiles);
+      }
+
+      const userMessage: Message = {
+        id: Date.now().toString(),
+        role: 'user',
+        content: inputValue.trim(),
+        images: validImageUrls && validImageUrls.length > 0 ? validImageUrls : undefined,
+        files: validPdfFiles && validPdfFiles.length > 0 ? validPdfFiles : undefined,
       };
 
-      // Step 1: Create conversation if it doesn't exist
-      let currentConversationId = conversationId;
-      if (!currentConversationId) {
-        try {
-          const conversationResponse = await fetch(getApiUrl(API_ENDPOINTS.CONVERSATIONS.CREATE), {
-            method: 'POST',
-            headers,
-        body: JSON.stringify({
-              title: messageText.substring(0, 50) || 'New Conversation', // Use first 50 chars of message as title
-              model: selectedModel,
-            }),
-            signal: abortControllerRef.current.signal,
-          });
+      setMessages((prev) => [...prev, userMessage]);
+      const messageText = inputValue.trim();
+      setInputValue('');
+      setIsGenerating(true);
 
-          if (!conversationResponse.ok) {
-            const errorData = await conversationResponse.json().catch(() => ({ detail: 'Failed to create conversation' }));
-            // Handle validation errors (422)
-            if (conversationResponse.status === 422 && errorData.detail) {
-              const errorMsg = Array.isArray(errorData.detail) 
-                ? errorData.detail.map((e: { msg?: string; message?: string }) => e.msg || e.message).join(', ')
-                : errorData.detail;
-              throw new Error(`Validation error: ${errorMsg}`);
-            }
-            throw new Error(errorData.detail || errorData.message || 'Failed to create conversation');
-          }
+      // Store object URLs for cleanup later (only those that aren't CDN URLs)
+      const objectUrlsToCleanup = filePreviews
+        .filter(p => !p.cdnURL)
+        .map(p => p.preview);
 
-          const conversationData = await conversationResponse.json();
-          // Extract conversation_id from response structure: { code: 0, data: { id: "..." } }
-          currentConversationId = conversationData?.data?.id || conversationData?.id || conversationData?.conversation_id || conversationData?.data?.conversation_id || null;
-          
-          if (currentConversationId) {
-            setConversationId(currentConversationId);
-            console.log('Conversation created with ID:', currentConversationId);
-          } else {
-            console.warn('Conversation created but no ID found in response:', conversationData);
-            throw new Error('Failed to get conversation ID from response');
-          }
-        } catch (error) {
-          // Don't throw if request was aborted
-          if (error instanceof Error && error.name === 'AbortError') {
-            return;
-          }
-          console.error('Error creating conversation:', error);
-          throw new Error('Failed to create conversation. Please try again.');
-        }
+      // Clear file previews immediately when send is clicked
+      if (filePreviews.length > 0) {
+        setFilePreviews([]);
       }
 
-      // Step 2: Determine which API to use based on whether images are present
-      // Step 3: Send message using appropriate API
-      let response;
-      let responseData;
+      // Create AI message placeholder
+      const aiMessageId = (Date.now() + 1).toString();
+      const aiMessage: Message = {
+        id: aiMessageId,
+        role: 'assistant',
+        content: '',
+        isGenerating: true,
+        model: selectedModel,
+      };
+      setMessages((prev) => [...prev, aiMessage]);
 
-      // If images are present, use /api/chat/send with image_url
-      if (imageUrls && imageUrls.length > 0) {
-        const requestBody = {
-          message: messageText,
-          model: selectedModel || 'webby fusion',
-          conversation_id: currentConversationId,
-          stream: false,
-          image_url: imageUrls[0], // Use first image URL
+      // Abort previous request if any
+      if (abortControllerRef.current) {
+        abortControllerRef.current.abort();
+      }
+      abortControllerRef.current = new AbortController();
+
+      try {
+        // Get auth token from localStorage
+        const authToken = localStorage.getItem('authToken');
+
+        if (!authToken || !authToken.trim()) {
+          throw new Error('Authentication required. Please login first.');
+        }
+
+        const headers: HeadersInit = {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${authToken.trim()}`,
         };
 
-        console.log('Sending message with images using send API:', {
-          message: messageText,
-          model: selectedModel || 'webby fusion',
-          conversation_id: currentConversationId,
-          image_url: imageUrls[0],
-        });
+        // Step 1: Create conversation if it doesn't exist
+        let currentConversationId = conversationId;
+        if (!currentConversationId) {
+          try {
+            const conversationResponse = await fetch(getApiUrl(API_ENDPOINTS.CONVERSATIONS.CREATE), {
+              method: 'POST',
+              headers,
+              body: JSON.stringify({
+                title: messageText.substring(0, 50) || 'New Conversation', // Use first 50 chars of message as title
+                model: selectedModel,
+              }),
+              signal: abortControllerRef.current.signal,
+            });
+
+            if (!conversationResponse.ok) {
+              const errorData = await conversationResponse.json().catch(() => ({ detail: 'Failed to create conversation' }));
+              // Handle validation errors (422)
+              if (conversationResponse.status === 422 && errorData.detail) {
+                const errorMsg = Array.isArray(errorData.detail)
+                  ? errorData.detail.map((e: { msg?: string; message?: string }) => e.msg || e.message).join(', ')
+                  : errorData.detail;
+                throw new Error(`Validation error: ${errorMsg}`);
+              }
+              throw new Error(errorData.detail || errorData.message || 'Failed to create conversation');
+            }
+
+            const conversationData = await conversationResponse.json();
+            // Extract conversation_id from response structure: { code: 0, data: { id: "..." } }
+            currentConversationId = conversationData?.data?.id || conversationData?.id || conversationData?.conversation_id || conversationData?.data?.conversation_id || null;
+
+            if (currentConversationId) {
+              setConversationId(currentConversationId);
+              console.log('Conversation created with ID:', currentConversationId);
+            } else {
+              console.warn('Conversation created but no ID found in response:', conversationData);
+              throw new Error('Failed to get conversation ID from response');
+            }
+          } catch (error) {
+            // Don't throw if request was aborted
+            if (error instanceof Error && error.name === 'AbortError') {
+              return;
+            }
+            console.error('Error creating conversation:', error);
+            throw new Error('Failed to create conversation. Please try again.');
+          }
+        }
+
+        // Step 2: Determine which API to use based on whether images are present
+        // Step 3: Send message using appropriate API
+        let response;
+        let responseData;
+
+        // If images are present, use /api/chat/send with image_url
+        if (imageUrls && imageUrls.length > 0) {
+          const requestBody = {
+            message: messageText,
+            model: selectedModel || 'webby fusion',
+            conversation_id: currentConversationId,
+            stream: false,
+            image_url: imageUrls[0], // Use first image URL
+          };
+
+          console.log('Sending message with images using send API:', {
+            message: messageText,
+            model: selectedModel || 'webby fusion',
+            conversation_id: currentConversationId,
+            image_url: imageUrls[0],
+          });
 
           response = await fetch(getApiUrl(API_ENDPOINTS.CHAT.SEND), {
             method: 'POST',
@@ -2677,34 +2563,7 @@ export default function Chat() {
     }
   };
 
-  const getToolSlug = (toolName: string): string => {
-    const slugMap: Record<string, string> = {
-      'AI Image Generator': 'ai-image-generator',
-      'Background Remover': 'background-remover',
-      'Text Remover': 'text-remover',
-      'Photo Eraser': 'photo-eraser',
-      'Inpaint': 'inpaint',
-      'Image Upscaler': 'image-upscaler',
-      'Background Changer': 'background-changer',
-      'AI Translator': 'ai-translator',
-      'Image Translator': 'image-translator',
-      'AI Video Shortener': 'ai-video-shortener',
-    };
-    return slugMap[toolName] || toolName.toLowerCase().replace(/\s+/g, '-');
-  };
 
-  const handleToolClick = (toolName: string) => {
-    const slug = getToolSlug(toolName);
-    // Check if it's a translator tool
-    if (toolName === 'AI Translator' || toolName === 'Image Translator') {
-      const translatorSlug = toolName === 'AI Translator' ? 'text-translator' : 'image-translator';
-      const url = `/translator/${translatorSlug}`;
-      window.open(url, '_blank');
-    } else {
-      const url = `/create/image/${slug}`;
-      window.open(url, '_blank');
-    }
-  };
 
   // Action button handlers for assistant messages
   const handleCopyMessage = async (content: string) => {
@@ -2745,432 +2604,7 @@ export default function Chat() {
   return (
     <div className="flex h-screen bg-gray-50 dark:bg-gray-900 overflow-hidden">
       {/* Sidebar */}
-      <aside className={`relative ${isSidebarCollapsed ? 'w-16' : 'w-56'} bg-white dark:bg-gray-800 border-r border-gray-200 dark:border-gray-700 flex flex-col transition-all duration-300`}>
-        {/* Logo */}
-        <div className={`${isSidebarCollapsed ? 'p-2' : 'p-4'} border-b border-gray-200 dark:border-gray-700`}>
-          <div className={`flex items-center ${isSidebarCollapsed ? 'justify-center' : 'justify-between'}`}>
-            {!isSidebarCollapsed && (
-              <div className="flex items-center gap-2">
-                <Sparkles className="w-6 h-6 text-indigo-600 dark:text-indigo-400" />
-                <span className="text-xl font-bold bg-gradient-to-r from-indigo-600 via-purple-600 to-pink-600 bg-clip-text text-transparent">
-                  Webby Sider
-                </span>
-              </div>
-            )}
-            <motion.button
-              whileHover={{ scale: 1.1 }}
-              whileTap={{ scale: 0.9 }}
-              onClick={() => setIsSidebarCollapsed(!isSidebarCollapsed)}
-              className={`${isSidebarCollapsed ? 'mx-auto' : ''} p-1.5 rounded-md hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors`}
-              title={isSidebarCollapsed ? 'Expand sidebar' : 'Collapse sidebar'}
-            >
-              <Layout className="w-4 h-4 text-gray-600 dark:text-gray-400" />
-            </motion.button>
-          </div>
-        </div>
-
-        {/* Navigation */}
-        <div className={`flex-1 overflow-y-auto overflow-x-visible ${isSidebarCollapsed ? 'p-2' : 'p-4'} ${isSidebarCollapsed ? 'space-y-1' : 'space-y-6'}`}>
-          {/* Chat */}
-          <div className="relative">
-            <motion.button
-              onClick={() => {
-                setActiveView('chat');
-                router.push('/chat');
-              }}
-              onMouseEnter={(e) => {
-                if (isSidebarCollapsed) {
-                  const rect = (e.currentTarget as HTMLElement).getBoundingClientRect();
-                  setTooltipPositions(prev => ({ ...prev, chat: { top: rect.top + rect.height / 2, left: rect.right + 8 } }));
-                  setHoveredItem('chat');
-                }
-              }}
-              onMouseLeave={() => {
-                setHoveredItem(null);
-                setTooltipPositions(prev => {
-                  const { chat: _, ...rest } = prev;
-                  return rest;
-                });
-              }}
-              className={`w-full flex items-center ${isSidebarCollapsed ? 'justify-center p-2' : 'gap-2 px-3 py-2'} rounded-lg ${isSidebarCollapsed ? 'mb-1' : 'mb-2'} transition-colors ${activeView === 'chat'
-                ? 'bg-indigo-50 dark:bg-indigo-900/20 text-indigo-600 dark:text-indigo-400'
-                : 'text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700'
-                }`}
-            >
-              <MessageCircle className={`${isSidebarCollapsed ? 'w-5 h-5' : 'w-5 h-5'}`} />
-              {!isSidebarCollapsed && <span className="font-semibold">Chat</span>}
-            </motion.button>
-            {isSidebarCollapsed && hoveredItem === 'chat' && tooltipPositions.chat && (
-              <div className="fixed z-[9999] pointer-events-none" style={{ top: `${tooltipPositions.chat.top}px`, left: `${tooltipPositions.chat.left}px`, transform: 'translateY(-50%)' }}>
-                <div className="bg-gray-900 dark:bg-gray-800 text-white text-sm px-3 py-1.5 rounded-md shadow-lg whitespace-nowrap relative">
-                  <div className="absolute right-full top-1/2 -translate-y-1/2 w-0 h-0 border-t-[6px] border-t-transparent border-b-[6px] border-b-transparent border-r-[6px] border-r-gray-900 dark:border-r-gray-800"></div>
-                  Chat
-                </div>
-              </div>
-            )}
-          </div>
-
-          {/* Agents */}
-          <div className={isSidebarCollapsed ? 'mt-2' : ''}>
-            {!isSidebarCollapsed && (
-              <h3 className="text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider px-3 mb-2">
-                Agents
-              </h3>
-            )}
-            <div className="space-y-1">
-              {agents.map((agent, index) => {
-                const Icon = agent.icon;
-                const agentSlug = agent.name.toLowerCase().replace(/\s+/g, '-') as 'deep-research' | 'web-creator' | 'ai-writer' | 'ai-slides';
-                // Deep Research should be active for both deep-research and scholar-research
-                const isActive = agentSlug === 'deep-research'
-                  ? (activeView === 'deep-research' || activeView === 'scholar-research')
-                  : activeView === agentSlug;
-                const handleAgentClick = () => {
-                  // Use /agents/ route for web-creator, ai-writer, ai-slides
-                  // Use /wisebase/ for deep-research
-                  const route = agentSlug === 'deep-research'
-                    ? `/wisebase/${agentSlug}`
-                    : `/agents/${agentSlug}`;
-                  // Set activeView immediately to prevent flash
-                  setActiveView(agentSlug);
-                  // Then navigate (this won't cause a full page reload in Next.js)
-                  router.push(route);
-                };
-                return (
-                  <div key={agent.name} className="relative">
-                    <motion.button
-                      initial={{ opacity: 0, x: -20 }}
-                      animate={{ opacity: 1, x: 0 }}
-                      transition={{ delay: index * 0.1 }}
-                      onClick={handleAgentClick}
-                      onMouseEnter={(e) => {
-                        if (isSidebarCollapsed) {
-                          const rect = (e.currentTarget as HTMLElement).getBoundingClientRect();
-                          setTooltipPositions(prev => ({ ...prev, [`agent-${agent.name}`]: { top: rect.top + rect.height / 2, left: rect.right + 8 } }));
-                          setHoveredItem(`agent-${agent.name}`);
-                        }
-                      }}
-                      onMouseLeave={() => {
-                        setHoveredItem(null);
-                        const key = `agent-${agent.name}`;
-                        setTooltipPositions(prev => {
-                          const { [key]: _, ...rest } = prev;
-                          return rest;
-                        });
-                      }}
-                      className={`w-full flex items-center ${isSidebarCollapsed ? 'justify-center p-2' : 'gap-3 px-3'} py-2 rounded-lg transition-colors ${isActive
-                        ? 'bg-indigo-50 dark:bg-indigo-900/20 text-indigo-600 dark:text-indigo-400'
-                        : 'text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700'
-                        }`}
-                    >
-                      <Icon className={`${isSidebarCollapsed ? 'w-5 h-5' : 'w-4 h-4'}`} />
-                      {!isSidebarCollapsed && <span className="text-sm">{agent.name}</span>}
-                    </motion.button>
-                    {isSidebarCollapsed && hoveredItem === `agent-${agent.name}` && tooltipPositions[`agent-${agent.name}`] && (
-                      <div className="fixed z-[9999] pointer-events-none" style={{ top: `${tooltipPositions[`agent-${agent.name}`].top}px`, left: `${tooltipPositions[`agent-${agent.name}`].left}px`, transform: 'translateY(-50%)' }}>
-                        <div className="bg-gray-900 dark:bg-gray-800 text-white text-sm px-3 py-1.5 rounded-md shadow-lg whitespace-nowrap relative">
-                          <div className="absolute right-full top-1/2 -translate-y-1/2 w-0 h-0 border-t-[6px] border-t-transparent border-b-[6px] border-b-transparent border-r-[6px] border-r-gray-900 dark:border-r-gray-800"></div>
-                          {agent.name}
-                        </div>
-                      </div>
-                    )}
-                  </div>
-                );
-              })}
-
-              {/* More Dropdown */}
-              <div
-                ref={moreButtonRef}
-                className="relative"
-                onMouseEnter={() => {
-                  setIsMoreHovered(true);
-                  if (isSidebarCollapsed && moreButtonRef.current) {
-                    const rect = moreButtonRef.current.getBoundingClientRect();
-                    setTooltipPositions(prev => ({ ...prev, more: { top: rect.top + rect.height / 2, left: rect.right + 8 } }));
-                    setHoveredItem('more');
-                  }
-                }}
-                onMouseLeave={() => {
-                  setIsMoreHovered(false);
-                  setHoveredItem(null);
-                  setTooltipPositions(prev => {
-                    const { more: _, ...rest } = prev;
-                    return rest;
-                  });
-                }}
-              >
-                <motion.button
-                  initial={{ opacity: 0, x: -20 }}
-                  animate={{ opacity: 1, x: 0 }}
-                  transition={{ delay: agents.length * 0.1 }}
-                  className={`w-full flex items-center ${isSidebarCollapsed ? 'justify-center p-2' : 'gap-3 px-3'} py-2 rounded-lg text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors`}
-                >
-                  <Grid3x3 className={`${isSidebarCollapsed ? 'w-5 h-5' : 'w-4 h-4'}`} />
-                  {!isSidebarCollapsed && (
-                    <>
-                      <span className="text-sm">More</span>
-                      <ChevronRight className="w-4 h-4 ml-auto" />
-                    </>
-                  )}
-                </motion.button>
-                {isSidebarCollapsed && hoveredItem === 'more' && tooltipPositions.more && (
-                  <div className="fixed z-[9999] pointer-events-none" style={{ top: `${tooltipPositions.more.top}px`, left: `${tooltipPositions.more.left}px`, transform: 'translateY(-50%)' }}>
-                    <div className="bg-gray-900 dark:bg-gray-800 text-white text-sm px-3 py-1.5 rounded-md shadow-lg whitespace-nowrap relative">
-                      <div className="absolute right-full top-1/2 -translate-y-1/2 w-0 h-0 border-t-[6px] border-t-transparent border-b-[6px] border-b-transparent border-r-[6px] border-r-gray-900 dark:border-r-gray-800"></div>
-                      More
-                    </div>
-                  </div>
-                )}
-
-                {isMoreHovered && moreButtonRef.current && (
-                  <>
-                    {/* Invisible bridge to prevent hover loss */}
-                    <div
-                      className="fixed z-[9998] pointer-events-auto"
-                      style={{
-                        top: `${dropdownPosition.top}px`,
-                        left: `${moreButtonRef.current.getBoundingClientRect().right}px`,
-                        width: '8px',
-                        height: `${360}px`,
-                      }}
-                      onMouseEnter={() => setIsMoreHovered(true)}
-                    />
-                    <motion.div
-                      initial={{ opacity: 0, x: -10 }}
-                      animate={{ opacity: 1, x: 0 }}
-                      exit={{ opacity: 0, x: -10 }}
-                      transition={{ duration: 0.2 }}
-                      className="fixed min-w-[260px] bg-white dark:bg-gray-800 rounded-xl shadow-2xl border border-gray-100 dark:border-gray-700 z-[9999]"
-                      style={{
-                        top: `${dropdownPosition.top}px`,
-                        left: `${dropdownPosition.left}px`,
-                      }}
-                      onMouseEnter={() => setIsMoreHovered(true)}
-                      onMouseLeave={() => setIsMoreHovered(false)}
-                    >
-                      {/* IMAGE SECTION */}
-                      <div className="p-4 border-b border-gray-100 dark:border-gray-700">
-                        <h4 className="text-xs font-semibold text-gray-500 dark:text-gray-400 mb-3 uppercase tracking-wide">
-                          Image
-                        </h4>
-                        <div className="grid grid-cols-2 gap-x-6 gap-y-2">
-                          {[
-                            { name: 'AI Image Generator', icon: Palette },
-                            { name: 'Background Remover', icon: Square },
-                            { name: 'Text Remover', icon: Type },
-                            { name: 'Photo Eraser', icon: Eraser },
-                            { name: 'Inpaint', icon: ScanSearch },
-                            { name: 'Image Upscaler', icon: Maximize2 },
-                            { name: 'Background Changer', icon: Layers },
-                          ].map((item, i) => {
-                            const Icon = item.icon;
-                            return (
-                              <motion.button
-                                key={item.name}
-                                initial={{ opacity: 0, x: -10 }}
-                                animate={{ opacity: 1, x: 0 }}
-                                transition={{ delay: i * 0.03 }}
-                                onClick={() => handleToolClick(item.name)}
-                                className="flex items-center gap-2 px-2 py-1.5 rounded-md hover:bg-gray-50 dark:hover:bg-gray-700/50 transition-colors"
-                              >
-                                <Icon className="w-4 h-4 text-blue-500" />
-                                <span className="text-sm text-gray-700 dark:text-gray-200">
-                                  {item.name}
-                                </span>
-                              </motion.button>
-                            );
-                          })}
-                        </div>
-                      </div>
-
-                      {/* TRANSLATOR SECTION */}
-                      <div className="p-4 border-b border-gray-100 dark:border-gray-700">
-                        <h4 className="text-xs font-semibold text-gray-500 dark:text-gray-400 mb-3 uppercase tracking-wide">
-                          Translator
-                        </h4>
-                        <div className="grid grid-cols-2 gap-x-6 gap-y-2">
-                          {[
-                            { name: 'AI Translator', icon: Languages },
-                            { name: 'Image Translator', icon: ImageIcon },
-                          ].map((item, i) => {
-                            const Icon = item.icon;
-                            return (
-                              <motion.button
-                                key={item.name}
-                                initial={{ opacity: 0, x: -10 }}
-                                animate={{ opacity: 1, x: 0 }}
-                                transition={{ delay: 0.25 + i * 0.05 }}
-                                onClick={() => handleToolClick(item.name)}
-                                className="flex items-center gap-2 px-2 py-1.5 rounded-md hover:bg-gray-50 dark:hover:bg-gray-700/50 transition-colors"
-                              >
-                                <Icon className="w-4 h-4 text-orange-500" />
-                                <span className="text-sm text-gray-700 dark:text-gray-200">
-                                  {item.name}
-                                </span>
-                              </motion.button>
-                            );
-                          })}
-                        </div>
-                      </div>
-
-                      {/* VIDEO SECTION */}
-                      <div className="p-4">
-                        <h4 className="text-xs font-semibold text-gray-500 dark:text-gray-400 mb-3 uppercase tracking-wide">
-                          Video
-                        </h4>
-                        <div className="flex flex-col gap-2">
-                          <motion.button
-                            initial={{ opacity: 0, x: -10 }}
-                            animate={{ opacity: 1, x: 0 }}
-                            transition={{ delay: 0.4 }}
-                            onClick={() => handleToolClick('AI Video Shortener')}
-                            className="flex items-center gap-2 px-2 py-1.5 rounded-md hover:bg-gray-50 dark:hover:bg-gray-700/50 transition-colors"
-                          >
-                            <Video className="w-4 h-4 text-purple-500" />
-                            <span className="text-sm text-gray-700 dark:text-gray-200">
-                              AI Video Shortener
-                            </span>
-                          </motion.button>
-                        </div>
-                      </div>
-                    </motion.div>
-                  </>
-                )}
-              </div>
-            </div>
-          </div>
-
-          {/* Wisebase */}
-          <div className={isSidebarCollapsed ? 'mt-2' : ''}>
-            {!isSidebarCollapsed && (
-              <h3 className="text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider px-3 mb-2">
-                Wisebase
-              </h3>
-            )}
-            <div className="space-y-1">
-              {wisebaseItems.map((item, index) => {
-                const Icon = item.icon;
-                return (
-                  <div key={item.name} className="relative">
-                    <motion.button
-                      initial={{ opacity: 0, x: -20 }}
-                      animate={{ opacity: 1, x: 0 }}
-                      transition={{ delay: (agents.length + 1 + index) * 0.1 }}
-                      onMouseEnter={(e) => {
-                        if (isSidebarCollapsed) {
-                          const rect = (e.currentTarget as HTMLElement).getBoundingClientRect();
-                          setTooltipPositions(prev => ({ ...prev, [`wisebase-${item.name}`]: { top: rect.top + rect.height / 2, left: rect.right + 8 } }));
-                          setHoveredItem(`wisebase-${item.name}`);
-                        }
-                      }}
-                      onMouseLeave={() => {
-                        setHoveredItem(null);
-                        const key = `wisebase-${item.name}`;
-                        setTooltipPositions(prev => {
-                          const { [key]: _, ...rest } = prev;
-                          return rest;
-                        });
-                      }}
-                      className={`w-full flex items-center ${isSidebarCollapsed ? 'justify-center p-2' : 'gap-2 px-3'} py-2 rounded-lg transition-colors ${isSidebarCollapsed
-                        ? `${item.color} ${item.isActive ? 'shadow-sm' : ''} text-gray-700 dark:text-gray-300`
-                        : 'text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700'
-                        }`}
-                    >
-                      <Icon className={`${isSidebarCollapsed ? 'w-5 h-5' : 'w-4 h-4'}`} />
-                      {!isSidebarCollapsed && <span className="text-sm">{item.name}</span>}
-                    </motion.button>
-                    {isSidebarCollapsed && hoveredItem === `wisebase-${item.name}` && tooltipPositions[`wisebase-${item.name}`] && (
-                      <div className="fixed z-[9999] pointer-events-none" style={{ top: `${tooltipPositions[`wisebase-${item.name}`].top}px`, left: `${tooltipPositions[`wisebase-${item.name}`].left}px`, transform: 'translateY(-50%)' }}>
-                        <div className="bg-gray-900 dark:bg-gray-800 text-white text-sm px-3 py-1.5 rounded-md shadow-lg whitespace-nowrap relative">
-                          <div className="absolute right-full top-1/2 -translate-y-1/2 w-0 h-0 border-t-[6px] border-t-transparent border-b-[6px] border-b-transparent border-r-[6px] border-r-gray-900 dark:border-r-gray-800"></div>
-                          {item.name}
-                        </div>
-                      </div>
-                    )}
-                  </div>
-                );
-              })}
-            </div>
-          </div>
-
-        </div>
-
-        {/* Footer Icons */}
-        <div className={`${isSidebarCollapsed ? 'p-2' : 'p-4'} border-t border-gray-200 dark:border-gray-700 flex ${isSidebarCollapsed ? 'flex-col items-center gap-2' : 'items-center justify-around'}`}>
-          <div className="relative">
-            <motion.button
-              ref={userProfileButtonRef}
-              onClick={handleUserProfileClick}
-              onMouseEnter={(e) => {
-                if (isSidebarCollapsed) {
-                  const rect = (e.currentTarget as HTMLElement).getBoundingClientRect();
-                  setTooltipPositions(prev => ({ ...prev, profile: { top: rect.top + rect.height / 2, left: rect.right + 8 } }));
-                  setHoveredItem('profile');
-                }
-              }}
-              onMouseLeave={() => {
-                setHoveredItem(null);
-                setTooltipPositions(prev => {
-                  const { profile: _, ...rest } = prev;
-                  return rest;
-                });
-              }}
-              whileHover={{ scale: 1.1 }}
-              whileTap={{ scale: 0.9 }}
-              className="relative rounded-full bg-gradient-to-r from-orange-400 to-orange-500 flex items-center justify-center transition-all hover:shadow-lg w-9 h-9"
-            >
-              <span className="text-white font-semibold text-sm">
-                {getUserInitial()}
-              </span>
-            </motion.button>
-            {isSidebarCollapsed && hoveredItem === 'profile' && tooltipPositions.profile && (
-              <div className="fixed z-[9999] pointer-events-none" style={{ top: `${tooltipPositions.profile.top}px`, left: `${tooltipPositions.profile.left}px`, transform: 'translateY(-50%)' }}>
-                <div className="bg-gray-900 dark:bg-gray-800 text-white text-sm px-3 py-1.5 rounded-md shadow-lg whitespace-nowrap relative">
-                  <div className="absolute right-full top-1/2 -translate-y-1/2 w-0 h-0 border-t-[6px] border-t-transparent border-b-[6px] border-b-transparent border-r-[6px] border-r-gray-900 dark:border-r-gray-800"></div>
-                  Profile
-                </div>
-              </div>
-            )}
-          </div>
-          {[Folder, MessageCircle, Settings].map((Icon, i) => {
-            const footerLabels = ['Folder', 'Message', 'Settings'];
-            return (
-              <div key={i} className="relative">
-                <motion.button
-                  whileHover={{ scale: 1.1 }}
-                  whileTap={{ scale: 0.9 }}
-                  onMouseEnter={(e) => {
-                    if (isSidebarCollapsed) {
-                      const rect = (e.currentTarget as HTMLElement).getBoundingClientRect();
-                      setTooltipPositions(prev => ({ ...prev, [`footer-${i}`]: { top: rect.top + rect.height / 2, left: rect.right + 8 } }));
-                      setHoveredItem(`footer-${i}`);
-                    }
-                  }}
-                  onMouseLeave={() => {
-                    setHoveredItem(null);
-                    const key = `footer-${i}`;
-                    setTooltipPositions(prev => {
-                      const { [key]: _, ...rest } = prev;
-                      return rest;
-                    });
-                  }}
-                  className="p-2 text-gray-600 dark:text-gray-400 hover:text-indigo-600 dark:hover:text-indigo-400 transition-colors"
-                >
-                  <Icon className="w-5 h-5" />
-                </motion.button>
-                {isSidebarCollapsed && hoveredItem === `footer-${i}` && tooltipPositions[`footer-${i}`] && (
-                  <div className="fixed z-[9999] pointer-events-none" style={{ top: `${tooltipPositions[`footer-${i}`].top}px`, left: `${tooltipPositions[`footer-${i}`].left}px`, transform: 'translateY(-50%)' }}>
-                    <div className="bg-gray-900 dark:bg-gray-800 text-white text-sm px-3 py-1.5 rounded-md shadow-lg whitespace-nowrap relative">
-                      <div className="absolute right-full top-1/2 -translate-y-1/2 w-0 h-0 border-t-[6px] border-t-transparent border-b-[6px] border-b-transparent border-r-[6px] border-r-gray-900 dark:border-r-gray-800"></div>
-                      {footerLabels[i]}
-                    </div>
-                  </div>
-                )}
-              </div>
-            );
-          })}
-        </div>
-      </aside>
+      <HoverSidebar activeItem={activeView} variant="sidebar" />
 
       {/* Main */}
       <main className="flex-1 flex flex-col overflow-hidden relative z-0">
@@ -4162,7 +3596,7 @@ export default function Chat() {
                                     message.model || selectedModel}
                                 </div>
                                 <div className="bg-white dark:bg-gray-800 rounded-lg p-4 text-gray-900 dark:text-white shadow-sm relative">
-                                <MarkdownRenderer content={message.content} />
+                                  <MarkdownRenderer content={message.content} />
                                   {message.isGenerating && (
                                     <span className="inline-block w-2 h-2 bg-gray-400 rounded-full ml-1 animate-pulse" />
                                   )}
@@ -5115,11 +4549,7 @@ export default function Chat() {
       </main>
 
       {/* User Profile Dropdown */}
-      <UserProfileDropdown
-        isOpen={isUserProfileOpen}
-        onClose={() => setIsUserProfileOpen(false)}
-        position={userProfilePosition}
-      />
+
 
       {/* Image Modal */}
       {currentImageItem &&
