@@ -16,6 +16,7 @@ export default function Navigation({ isAuthenticated: initialAuthState = false }
   const [isLoginDialogOpen, setIsLoginDialogOpen] = useState(false);
   const [isSignUpDialogOpen, setIsSignUpDialogOpen] = useState(false);
   const [isAuthenticated, setIsAuthenticated] = useState(initialAuthState);
+  const [isLogoutConfirmOpen, setIsLogoutConfirmOpen] = useState(false);
   const navRef = useRef<HTMLElement>(null);
   const logoRef = useRef<HTMLDivElement>(null);
 
@@ -62,6 +63,12 @@ export default function Navigation({ isAuthenticated: initialAuthState = false }
       ease: 'none',
     });
   });
+
+  const handleLogout = () => {
+    localStorage.removeItem('authToken');
+    setIsAuthenticated(false);
+    setIsLogoutConfirmOpen(false);
+  };
 
   const navLinks = [
     { name: 'Features', href: '#features' },
@@ -123,17 +130,31 @@ export default function Navigation({ isAuthenticated: initialAuthState = false }
                 </motion.a>
               ))}
 
-              <motion.button
-                onClick={() => setIsLoginDialogOpen(true)}
-                initial={{ opacity: 0, scale: 0.9 }}
-                animate={{ opacity: 1, scale: 1 }}
-                transition={{ duration: 0.4, delay: 0.6 }}
-                whileHover={{ scale: 1.05, y: -2 }}
-                whileTap={{ scale: 0.95 }}
-                className="px-6 py-2.5 bg-gradient-to-r from-indigo-600 via-purple-600 to-pink-600 text-white rounded-full font-medium shadow-lg hover:shadow-xl transition-all"
-              >
-                Get Started
-              </motion.button>
+              {!isAuthenticated ? (
+                <motion.button
+                  onClick={() => setIsLoginDialogOpen(true)}
+                  initial={{ opacity: 0, scale: 0.9 }}
+                  animate={{ opacity: 1, scale: 1 }}
+                  transition={{ duration: 0.4, delay: 0.6 }}
+                  whileHover={{ scale: 1.05, y: -2 }}
+                  whileTap={{ scale: 0.95 }}
+                  className="px-6 py-2.5 bg-gradient-to-r from-indigo-600 via-purple-600 to-pink-600 text-white rounded-full font-medium shadow-lg hover:shadow-xl transition-all cursor-pointer"
+                >
+                  Get Started
+                </motion.button>
+              ) : (
+                <motion.button
+                  onClick={() => setIsLogoutConfirmOpen(true)}
+                  initial={{ opacity: 0, scale: 0.9 }}
+                  animate={{ opacity: 1, scale: 1 }}
+                  transition={{ duration: 0.4, delay: 0.6 }}
+                  whileHover={{ scale: 1.05, y: -2 }}
+                  whileTap={{ scale: 0.95 }}
+                  className="px-6 py-2.5 bg-gradient-to-r from-red-500 via-rose-500 to-pink-500 text-white rounded-full font-medium shadow-lg hover:shadow-xl transition-all cursor-pointer"
+                >
+                  Log out
+                </motion.button>
+              )}
             </div>
 
             {/* Mobile Menu Button */}
@@ -168,15 +189,27 @@ export default function Navigation({ isAuthenticated: initialAuthState = false }
                   </a>
                 ))}
 
-                <button
-                  onClick={() => {
-                    setIsMobileMenuOpen(false);
-                    setIsLoginDialogOpen(true);
-                  }}
-                  className="w-full px-6 py-3 bg-gradient-to-r from-indigo-600 to-purple-600 text-white rounded-full font-medium shadow-lg hover:shadow-xl transition-all"
-                >
-                  Get Started
-                </button>
+                {!isAuthenticated ? (
+                  <button
+                    onClick={() => {
+                      setIsMobileMenuOpen(false);
+                      setIsLoginDialogOpen(true);
+                    }}
+                    className="w-full px-6 py-3 bg-gradient-to-r from-indigo-600 to-purple-600 text-white rounded-full font-medium shadow-lg hover:shadow-xl transition-all cursor-pointer"
+                  >
+                    Get Started
+                  </button>
+                ) : (
+                  <button
+                    onClick={() => {
+                      setIsMobileMenuOpen(false);
+                      setIsLogoutConfirmOpen(true);
+                    }}
+                    className="w-full px-6 py-3 bg-gradient-to-r from-red-500 to-pink-500 text-white rounded-full font-medium shadow-lg hover:shadow-xl transition-all cursor-pointer"
+                  >
+                    Log out
+                  </button>
+                )}
               </div>
             </motion.div>
           )}
@@ -199,9 +232,47 @@ export default function Navigation({ isAuthenticated: initialAuthState = false }
          onClose={() => setIsSignUpDialogOpen(false)}
          onSwitchToLogin={() => {
            setIsSignUpDialogOpen(false);
-           setIsLoginDialogOpen(true);
-         }}
-       />
-     </>
-   );
- }
+          setIsLoginDialogOpen(true);
+        }}
+      />
+
+      <AnimatePresence>
+        {isLogoutConfirmOpen && (
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            className="fixed inset-0 bg-black/40 backdrop-blur-sm flex items-center justify-center z-50"
+          >
+            <motion.div
+              initial={{ scale: 0.8, opacity: 0 }}
+              animate={{ scale: 1, opacity: 1 }}
+              exit={{ scale: 0.8, opacity: 0 }}
+              className="bg-white dark:bg-gray-900 rounded-xl shadow-xl p-6 w-full max-w-sm"
+            >
+              <h2 className="text-lg font-semibold text-gray-800 dark:text-gray-200 mb-4">
+                Are you sure you want to logout?
+              </h2>
+
+              <div className="flex justify-end gap-3">
+                <button
+                  onClick={() => setIsLogoutConfirmOpen(false)}
+                  className="px-4 py-2 rounded-lg bg-gray-200 dark:bg-gray-700 text-gray-800 dark:text-gray-200 hover:bg-gray-300 dark:hover:bg-gray-600 transition cursor-pointer"
+                >
+                  Cancel
+                </button>
+
+                <button
+                  onClick={handleLogout}
+                  className="px-4 py-2 rounded-lg bg-red-600 text-white hover:bg-red-700 transition cursor-pointer"
+                >
+                  OK
+                </button>
+              </div>
+            </motion.div>
+          </motion.div>
+        )}
+      </AnimatePresence>
+    </>
+  );
+}
