@@ -137,16 +137,16 @@ export async function loginWithGoogle(): Promise<void> {
       const { token, user } = event.data;
       if (token) {
         localStorage.setItem('authToken', token);
-          try {
-            window.postMessage({
-              type: 'SIDER_AUTH_SYNC',
-              source: 'app',
-              token,
-              refreshToken: null,
-              user
-            }, '*');
-          } catch (pmErr) {
-          }
+        try {
+          window.postMessage({
+            type: 'SIDER_AUTH_SYNC',
+            source: 'app',
+            token,
+            refreshToken: null,
+            user
+          }, '*');
+        } catch (pmErr) {
+        }
       }
       if (user) {
         localStorage.setItem('user', JSON.stringify(user));
@@ -191,3 +191,90 @@ export async function syncAuthFromExtension(): Promise<boolean> {
   }
 }
 
+let googleClientIdCache: string | null = null;
+
+export async function getGoogleClientId(): Promise<string> {
+  if (googleClientIdCache) {
+    return googleClientIdCache;
+  }
+
+  try {
+    const response = await fetch(getApiUrl('/api/auth/google/client-id'), {
+      method: 'GET',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+    });
+
+    if (!response.ok) {
+      throw new Error('Failed to fetch Google Client ID');
+    }
+
+    const data = await response.json();
+    // Handle the specific response structure: { code: 0, msg: "", data: { client_id: "..." } }
+    const clientId = data?.data?.client_id || data?.client_id || data?.clientId;
+
+    if (!clientId || typeof clientId !== 'string') {
+      throw new Error('Invalid Client ID format');
+    }
+
+    googleClientIdCache = clientId;
+    return clientId;
+  } catch (err) {
+    console.error('Error fetching Google Client ID:', err);
+    throw err;
+  }
+}
+
+export async function loginWithGoogleToken(token: string): Promise<AuthResponse> {
+  try {
+    const response = await fetch(getApiUrl('/api/auth/google/signin'), {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({
+        token: token,
+      }),
+    });
+
+    if (!response.ok) {
+      const errorData = await response.json();
+      throw new Error(
+        errorData?.message || errorData?.detail || 'Google login failed'
+      );
+    }
+
+    const data = await response.json();
+    return { ...data, _headers: response.headers };
+  } catch (err) {
+    console.error('Error logging in with Google token:', err);
+    throw err;
+  }
+}
+
+import { fetchWithAuth } from './fetchUtils';
+
+export async function getCurrentUser(token: string): Promise<any> {
+  try {
+    // Note: fetchWithAuth automatically uses the token from localStorage if available.
+    // However, if a specific token is passed (e.g. during initial sync), we might want to use that.
+    // But fetchWithAuth is designed to use the stored token.
+    // If we want to verify a specific token, we might need to override the header.
+
+    const response = await fetchWithAuth('/api/auth/me', {
+      headers: {
+        'Authorization': `Bearer ${token}`
+      }
+    });
+
+    if (!response.ok) {
+      throw new Error('Failed to fetch user info');
+    }
+
+    return await response.json();
+  } catch (err) {
+    console.error('Error fetching current user:', err);
+    throw err;
+  }
+}

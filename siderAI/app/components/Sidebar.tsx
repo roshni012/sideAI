@@ -20,6 +20,7 @@ import {
     Image as ImageIcon,
 } from 'lucide-react';
 import { RefObject, useState, useEffect } from 'react';
+import { getCurrentUser } from '../lib/authService';
 
 interface UserData {
     name?: string;
@@ -56,23 +57,42 @@ export default function Sidebar({
     const [userData, setUserData] = useState<UserData | null>(null);
 
     useEffect(() => {
-        // Get user data from localStorage
-        const storedUser = localStorage.getItem('user');
-        if (storedUser) {
-            try {
-                setUserData(JSON.parse(storedUser));
-            } catch {
-                // Handle parse error
+        const fetchUser = async () => {
+            const token = localStorage.getItem('authToken');
+            if (token) {
+                try {
+                    const response = await getCurrentUser(token);
+                    // Handle potential response structures
+                    const user = response.data?.user || response.user || response.data || response;
+                    setUserData(user);
+                    localStorage.setItem('user', JSON.stringify(user));
+                } catch (error) {
+                    console.error('Failed to fetch user info:', error);
+                    const storedUser = localStorage.getItem('user');
+                    if (storedUser) {
+                        try {
+                            setUserData(JSON.parse(storedUser));
+                        } catch { }
+                    }
+                }
+            } else {
+                const storedUser = localStorage.getItem('user');
+                if (storedUser) {
+                    try {
+                        setUserData(JSON.parse(storedUser));
+                    } catch { }
+                }
             }
-        }
+        };
+        fetchUser();
     }, []);
 
     const getUserInitial = () => {
-        if (userData?.name) {
-            return userData.name.charAt(0).toUpperCase();
-        }
         if (userData?.username) {
             return userData.username.charAt(0).toUpperCase();
+        }
+        if (userData?.name) {
+            return userData.name.charAt(0).toUpperCase();
         }
         if (userData?.email) {
             return userData.email.charAt(0).toUpperCase();

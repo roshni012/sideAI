@@ -32,15 +32,18 @@ import {
   Loader2,
   LucideIcon,
   Trash2,
+  Pencil,
   Copy,
   RotateCw,
   X,
+  Check,
   HelpCircle,
   Zap,
 } from 'lucide-react';
 import UserProfileDropdown from './UserProfileDropdown';
 import { getApiUrl, API_ENDPOINTS } from '../lib/apiConfig';
 import Sidebar from './Sidebar';
+import * as chatService from '../lib/chatService';
 
 interface AIImageGeneratorProps {
   tool: string;
@@ -199,6 +202,10 @@ export default function AIImageGenerator({ tool }: AIImageGeneratorProps) {
   const [optimizedPrompt, setOptimizedPrompt] = useState('');
   const [isOptimizing, setIsOptimizing] = useState(false);
   const [optimizeError, setOptimizeError] = useState<string | null>(null);
+  const [conversationId, setConversationId] = useState<string | null>(null);
+  const [editingConversationId, setEditingConversationId] = useState<string | null>(null);
+  const [editTitleInput, setEditTitleInput] = useState('');
+  const [deleteConfirmationId, setDeleteConfirmationId] = useState<string | null>(null);
 
   const currentTool = toolConfig[tool] || toolConfig['ai-image-generator'];
   const isAIImageGenerator = tool === 'ai-image-generator';
@@ -268,35 +275,37 @@ export default function AIImageGenerator({ tool }: AIImageGeneratorProps) {
     }
   };
 
+  // Create a new conversation for image generation
+  const createConversation = async (): Promise<string | null> => {
+    try {
+      const conversationId = await chatService.createConversation('Image Generation', selectedModel);
+      if (conversationId) {
+        setConversationId(conversationId);
+      }
+      return conversationId;
+    } catch (error) {
+      console.error('Error creating conversation:', error);
+      return null;
+    }
+  };
+
   const generateImage = async (promptToUse: string) => {
     if (!promptToUse.trim() || isGenerating) return;
 
     setIsGenerating(true);
     setErrorMessage(null);
 
-    // Ensure we have an active canvas
-    let currentCanvasId = activeCanvasId;
-    if (!currentCanvasId) {
-      // Create a new canvas if none exists
-      const newCanvasId = `canvas-${Date.now()}`;
-      const newCanvas: Canvas = {
-        id: newCanvasId,
-        prompt: promptToUse.trim(),
-        images: [],
-        isNew: false,
-      };
-      setCanvases([newCanvas]);
-      setActiveCanvasId(newCanvasId);
-      currentCanvasId = newCanvasId; // Use the local variable instead of state
-    }
-
     try {
-      const authToken = localStorage.getItem('authToken');
-      if (!authToken || !authToken.trim()) {
-        throw new Error('Authentication required. Please login first.');
+      // Create conversation if it doesn't exist (first time or new chat)
+      let currentConversationId = conversationId;
+      if (!currentConversationId) {
+        currentConversationId = await createConversation();
+        if (!currentConversationId) {
+          throw new Error('Failed to create conversation');
+        }
       }
 
-      const payload = {
+      const payload: chatService.ImageGenerationPayload = {
         prompt: promptToUse.trim(),
         model: selectedModel,
         width: IMAGE_GENERATION_DEFAULTS.width,
@@ -304,65 +313,75 @@ export default function AIImageGenerator({ tool }: AIImageGeneratorProps) {
         num_outputs: numImages,
         guidance_scale: IMAGE_GENERATION_DEFAULTS.guidance_scale,
         num_inference_steps: IMAGE_GENERATION_DEFAULTS.num_inference_steps,
+        conversation_id: currentConversationId,
       };
 
-      const response = await fetch(getApiUrl(API_ENDPOINTS.IMAGES.GENERATE), {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          Authorization: `Bearer ${authToken.trim()}`,
-        },
-        body: JSON.stringify(payload),
-      });
+      // Generate images using the service
+      await chatService.generateImages(payload);
 
-      const data = await response.json().catch(() => ({}));
+      // After successful generation, fetch all images from this conversation
+      await fetchAndDisplayConversationImages(currentConversationId, promptToUse.trim());
 
-      if (!response.ok) {
-        const detail = data?.detail || data?.msg || 'Failed to generate image';
-        throw new Error(
-          Array.isArray(detail)
-            ? detail.map((item: { msg?: string; message?: string }) => item?.msg || item?.message).join(', ')
-            : detail,
-        );
-      }
-
-      // Debug: Log the response to see its structure
-      console.log('API Response:', data);
-
-      const imageUrls: string[] | undefined =
-        data?.data?.image_urls || data?.data?.images || data?.image_urls || data?.images;
-
-      console.log('Extracted imageUrls:', imageUrls);
-
-      if (Array.isArray(imageUrls) && imageUrls.length > 0) {
-        // Update the active canvas with new images using currentCanvasId
-        setCanvases((prevCanvases) => {
-          const updated = prevCanvases.map((canvas) => {
-            if (canvas.id === currentCanvasId) {
-              // If it's a new canvas with placeholders, replace them; otherwise append
-              const updatedImages = canvas.isNew ? imageUrls : [...canvas.images, ...imageUrls];
-              console.log('Updating canvas:', canvas.id, 'with images:', updatedImages);
-              return {
-                ...canvas,
-                prompt: promptToUse.trim(),
-                images: updatedImages,
-                isNew: false, // Mark as no longer new after first generation
-              };
-            }
-            return canvas;
-          });
-          console.log('Updated canvases:', updated);
-          return updated;
-        });
-      } else {
-        console.error('No images found in response. Response structure:', data);
-        setErrorMessage('Image generation succeeded but no images were returned.');
-      }
     } catch (error) {
       console.error('Error generating image:', error);
       setErrorMessage(error instanceof Error ? error.message : 'Failed to generate image. Please try again.');
     } finally {
       setIsGenerating(false);
+    }
+  };
+
+  const fetchAndDisplayConversationImages = async (convId: string, promptText: string) => {
+    try {
+      const authToken = localStorage.getItem('authToken');
+      if (!authToken) return;
+
+      const response = await fetch(
+        `${getApiUrl(`/api/images/conversation/${convId}`)}`,
+        {
+          headers: {
+            Authorization: `Bearer ${authToken}`,
+          },
+        }
+      );
+
+      const data = await response.json();
+      if (!response.ok) {
+        console.error('Failed to fetch conversation images:', data);
+        return;
+      }
+
+      // Get all images from the conversation
+      const images = data?.data || [];
+
+      // Clear existing canvases and create new ones for each generation
+      // This ensures we show each generation separately instead of merging them
+      const newCanvases: Canvas[] = [];
+
+      // Sort images by creation time (oldest first) to display in correct order
+      const sortedImages = [...images].sort((a, b) =>
+        new Date(a.created_at).getTime() - new Date(b.created_at).getTime()
+      );
+
+      sortedImages.forEach((item: any, index: number) => {
+        if (item.image_urls && Array.isArray(item.image_urls) && item.image_urls.length > 0) {
+          const canvasId = `canvas-${convId}-${index}-${Date.now()}`;
+          newCanvases.push({
+            id: canvasId,
+            prompt: item.prompt || promptText,
+            images: item.image_urls,
+            isNew: false,
+          });
+        }
+      });
+
+      // Set all canvases at once
+      if (newCanvases.length > 0) {
+        setCanvases(newCanvases);
+        // Set the last (newest) canvas as active
+        setActiveCanvasId(newCanvases[newCanvases.length - 1].id);
+      }
+    } catch (error) {
+      console.error('Error fetching conversation images:', error);
     }
   };
 
@@ -375,21 +394,27 @@ export default function AIImageGenerator({ tool }: AIImageGeneratorProps) {
     await generateImage(trimmedPrompt);
   };
 
-  const handleNewCanvas = () => {
-    const newCanvasId = `canvas-${Date.now()}`;
-    const newCanvas: Canvas = {
-      id: newCanvasId,
-      images: [
-        '/image/girl1.png',
-        '/image/girl2.png',
-        '/image/girl3.png',
-        '/image/girl4.png'
-      ],
-      isNew: true,
-    };
-    setCanvases((prev) => [...prev, newCanvas]);
-    setActiveCanvasId(newCanvasId);
-    setPrompt(''); // Clear prompt input
+  const handleNewCanvas = async () => {
+    // Clear current conversation state
+    setConversationId(null);
+    setPrompt('');
+    setCanvases([]);
+    setActiveCanvasId(null);
+
+    // Create a new conversation for the new canvas
+    try {
+      const newConversationId = await createConversation();
+      if (newConversationId) {
+        console.log('New conversation created:', newConversationId);
+        // The conversation ID is already set by createConversation()
+      }
+    } catch (error) {
+      console.error('Failed to create new conversation:', error);
+    }
+
+    // Navigate to a fresh page (reload current route)
+    router.push('/create/image/ai-image-generator');
+    router.refresh();
   };
 
   const handleCopyPrompt = async (canvasPrompt?: string) => {
@@ -432,8 +457,92 @@ export default function AIImageGenerator({ tool }: AIImageGeneratorProps) {
         throw new Error('Login required');
       }
 
+      // Fetch conversations (for titles) AND image history (for images) in parallel
+      const [conversationsRes, historyRes] = await Promise.all([
+        fetch(getApiUrl('/api/conversations'), {
+          headers: { Authorization: `Bearer ${authToken}` },
+        }),
+        fetch(getApiUrl(API_ENDPOINTS.IMAGES.HISTORY), {
+          headers: { Authorization: `Bearer ${authToken}` },
+        })
+      ]);
+
+      const conversationsData = await conversationsRes.json().catch(() => ({}));
+      const historyData = await historyRes.json().catch(() => ({}));
+
+      // Create a map of conversation titles
+      const titlesMap = new Map<string, string>();
+      const conversationsList = Array.isArray(conversationsData) ? conversationsData : (conversationsData?.data || []);
+
+      if (Array.isArray(conversationsList)) {
+        conversationsList.forEach((c: any) => {
+          if (c.id && c.title) {
+            titlesMap.set(c.id, c.title);
+          }
+        });
+      }
+
+      // Group images by conversation_id
+      const images = historyData?.data || [];
+      const conversationsMap = new Map();
+
+      // Process images to group by conversation
+      // We want to keep the FIRST/OLDEST image for the preview
+      images.forEach((item: any) => {
+        const convId = item.conversation_id;
+        // Use title from map if available, otherwise item.title (if exists), otherwise item.prompt
+        const realTitle = titlesMap.get(convId) || item.title || item.prompt;
+
+        if (!conversationsMap.has(convId)) {
+          // First time seeing this conversation
+          conversationsMap.set(convId, {
+            conversation_id: convId,
+            title: realTitle,
+            prompt: item.prompt,
+            first_image: item.image_urls?.[0] || null,
+            created_at: item.created_at,
+            total_images: item.image_urls?.length || 0,
+            // Store timestamp to find oldest later if needed, 
+            // but API usually returns newest first, so last item in list is oldest
+          });
+        } else {
+          // Conversation exists, update stats
+          const existing = conversationsMap.get(convId);
+          existing.total_images += item.image_urls?.length || 0;
+
+          // If this item is older than what we have, use its image as the preview
+          // (assuming we want the very first image generated in the conversation)
+          if (new Date(item.created_at).getTime() < new Date(existing.created_at).getTime()) {
+            existing.first_image = item.image_urls?.[0] || existing.first_image;
+            existing.created_at = item.created_at; // Update creation time to oldest
+            existing.prompt = item.prompt; // Use prompt from oldest generation
+            existing.title = realTitle; // Use title from oldest generation
+          }
+        }
+      });
+
+      // Convert map to array and sort by created_at (newest conversation first)
+      const conversations = Array.from(conversationsMap.values()).sort(
+        (a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime()
+      );
+
+      setHistoryItems(conversations);
+    } catch (e) {
+      console.error('History load error', e);
+    } finally {
+      setHistoryLoading(false);
+    }
+  };
+
+  const fetchConversationImages = async (conversationId: string) => {
+    try {
+      const authToken = localStorage.getItem('authToken');
+      if (!authToken) {
+        throw new Error('Login required');
+      }
+
       const response = await fetch(
-        `${getApiUrl(API_ENDPOINTS.IMAGES.HISTORY)}`,
+        `${getApiUrl(`/api/images/conversation/${conversationId}`)}`,
         {
           headers: {
             Authorization: `Bearer ${authToken}`,
@@ -443,14 +552,91 @@ export default function AIImageGenerator({ tool }: AIImageGeneratorProps) {
 
       const data = await response.json();
       if (!response.ok) {
-        throw new Error(data?.detail || 'Failed to load history');
+        throw new Error(data?.detail || 'Failed to load conversation images');
       }
 
-      setHistoryItems(data?.data || []);
-    } catch (e) {
-      console.error('History load error', e);
-    } finally {
-      setHistoryLoading(false);
+      // Get all images from the conversation
+      const images = data?.data || [];
+
+      // Clear existing canvases and create new ones for each generation
+      const newCanvases: Canvas[] = [];
+
+      // Sort images by creation time (oldest first)
+      const sortedImages = [...images].sort((a, b) =>
+        new Date(a.created_at).getTime() - new Date(b.created_at).getTime()
+      );
+
+      sortedImages.forEach((item: any, index: number) => {
+        if (item.image_urls && Array.isArray(item.image_urls) && item.image_urls.length > 0) {
+          const canvasId = `canvas-${conversationId}-${index}-${Date.now()}`;
+          newCanvases.push({
+            id: canvasId,
+            prompt: item.prompt,
+            images: item.image_urls,
+            isNew: false,
+          });
+        }
+      });
+
+      // Set all canvases
+      if (newCanvases.length > 0) {
+        setCanvases(newCanvases);
+        setActiveCanvasId(newCanvases[newCanvases.length - 1].id);
+        setConversationId(conversationId);
+        setIsHistoryOpen(false);
+      }
+    } catch (error) {
+      console.error('Error fetching conversation images:', error);
+    }
+  };
+
+  const handleEditTitle = (conversationId: string, currentTitle: string) => {
+    setEditingConversationId(conversationId);
+    setEditTitleInput(currentTitle);
+  };
+
+  const handleSaveTitle = async (conversationId: string) => {
+    if (!editTitleInput.trim()) return;
+    try {
+      await chatService.updateConversation(conversationId, editTitleInput.trim());
+
+      // Update local state immediately without refreshing from API
+      setHistoryItems((prevItems) =>
+        prevItems.map((item) =>
+          item.conversation_id === conversationId
+            ? { ...item, title: editTitleInput.trim() }
+            : item
+        )
+      );
+
+      setEditingConversationId(null);
+      setEditTitleInput('');
+    } catch (error) {
+      console.error('Failed to update title:', error);
+    }
+  };
+
+  const handleCancelEdit = () => {
+    setEditingConversationId(null);
+    setEditTitleInput('');
+  };
+
+  const handleDeleteConversation = async () => {
+    if (!deleteConfirmationId) return;
+    try {
+      await chatService.deleteConversation(deleteConfirmationId);
+
+      // Optimistic update
+      setHistoryItems((prev) => prev.filter((item) => item.conversation_id !== deleteConfirmationId));
+
+      // If the deleted conversation was active, clear canvas
+      if (conversationId === deleteConfirmationId) {
+        handleNewCanvas();
+      }
+
+      setDeleteConfirmationId(null);
+    } catch (error) {
+      console.error('Failed to delete conversation:', error);
     }
   };
 
@@ -462,32 +648,7 @@ export default function AIImageGenerator({ tool }: AIImageGeneratorProps) {
     setOptimizeError(null);
 
     try {
-      const authToken = localStorage.getItem('authToken');
-      if (!authToken || !authToken.trim()) {
-        throw new Error('Authentication required. Please login first.');
-      }
-
-      const response = await fetch(getApiUrl(API_ENDPOINTS.IMAGES.OPTIMIZE_PROMPT), {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          Authorization: `Bearer ${authToken.trim()}`,
-        },
-        body: JSON.stringify({ prompt: promptText }),
-      });
-
-      const data = await response.json().catch(() => ({}));
-
-      if (!response.ok) {
-        const detail = data?.detail || data?.msg || 'Failed to optimize prompt';
-        throw new Error(
-          Array.isArray(detail)
-            ? detail.map((item: { msg?: string; message?: string }) => item?.msg || item?.message).join(', ')
-            : detail,
-        );
-      }
-
-      const optimized = data?.data?.optimized_prompt || data?.data?.prompt || data?.optimized_prompt || data?.prompt || '';
+      const optimized = await chatService.optimizePrompt(promptText);
       setOptimizedPrompt(optimized);
     } catch (error) {
       console.error('Error optimizing prompt:', error);
@@ -532,7 +693,7 @@ export default function AIImageGenerator({ tool }: AIImageGeneratorProps) {
       />
 
       {/* Main Content */}
-      <main className="flex-1 flex flex-col overflow-hidden relative">
+      <main className="flex-1 flex flex-col overflow-y-auto relative">
         {isAIImageGenerator ? (
           <>
             {/* Header */}
@@ -937,7 +1098,7 @@ export default function AIImageGenerator({ tool }: AIImageGeneratorProps) {
                     whileTap={{ scale: 0.9 }}
                     onClick={handleNewCanvas}
                     className="p-2 text-gray-600 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-300 transition-colors"
-                    title="Add"
+                    title="New Canvas"
                   >
                     <Plus className="w-4 h-4" />
                   </motion.button>
@@ -1045,46 +1206,126 @@ export default function AIImageGenerator({ tool }: AIImageGeneratorProps) {
             )}
 
             {!historyLoading && historyItems.length > 0 && (
-              <div className="space-y-6">
-                {historyItems.map((item) => (
+              <div className="space-y-4">
+                {historyItems.map((conversation, itemIndex) => (
                   <div
-                    key={item.id}
-                    className="p-4 bg-gray-50 dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg"
+                    key={itemIndex}
+                    onClick={() => fetchConversationImages(conversation.conversation_id)}
+                    className="p-4 bg-gray-50 dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg cursor-pointer hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors"
                   >
-                    <p className="text-sm font-semibold text-gray-900 dark:text-white mb-3">
-                      {item.prompt}
+                    {/* Header: Title and Action Icons */}
+                    <div className="flex justify-between items-start mb-1">
+                      {editingConversationId === conversation.conversation_id ? (
+                        <div className="flex items-center gap-1 flex-1 mr-2">
+                          <input
+                            type="text"
+                            value={editTitleInput}
+                            onChange={(e) => setEditTitleInput(e.target.value)}
+                            onClick={(e) => e.stopPropagation()}
+                            className="flex-1 text-sm border border-gray-300 dark:border-gray-600 rounded px-1 py-0.5 bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:outline-none focus:border-blue-500"
+                            autoFocus
+                          />
+                          <button
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              handleSaveTitle(conversation.conversation_id);
+                            }}
+                            className="p-1 text-green-500 hover:text-green-600 transition-colors"
+                            title="Save"
+                          >
+                            <Check className="w-4 h-4" />
+                          </button>
+                          <button
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              handleCancelEdit();
+                            }}
+                            className="p-1 text-red-500 hover:text-red-600 transition-colors"
+                            title="Cancel"
+                          >
+                            <X className="w-4 h-4" />
+                          </button>
+                        </div>
+                      ) : (
+                        <>
+                          <p className="text-sm font-semibold text-gray-900 dark:text-white line-clamp-1 mr-2 flex-1">
+                            {conversation.title || conversation.prompt}
+                          </p>
+                          <div className="flex items-center gap-1 shrink-0">
+                            <button
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                handleEditTitle(conversation.conversation_id, conversation.title || conversation.prompt);
+                              }}
+                              className="p-1 text-gray-400 hover:text-gray-600 dark:hover:text-gray-300 transition-colors"
+                              title="Edit Title"
+                            >
+                              <Pencil className="w-4 h-4" />
+                            </button>
+                            <button
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                setDeleteConfirmationId(conversation.conversation_id);
+                              }}
+                              className="p-1 text-gray-400 hover:text-red-500 transition-colors"
+                              title="Delete"
+                            >
+                              <Trash2 className="w-4 h-4" />
+                            </button>
+                          </div>
+                        </>
+                      )}
+                    </div>
+
+                    {/* Description */}
+                    <p className="text-xs text-gray-500 dark:text-gray-400 mb-3 line-clamp-2">
+                      {conversation.prompt}
                     </p>
 
-                    <div className="grid grid-cols-2 gap-3 mb-3">
-                      {item.images?.map((url: string, index: number) => (
+                    {/* Small Image Thumbnail */}
+                    {conversation.first_image && (
+                      <div className="w-20 h-20 rounded-lg overflow-hidden bg-gray-100 dark:bg-gray-700 mb-2">
                         <img
-                          key={index}
-                          src={url}
-                          className="w-full h-24 rounded-lg object-cover"
+                          src={conversation.first_image}
+                          alt="Conversation preview"
+                          className="w-full h-full object-cover hover:scale-105 transition-transform duration-200"
+                          loading="lazy"
                         />
-                      ))}
-                    </div>
-
-                    <div className="flex gap-2">
-                      <button
-                        onClick={() => setPrompt(item.prompt)}
-                        className="px-3 py-1.5 bg-gray-200 dark:bg-gray-700 rounded-lg text-sm"
-                      >
-                        Use Prompt
-                      </button>
-
-                      <button
-                        onClick={() => generateImage(item.prompt)}
-                        className="px-3 py-1.5 bg-purple-600 text-white rounded-lg text-sm"
-                      >
-                        Regenerate
-                      </button>
-                    </div>
+                      </div>
+                    )}
                   </div>
                 ))}
               </div>
             )}
           </motion.div>
+        </div>
+      )}
+
+      {/* Delete Confirmation Modal */}
+      {deleteConfirmationId && (
+        <div className="fixed inset-0 bg-black/50 z-[60] flex items-center justify-center p-4">
+          <div className="bg-white dark:bg-gray-800 rounded-xl shadow-xl max-w-sm w-full p-6" onClick={(e) => e.stopPropagation()}>
+            <h3 className="text-lg font-bold text-gray-900 dark:text-white mb-2">
+              Delete Conversation?
+            </h3>
+            <p className="text-gray-600 dark:text-gray-400 mb-6">
+              Are you sure you want to delete this conversation? This action cannot be undone.
+            </p>
+            <div className="flex justify-end gap-3">
+              <button
+                onClick={() => setDeleteConfirmationId(null)}
+                className="px-4 py-2 text-gray-600 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-lg transition-colors"
+              >
+                Cancel
+              </button>
+              <button
+                onClick={handleDeleteConversation}
+                className="px-4 py-2 bg-red-600 text-white hover:bg-red-700 rounded-lg transition-colors"
+              >
+                Delete
+              </button>
+            </div>
+          </div>
         </div>
       )}
 

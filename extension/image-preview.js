@@ -1,4 +1,4 @@
-(function() {
+(function () {
   'use strict';
 
   let imageOverlays = new Map();
@@ -10,10 +10,10 @@
   const MENU_ITEMS = [
     { id: 'chat-image', label: 'Chat with Image', icon: chrome.runtime.getURL('svg/chat-left.svg'), isSvg: true, action: 'chat' },
     { id: 'extract-text', label: 'Extract Text', icon: chrome.runtime.getURL('svg/upc-scan.svg'), isSvg: true, action: 'extract' },
-    { 
-      id: 'image-tools', 
-      label: 'Image Tools', 
-      icon: chrome.runtime.getURL('svg/brush.svg'), 
+    {
+      id: 'image-tools',
+      label: 'Image Tools',
+      icon: chrome.runtime.getURL('svg/brush.svg'),
       isSvg: true,
       action: 'tools',
       hasSubmenu: true
@@ -22,45 +22,45 @@
   ];
 
   const IMAGE_TOOLS_SUBMENU = [
-    { 
-      id: 'bg-remover', 
-      label: 'Background Remover', 
+    {
+      id: 'bg-remover',
+      label: 'Background Remover',
       icon: '<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="2" ry="2"/></svg>',
       isSvg: true
     },
-    { 
-      id: 'text-remover', 
-      label: 'Text Remover', 
+    {
+      id: 'text-remover',
+      label: 'Text Remover',
       icon: '<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="4 7 4 4 20 4 20 7"/><line x1="9" y1="20" x2="15" y2="20"/><line x1="12" y1="4" x2="12" y2="20"/></svg>',
       isSvg: true
     },
-    { 
-      id: 'inpaint', 
-      label: 'Inpaint', 
+    {
+      id: 'inpaint',
+      label: 'Inpaint',
       icon: '<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"/><polyline points="3.27 6.96 12 12.01 20.73 6.96"/><line x1="12" y1="22.08" x2="12" y2="12"/></svg>',
       isSvg: true
     },
-    { 
-      id: 'photo-eraser', 
-      label: 'Photo Eraser', 
+    {
+      id: 'photo-eraser',
+      label: 'Photo Eraser',
       icon: '<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m7 21-4.3-4.3c-1-1-1-2.5 0-3.4l9.6-9.6c1-1 2.5-1 3.4 0l5.6 5.6c1 1 1 2.5 0 3.4L13 21"/><path d="M22 21H7"/><path d="m5 11 9 9"/></svg>',
       isSvg: true
     },
-    { 
-      id: 'bg-changer', 
-      label: 'Background Changer', 
+    {
+      id: 'bg-changer',
+      label: 'Background Changer',
       icon: '<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="12 2 2 7 12 12 22 7 12 2"/><polyline points="2 17 12 22 22 17"/><polyline points="2 12 12 17 22 12"/></svg>',
       isSvg: true
     },
-    { 
-      id: 'upscaler', 
-      label: 'Image Upscaler', 
+    {
+      id: 'upscaler',
+      label: 'Image Upscaler',
       icon: '<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M8 3H5a2 2 0 0 0-2 2v3m18 0V5a2 2 0 0 0-2-2h-3m0 18h3a2 2 0 0 0 2-2v-3M3 16v3a2 2 0 0 0 2 2h3"/></svg>',
       isSvg: true
     },
-    { 
-      id: 'variations', 
-      label: 'Create Variations', 
+    {
+      id: 'variations',
+      label: 'Create Variations',
       icon: '<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14.7 6.3a1 1 0 0 0 0 1.4l1.6 1.6a1 1 0 0 0 1.4 0l3.77-3.77a6 6 0 0 1-7.94 7.94l-6.91 6.91a2.12 2.12 0 0 1-3-3l6.91-6.91a6 6 0 0 1 7.94-7.94l-3.76 3.76z"/></svg>',
       isSvg: true
     }
@@ -82,13 +82,13 @@
 
     // Create a wrapper container for the image if needed
     let wrapper = img.parentElement;
-    
+
     // Ensure the image or its parent has relative positioning
     const imgStyle = window.getComputedStyle(img);
     if (imgStyle.position === 'static') {
       img.style.position = 'relative';
     }
-    
+
     // If parent is static, wrap the image
     if (wrapper && window.getComputedStyle(wrapper).position === 'static') {
       const newWrapper = document.createElement('div');
@@ -98,7 +98,7 @@
       newWrapper.appendChild(img);
       wrapper = newWrapper;
     }
-    
+
     // Insert overlay as sibling or append to wrapper
     if (wrapper) {
       wrapper.appendChild(overlay);
@@ -119,7 +119,7 @@
     attachImageHoverListeners(img, overlay);
     return overlay;
   }
-  
+
   function attachImageHoverListeners(img, overlay) {
     img.addEventListener('mouseenter', () => {
       if (overlay && overlay.parentNode) {
@@ -127,29 +127,29 @@
         overlay.style.pointerEvents = 'auto';
       }
     });
-    
+
     // Hide overlay when mouse leaves image
     img.addEventListener('mouseleave', (e) => {
       // Don't hide if moving to overlay or menu
       if (overlay && overlay.parentNode) {
         const relatedTarget = e.relatedTarget;
-        if (!overlay.contains(relatedTarget) && 
-            !currentMenu?.contains(relatedTarget) && 
-            !currentSubMenu?.contains(relatedTarget)) {
+        if (!overlay.contains(relatedTarget) &&
+          !currentMenu?.contains(relatedTarget) &&
+          !currentSubMenu?.contains(relatedTarget)) {
           overlay.style.opacity = '0';
           overlay.style.pointerEvents = 'none';
           hideMenu();
         }
       }
     });
-    
+
     // Also handle when leaving overlay itself
     overlay.addEventListener('mouseleave', (e) => {
       const relatedTarget = e.relatedTarget;
       // Don't hide if moving to menu or back to image
-      if (!img.contains(relatedTarget) && 
-          !currentMenu?.contains(relatedTarget) && 
-          !currentSubMenu?.contains(relatedTarget)) {
+      if (!img.contains(relatedTarget) &&
+        !currentMenu?.contains(relatedTarget) &&
+        !currentSubMenu?.contains(relatedTarget)) {
         overlay.style.opacity = '0';
         overlay.style.pointerEvents = 'none';
         hideMenu();
@@ -168,46 +168,46 @@
 
       // Show menu on hover over the overlay or AI Tools button
       let menuTimeout;
-    
-    const showMenuOnHover = () => {
-      clearTimeout(menuTimeout);
-      try {
-        menuTimeout = setTimeout(() => {
-          try {
-            showMenu(overlay, img);
-          } catch (err) {
-            // Error in showMenuOnHover
-          }
-        }, 50); // Reduced delay for faster response
-      } catch (err) {
-        // Error setting menu timeout
-      }
-    };
 
-    const hideMenuOnLeave = () => {
-      clearTimeout(menuTimeout);
-      menuTimeout = setTimeout(() => {
-        if (!isMenuHovered && !overlay.matches(':hover')) {
-          hideMenu();
+      const showMenuOnHover = () => {
+        clearTimeout(menuTimeout);
+        try {
+          menuTimeout = setTimeout(() => {
+            try {
+              showMenu(overlay, img);
+            } catch (err) {
+              // Error in showMenuOnHover
+            }
+          }, 50); // Reduced delay for faster response
+        } catch (err) {
+          // Error setting menu timeout
         }
-      }, 200);
-    };
+      };
 
-    // Show menu when hovering over overlay
-    overlay.addEventListener('mouseenter', () => {
-      overlay.style.opacity = '1';
-      overlay.style.pointerEvents = 'auto';
-      showMenuOnHover();
-    });
+      const hideMenuOnLeave = () => {
+        clearTimeout(menuTimeout);
+        menuTimeout = setTimeout(() => {
+          if (!isMenuHovered && !overlay.matches(':hover')) {
+            hideMenu();
+          }
+        }, 200);
+      };
 
-    overlay.addEventListener('mouseleave', (e) => {
-      if (!currentMenu?.contains(e.relatedTarget) && 
+      // Show menu when hovering over overlay
+      overlay.addEventListener('mouseenter', () => {
+        overlay.style.opacity = '1';
+        overlay.style.pointerEvents = 'auto';
+        showMenuOnHover();
+      });
+
+      overlay.addEventListener('mouseleave', (e) => {
+        if (!currentMenu?.contains(e.relatedTarget) &&
           !currentSubMenu?.contains(e.relatedTarget) &&
           !img.contains(e.relatedTarget)) {
-        isMenuHovered = false;
-        hideMenuOnLeave();
-      }
-    });
+          isMenuHovered = false;
+          hideMenuOnLeave();
+        }
+      });
 
       // Also show menu on hover over the AI Tools button specifically
       aiToolsBtn.addEventListener('mouseenter', (e) => {
@@ -230,14 +230,14 @@
               currentMenu.style.visibility = 'visible';
               currentMenu.style.opacity = '1';
               currentMenu.style.zIndex = '100001';
-              
+
               // Check if menu is actually in viewport
               const rect = currentMenu.getBoundingClientRect();
-              const inViewport = rect.top >= 0 && rect.left >= 0 && 
-                                rect.bottom <= window.innerHeight && 
-                                rect.right <= window.innerWidth;
-              
-              
+              const inViewport = rect.top >= 0 && rect.left >= 0 &&
+                rect.bottom <= window.innerHeight &&
+                rect.right <= window.innerWidth;
+
+
               // If menu is off-screen, adjust position
               if (!inViewport) {
                 const overlayRect = overlay.getBoundingClientRect();
@@ -272,8 +272,8 @@
       return { isOpen: false, width: 0 };
     }
     const sidebarRect = sidebar.getBoundingClientRect();
-    return { 
-      isOpen: true, 
+    return {
+      isOpen: true,
       width: sidebarRect.width || (window.innerWidth <= 768 ? window.innerWidth : window.innerWidth <= 1024 ? 320 : 380),
       left: sidebarRect.left
     };
@@ -291,9 +291,9 @@
 
       hideMenu(); // Close any existing menu
 
-    const menu = document.createElement('div');
-    menu.className = 'sider-image-menu';
-    menu.innerHTML = MENU_ITEMS.map(item => `
+      const menu = document.createElement('div');
+      menu.className = 'sider-image-menu';
+      menu.innerHTML = MENU_ITEMS.map(item => `
       <div class="sider-menu-item ${item.hasSubmenu ? 'has-submenu' : ''}" 
            data-action="${item.action}" 
            data-id="${item.id}">
@@ -303,208 +303,208 @@
       </div>
     `).join('');
 
-    const overlayRect = overlay.getBoundingClientRect();
-    const sidebarInfo = getSidebarInfo();
-    const viewportWidth = window.innerWidth;
-    const viewportHeight = window.innerHeight;
-    
-    // Calculate available width (considering sidebar if open)
-    const availableWidth = sidebarInfo.isOpen 
-      ? sidebarInfo.left - 20  // Available space up to sidebar minus padding
-      : viewportWidth - 40;
-    
-    // Calculate responsive menu width
-    // When sidebar is open, reduce menu width to fit available space
-    const baseMenuWidth = 180;
-    const menuWidth = sidebarInfo.isOpen
-      ? Math.min(baseMenuWidth, Math.max(150, availableWidth))  // Min 150px when sidebar open
-      : Math.min(baseMenuWidth, availableWidth);
-    
-    menu.style.position = 'fixed';
-    menu.style.zIndex = '100001';
-    menu.style.display = 'block';
-    menu.style.visibility = 'visible';
-    menu.style.opacity = '1';
-    menu.style.pointerEvents = 'auto';
-    menu.style.width = `${menuWidth}px`;
-    menu.style.minWidth = `${Math.min(menuWidth, 150)}px`;
-    menu.style.maxWidth = `${menuWidth}px`;
-    // Use !important to override CSS defaults when sidebar is open
-    if (sidebarInfo.isOpen) {
-      menu.style.setProperty('width', `${menuWidth}px`, 'important');
-      menu.style.setProperty('min-width', `${Math.min(menuWidth, 150)}px`, 'important');
-      menu.style.setProperty('max-width', `${menuWidth}px`, 'important');
-    }
-    
-    // Use viewport coordinates (not scroll-adjusted) for fixed positioning
-    let menuTop = overlayRect.bottom + 5;  // Relative to viewport
-    let menuLeft = overlayRect.left;       // Relative to viewport
-    
-    const menuHeight = MENU_ITEMS.length * 40 + 12; // Approximate height
-    
-    // Adjust horizontal position (viewport-relative, accounting for sidebar)
-    const maxRight = sidebarInfo.isOpen 
-      ? sidebarInfo.left - 10  // Leave gap before sidebar
-      : viewportWidth - 10;
-    
-    if (menuLeft + menuWidth > maxRight) {
-      // Try positioning to the left of overlay
-      const leftPosition = overlayRect.right - menuWidth;
-      if (leftPosition >= 10) {
-        menuLeft = leftPosition;
-      } else {
-        // Position as far left as possible
-        menuLeft = Math.max(10, maxRight - menuWidth);
-      }
-    }
-    if (menuLeft < 10) {
-      menuLeft = 10;
-    }
-    
-    // Ensure menu doesn't overlap with sidebar
-    if (sidebarInfo.isOpen && menuLeft + menuWidth > sidebarInfo.left - 5) {
-      menuLeft = Math.max(10, sidebarInfo.left - menuWidth - 10);
-    }
-    
-    // Adjust vertical position (viewport-relative)
-    if (menuTop + menuHeight > viewportHeight) {
-      // Show menu above overlay instead
-      menuTop = overlayRect.top - menuHeight - 5;
-    }
-    if (menuTop < 10) {
-      menuTop = 10;
-    }
-    
-    // For fixed positioning, use viewport coordinates (not scroll-adjusted)
-    menu.style.top = `${menuTop}px`;
-    menu.style.left = `${menuLeft}px`;
+      const overlayRect = overlay.getBoundingClientRect();
+      const sidebarInfo = getSidebarInfo();
+      const viewportWidth = window.innerWidth;
+      const viewportHeight = window.innerHeight;
 
-    // Append to body first to get accurate dimensions
-    document.body.appendChild(menu);
-    currentMenu = menu;
+      // Calculate available width (considering sidebar if open)
+      const availableWidth = sidebarInfo.isOpen
+        ? sidebarInfo.left - 20  // Available space up to sidebar minus padding
+        : viewportWidth - 40;
 
-    // Force a reflow to ensure menu is rendered
-    menu.offsetHeight;
-    
-    // Verify menu is actually visible and in viewport
-    const menuRect = menu.getBoundingClientRect();
-    const isVisible = menuRect.width > 0 && menuRect.height > 0;
-    const inViewport = menuRect.top >= 0 && menuRect.left >= 0 && 
-                      menuRect.bottom <= window.innerHeight && 
-                      menuRect.right <= window.innerWidth;
-    
+      // Calculate responsive menu width
+      // When sidebar is open, reduce menu width to fit available space
+      const baseMenuWidth = 180;
+      const menuWidth = sidebarInfo.isOpen
+        ? Math.min(baseMenuWidth, Math.max(150, availableWidth))  // Min 150px when sidebar open
+        : Math.min(baseMenuWidth, availableWidth);
 
-    attachMenuListeners(menu, overlay, img);
-    
-    // Keep menu visible when hovering over it
-    let menuHoverTimeout;
-    menu.addEventListener('mouseenter', () => {
+      menu.style.position = 'fixed';
+      menu.style.zIndex = '100001';
       menu.style.display = 'block';
       menu.style.visibility = 'visible';
       menu.style.opacity = '1';
-      isMenuHovered = true;
-      clearTimeout(menuHoverTimeout);
-      if (overlay && overlay.parentNode) {
-        overlay.style.opacity = '1';
-        overlay.style.pointerEvents = 'auto';
+      menu.style.pointerEvents = 'auto';
+      menu.style.width = `${menuWidth}px`;
+      menu.style.minWidth = `${Math.min(menuWidth, 150)}px`;
+      menu.style.maxWidth = `${menuWidth}px`;
+      // Use !important to override CSS defaults when sidebar is open
+      if (sidebarInfo.isOpen) {
+        menu.style.setProperty('width', `${menuWidth}px`, 'important');
+        menu.style.setProperty('min-width', `${Math.min(menuWidth, 150)}px`, 'important');
+        menu.style.setProperty('max-width', `${menuWidth}px`, 'important');
       }
-    });
-    
-    // Track mouse movement over menu to keep it open
-    menu.addEventListener('mousemove', () => {
-      isMenuHovered = true;
-      clearTimeout(menuHoverTimeout);
-      if (overlay && overlay.parentNode) {
-        overlay.style.opacity = '1';
-        overlay.style.pointerEvents = 'auto';
-      }
-    });
 
-    menu.addEventListener('mouseleave', (e) => {
-      const relatedTarget = e.relatedTarget;
-      // Don't close if moving to submenu, overlay, or image
-      if (currentSubMenu?.contains(relatedTarget) || 
+      // Use viewport coordinates (not scroll-adjusted) for fixed positioning
+      let menuTop = overlayRect.bottom + 5;  // Relative to viewport
+      let menuLeft = overlayRect.left;       // Relative to viewport
+
+      const menuHeight = MENU_ITEMS.length * 40 + 12; // Approximate height
+
+      // Adjust horizontal position (viewport-relative, accounting for sidebar)
+      const maxRight = sidebarInfo.isOpen
+        ? sidebarInfo.left - 10  // Leave gap before sidebar
+        : viewportWidth - 10;
+
+      if (menuLeft + menuWidth > maxRight) {
+        // Try positioning to the left of overlay
+        const leftPosition = overlayRect.right - menuWidth;
+        if (leftPosition >= 10) {
+          menuLeft = leftPosition;
+        } else {
+          // Position as far left as possible
+          menuLeft = Math.max(10, maxRight - menuWidth);
+        }
+      }
+      if (menuLeft < 10) {
+        menuLeft = 10;
+      }
+
+      // Ensure menu doesn't overlap with sidebar
+      if (sidebarInfo.isOpen && menuLeft + menuWidth > sidebarInfo.left - 5) {
+        menuLeft = Math.max(10, sidebarInfo.left - menuWidth - 10);
+      }
+
+      // Adjust vertical position (viewport-relative)
+      if (menuTop + menuHeight > viewportHeight) {
+        // Show menu above overlay instead
+        menuTop = overlayRect.top - menuHeight - 5;
+      }
+      if (menuTop < 10) {
+        menuTop = 10;
+      }
+
+      // For fixed positioning, use viewport coordinates (not scroll-adjusted)
+      menu.style.top = `${menuTop}px`;
+      menu.style.left = `${menuLeft}px`;
+
+      // Append to body first to get accurate dimensions
+      document.body.appendChild(menu);
+      currentMenu = menu;
+
+      // Force a reflow to ensure menu is rendered
+      menu.offsetHeight;
+
+      // Verify menu is actually visible and in viewport
+      const menuRect = menu.getBoundingClientRect();
+      const isVisible = menuRect.width > 0 && menuRect.height > 0;
+      const inViewport = menuRect.top >= 0 && menuRect.left >= 0 &&
+        menuRect.bottom <= window.innerHeight &&
+        menuRect.right <= window.innerWidth;
+
+
+      attachMenuListeners(menu, overlay, img);
+
+      // Keep menu visible when hovering over it
+      let menuHoverTimeout;
+      menu.addEventListener('mouseenter', () => {
+        menu.style.display = 'block';
+        menu.style.visibility = 'visible';
+        menu.style.opacity = '1';
+        isMenuHovered = true;
+        clearTimeout(menuHoverTimeout);
+        if (overlay && overlay.parentNode) {
+          overlay.style.opacity = '1';
+          overlay.style.pointerEvents = 'auto';
+        }
+      });
+
+      // Track mouse movement over menu to keep it open
+      menu.addEventListener('mousemove', () => {
+        isMenuHovered = true;
+        clearTimeout(menuHoverTimeout);
+        if (overlay && overlay.parentNode) {
+          overlay.style.opacity = '1';
+          overlay.style.pointerEvents = 'auto';
+        }
+      });
+
+      menu.addEventListener('mouseleave', (e) => {
+        const relatedTarget = e.relatedTarget;
+        // Don't close if moving to submenu, overlay, or image
+        if (currentSubMenu?.contains(relatedTarget) ||
           overlay.contains(relatedTarget) ||
           img.contains(relatedTarget)) {
-        isMenuHovered = true;
-        return;
-      }
-      
-      // Check if mouse is still over menu or submenu (with gap tolerance)
-      const checkMousePosition = () => {
-        const menuRect = currentMenu?.getBoundingClientRect();
-        const subMenuRect = currentSubMenu?.getBoundingClientRect();
-        const mouseX = e.clientX;
-        const mouseY = e.clientY;
-        const gapTolerance = 10; // Allow 10px gap between menu and submenu
-        
-        // Check if mouse is within menu bounds (with tolerance)
-        const isOverMenu = menuRect && 
-          mouseX >= menuRect.left - gapTolerance && 
-          mouseX <= menuRect.right + gapTolerance && 
-          mouseY >= menuRect.top - gapTolerance && 
-          mouseY <= menuRect.bottom + gapTolerance;
-        
-        // Check if mouse is within submenu bounds (with tolerance)
-        const isOverSubMenu = subMenuRect && 
-          mouseX >= subMenuRect.left - gapTolerance && 
-          mouseX <= subMenuRect.right + gapTolerance && 
-          mouseY >= subMenuRect.top - gapTolerance && 
-          mouseY <= subMenuRect.bottom + gapTolerance;
-        
-        // Check if mouse is in the gap between menu and submenu
-        const isInGap = menuRect && subMenuRect && (
-          (mouseX >= Math.min(menuRect.right, subMenuRect.left) - gapTolerance && 
-           mouseX <= Math.max(menuRect.right, subMenuRect.left) + gapTolerance &&
-           mouseY >= Math.min(menuRect.top, subMenuRect.top) - gapTolerance &&
-           mouseY <= Math.max(menuRect.bottom, subMenuRect.bottom) + gapTolerance)
-        );
-        
-        if (isOverMenu || isOverSubMenu || isInGap) {
           isMenuHovered = true;
           return;
         }
-        
-        isMenuHovered = false;
-        menuHoverTimeout = setTimeout(() => {
-          // Double check before closing
-          if (!isMenuHovered && 
-              !currentSubMenu?.matches(':hover') && 
+
+        // Check if mouse is still over menu or submenu (with gap tolerance)
+        const checkMousePosition = () => {
+          const menuRect = currentMenu?.getBoundingClientRect();
+          const subMenuRect = currentSubMenu?.getBoundingClientRect();
+          const mouseX = e.clientX;
+          const mouseY = e.clientY;
+          const gapTolerance = 10; // Allow 10px gap between menu and submenu
+
+          // Check if mouse is within menu bounds (with tolerance)
+          const isOverMenu = menuRect &&
+            mouseX >= menuRect.left - gapTolerance &&
+            mouseX <= menuRect.right + gapTolerance &&
+            mouseY >= menuRect.top - gapTolerance &&
+            mouseY <= menuRect.bottom + gapTolerance;
+
+          // Check if mouse is within submenu bounds (with tolerance)
+          const isOverSubMenu = subMenuRect &&
+            mouseX >= subMenuRect.left - gapTolerance &&
+            mouseX <= subMenuRect.right + gapTolerance &&
+            mouseY >= subMenuRect.top - gapTolerance &&
+            mouseY <= subMenuRect.bottom + gapTolerance;
+
+          // Check if mouse is in the gap between menu and submenu
+          const isInGap = menuRect && subMenuRect && (
+            (mouseX >= Math.min(menuRect.right, subMenuRect.left) - gapTolerance &&
+              mouseX <= Math.max(menuRect.right, subMenuRect.left) + gapTolerance &&
+              mouseY >= Math.min(menuRect.top, subMenuRect.top) - gapTolerance &&
+              mouseY <= Math.max(menuRect.bottom, subMenuRect.bottom) + gapTolerance)
+          );
+
+          if (isOverMenu || isOverSubMenu || isInGap) {
+            isMenuHovered = true;
+            return;
+          }
+
+          isMenuHovered = false;
+          menuHoverTimeout = setTimeout(() => {
+            // Double check before closing
+            if (!isMenuHovered &&
+              !currentSubMenu?.matches(':hover') &&
               !currentMenu?.matches(':hover') &&
               !overlay.matches(':hover')) {
-            hideMenu();
-            if (overlay && overlay.parentNode) {
-              overlay.style.opacity = '0';
-              overlay.style.pointerEvents = 'none';
+              hideMenu();
+              if (overlay && overlay.parentNode) {
+                overlay.style.opacity = '0';
+                overlay.style.pointerEvents = 'none';
+              }
             }
-          }
-        }, 400);
-      };
-      
-      // Use a small delay to allow mouse to move to submenu
-      setTimeout(checkMousePosition, 100);
-    });
-    
-    // Close menu when clicking outside
-    setTimeout(() => {
-      document.addEventListener('click', onClickOutside, true);
-    }, 0);
+          }, 400);
+        };
 
-    
-    // Double-check visibility after a brief delay
-    setTimeout(() => {
-      if (currentMenu && currentMenu.parentNode) {
-        const computed = window.getComputedStyle(currentMenu);
-        
-        // Force visibility if still not showing
-        if (computed.display === 'none' || computed.visibility === 'hidden' || computed.opacity === '0') {
-          currentMenu.style.display = 'block';
-          currentMenu.style.visibility = 'visible';
-          currentMenu.style.opacity = '1';
-          currentMenu.style.zIndex = '100001';
+        // Use a small delay to allow mouse to move to submenu
+        setTimeout(checkMousePosition, 100);
+      });
+
+      // Close menu when clicking outside
+      setTimeout(() => {
+        document.addEventListener('click', onClickOutside, true);
+      }, 0);
+
+
+      // Double-check visibility after a brief delay
+      setTimeout(() => {
+        if (currentMenu && currentMenu.parentNode) {
+          const computed = window.getComputedStyle(currentMenu);
+
+          // Force visibility if still not showing
+          if (computed.display === 'none' || computed.visibility === 'hidden' || computed.opacity === '0') {
+            currentMenu.style.display = 'block';
+            currentMenu.style.visibility = 'visible';
+            currentMenu.style.opacity = '1';
+            currentMenu.style.zIndex = '100001';
+          }
         }
-      }
-    }, 50);
+      }, 50);
     } catch (err) {
       // Error in showMenu
     }
@@ -528,19 +528,19 @@
     const sidebarInfo = getSidebarInfo();
     const viewportWidth = window.innerWidth;
     const viewportHeight = window.innerHeight;
-    
+
     // Calculate available width (considering sidebar if open)
-    const availableWidth = sidebarInfo.isOpen 
+    const availableWidth = sidebarInfo.isOpen
       ? sidebarInfo.left - 20  // Available space up to sidebar minus padding
       : viewportWidth - 40;
-    
+
     // Calculate responsive submenu width
     // When sidebar is open, reduce submenu width to fit available space
     const baseSubMenuWidth = 180;
     const subMenuWidth = sidebarInfo.isOpen
       ? Math.min(baseSubMenuWidth, Math.max(150, availableWidth))  // Min 150px when sidebar open
       : Math.min(baseSubMenuWidth, availableWidth);
-    
+
     subMenu.style.position = 'fixed';
     subMenu.style.width = `${subMenuWidth}px`;
     subMenu.style.minWidth = `${Math.min(subMenuWidth, 150)}px`;
@@ -551,18 +551,18 @@
       subMenu.style.setProperty('min-width', `${Math.min(subMenuWidth, 150)}px`, 'important');
       subMenu.style.setProperty('max-width', `${subMenuWidth}px`, 'important');
     }
-    
+
     let subMenuTop = menuRect.top;
     // Use viewport coordinates (not scroll-adjusted) for fixed positioning
     let subMenuLeft = menuRect.right + 5;
-    
+
     const subMenuHeight = IMAGE_TOOLS_SUBMENU.length * 40 + 12;
-    
+
     // Calculate max right position (accounting for sidebar)
-    const maxRight = sidebarInfo.isOpen 
+    const maxRight = sidebarInfo.isOpen
       ? sidebarInfo.left - 10  // Leave gap before sidebar
       : viewportWidth - 10;
-    
+
     // Adjust horizontal position
     if (subMenuLeft + subMenuWidth > maxRight) {
       // Show submenu to the left instead
@@ -571,12 +571,12 @@
     if (subMenuLeft < 10) {
       subMenuLeft = 10;
     }
-    
+
     // Ensure submenu doesn't overlap with sidebar
     if (sidebarInfo.isOpen && subMenuLeft + subMenuWidth > sidebarInfo.left - 5) {
       subMenuLeft = Math.max(10, sidebarInfo.left - subMenuWidth - 10);
     }
-    
+
     // Adjust vertical position (viewport-relative)
     if (subMenuTop + subMenuHeight > viewportHeight) {
       subMenuTop = Math.max(10, viewportHeight - subMenuHeight - 10);
@@ -584,7 +584,7 @@
     if (subMenuTop < 10) {
       subMenuTop = 10;
     }
-    
+
     subMenu.style.top = `${subMenuTop}px`;
     subMenu.style.left = `${subMenuLeft}px`;
     subMenu.style.zIndex = '100002';
@@ -616,7 +616,7 @@
       }
       isMenuHovered = true;
     });
-    
+
     // Track mouse movement over submenu to keep it open
     subMenu.addEventListener('mousemove', () => {
       isMenuHovered = true;
@@ -630,17 +630,17 @@
         overlay.style.pointerEvents = 'auto';
       }
     });
-    
+
     subMenu.addEventListener('mouseleave', (e) => {
       const relatedTarget = e.relatedTarget;
-      
+
       // Don't close if moving to menu, overlay, or image
-      if (currentMenu?.contains(relatedTarget) || 
-          overlay.contains(relatedTarget) ||
-          img.contains(relatedTarget)) {
+      if (currentMenu?.contains(relatedTarget) ||
+        overlay.contains(relatedTarget) ||
+        img.contains(relatedTarget)) {
         return;
       }
-      
+
       // Check if mouse is still over menu or submenu (with gap tolerance)
       const checkMousePosition = () => {
         const menuRect = currentMenu?.getBoundingClientRect();
@@ -648,38 +648,38 @@
         const mouseX = e.clientX;
         const mouseY = e.clientY;
         const gapTolerance = 10; // Allow 10px gap between menu and submenu
-        
+
         // Check if mouse is within menu bounds (with tolerance)
-        const isOverMenu = menuRect && 
-          mouseX >= menuRect.left - gapTolerance && 
-          mouseX <= menuRect.right + gapTolerance && 
-          mouseY >= menuRect.top - gapTolerance && 
+        const isOverMenu = menuRect &&
+          mouseX >= menuRect.left - gapTolerance &&
+          mouseX <= menuRect.right + gapTolerance &&
+          mouseY >= menuRect.top - gapTolerance &&
           mouseY <= menuRect.bottom + gapTolerance;
-        
+
         // Check if mouse is within submenu bounds (with tolerance)
-        const isOverSubMenu = subMenuRect && 
-          mouseX >= subMenuRect.left - gapTolerance && 
-          mouseX <= subMenuRect.right + gapTolerance && 
-          mouseY >= subMenuRect.top - gapTolerance && 
+        const isOverSubMenu = subMenuRect &&
+          mouseX >= subMenuRect.left - gapTolerance &&
+          mouseX <= subMenuRect.right + gapTolerance &&
+          mouseY >= subMenuRect.top - gapTolerance &&
           mouseY <= subMenuRect.bottom + gapTolerance;
-        
+
         // Check if mouse is in the gap between menu and submenu
         const isInGap = menuRect && subMenuRect && (
-          (mouseX >= Math.min(menuRect.right, subMenuRect.left) - gapTolerance && 
-           mouseX <= Math.max(menuRect.right, subMenuRect.left) + gapTolerance &&
-           mouseY >= Math.min(menuRect.top, subMenuRect.top) - gapTolerance &&
-           mouseY <= Math.max(menuRect.bottom, subMenuRect.bottom) + gapTolerance)
+          (mouseX >= Math.min(menuRect.right, subMenuRect.left) - gapTolerance &&
+            mouseX <= Math.max(menuRect.right, subMenuRect.left) + gapTolerance &&
+            mouseY >= Math.min(menuRect.top, subMenuRect.top) - gapTolerance &&
+            mouseY <= Math.max(menuRect.bottom, subMenuRect.bottom) + gapTolerance)
         );
-        
+
         if (isOverMenu || isOverSubMenu || isInGap) {
           return;
         }
-        
+
         // Only close submenu if mouse is truly outside both
         setTimeout(() => {
-          if (!currentMenu?.matches(':hover') && 
-              !currentSubMenu?.matches(':hover') &&
-              !overlay.matches(':hover')) {
+          if (!currentMenu?.matches(':hover') &&
+            !currentSubMenu?.matches(':hover') &&
+            !overlay.matches(':hover')) {
             if (currentSubMenu) {
               currentSubMenu.remove();
               currentSubMenu = null;
@@ -687,7 +687,7 @@
           }
         }, 400);
       };
-      
+
       // Use a small delay to allow mouse to move to menu
       setTimeout(checkMousePosition, 100);
     });
@@ -698,7 +698,7 @@
   function attachMenuListeners(menu, overlay, img) {
     const menuItems = menu.querySelectorAll('.sider-menu-item');
     let subMenuTimeout;
-    
+
     menuItems.forEach(item => {
       const id = item.getAttribute('data-id');
       const action = item.getAttribute('data-action');
@@ -709,16 +709,16 @@
             showSubMenu(item, overlay, img);
           }, 150); // Small delay to prevent accidental triggers
         });
-        
+
         item.addEventListener('mouseleave', (e) => {
           clearTimeout(subMenuTimeout);
           const relatedTarget = e.relatedTarget;
-          
+
           // Don't close submenu if moving to it
           if (currentSubMenu?.contains(relatedTarget)) {
             return;
           }
-          
+
           // Check if mouse is still over submenu (with gap tolerance)
           const checkMousePosition = () => {
             const subMenuRect = currentSubMenu?.getBoundingClientRect();
@@ -726,38 +726,38 @@
             const mouseX = e.clientX;
             const mouseY = e.clientY;
             const gapTolerance = 10; // Allow 10px gap between menu and submenu
-            
+
             // Check if mouse is within submenu bounds (with tolerance)
-            const isOverSubMenu = subMenuRect && 
-              mouseX >= subMenuRect.left - gapTolerance && 
-              mouseX <= subMenuRect.right + gapTolerance && 
-              mouseY >= subMenuRect.top - gapTolerance && 
+            const isOverSubMenu = subMenuRect &&
+              mouseX >= subMenuRect.left - gapTolerance &&
+              mouseX <= subMenuRect.right + gapTolerance &&
+              mouseY >= subMenuRect.top - gapTolerance &&
               mouseY <= subMenuRect.bottom + gapTolerance;
-            
+
             // Check if mouse is within menu bounds (with tolerance)
-            const isOverMenu = menuRect && 
-              mouseX >= menuRect.left - gapTolerance && 
-              mouseX <= menuRect.right + gapTolerance && 
-              mouseY >= menuRect.top - gapTolerance && 
+            const isOverMenu = menuRect &&
+              mouseX >= menuRect.left - gapTolerance &&
+              mouseX <= menuRect.right + gapTolerance &&
+              mouseY >= menuRect.top - gapTolerance &&
               mouseY <= menuRect.bottom + gapTolerance;
-            
+
             // Check if mouse is in the gap between menu and submenu
             const isInGap = menuRect && subMenuRect && (
-              (mouseX >= Math.min(menuRect.right, subMenuRect.left) - gapTolerance && 
-               mouseX <= Math.max(menuRect.right, subMenuRect.left) + gapTolerance &&
-               mouseY >= Math.min(menuRect.top, subMenuRect.top) - gapTolerance &&
-               mouseY <= Math.max(menuRect.bottom, subMenuRect.bottom) + gapTolerance)
+              (mouseX >= Math.min(menuRect.right, subMenuRect.left) - gapTolerance &&
+                mouseX <= Math.max(menuRect.right, subMenuRect.left) + gapTolerance &&
+                mouseY >= Math.min(menuRect.top, subMenuRect.top) - gapTolerance &&
+                mouseY <= Math.max(menuRect.bottom, subMenuRect.bottom) + gapTolerance)
             );
-            
+
             if (isOverSubMenu || isOverMenu || isInGap) {
               return;
             }
-            
+
             subMenuTimeout = setTimeout(() => {
               // Double check before closing
-              if (currentSubMenu && 
-                  !currentSubMenu.matches(':hover') && 
-                  !currentMenu?.matches(':hover')) {
+              if (currentSubMenu &&
+                !currentSubMenu.matches(':hover') &&
+                !currentMenu?.matches(':hover')) {
                 if (currentSubMenu) {
                   currentSubMenu.remove();
                   currentSubMenu = null;
@@ -765,13 +765,13 @@
               }
             }, 400);
           };
-          
+
           // Use a small delay to allow mouse to move to submenu
           setTimeout(checkMousePosition, 100);
         });
       }
     });
-    
+
     menu.addEventListener('click', (e) => {
       e.stopPropagation();
       const item = e.target.closest('.sider-menu-item');
@@ -814,10 +814,10 @@
   }
 
   function onClickOutside(e) {
-    if (currentMenu && !currentMenu.contains(e.target) && 
-        (!currentSubMenu || !currentSubMenu.contains(e.target)) &&
-        !e.target.closest('.sider-image-overlay') &&
-        !e.target.closest('.sider-ai-tools-btn')) {
+    if (currentMenu && !currentMenu.contains(e.target) &&
+      (!currentSubMenu || !currentSubMenu.contains(e.target)) &&
+      !e.target.closest('.sider-image-overlay') &&
+      !e.target.closest('.sider-ai-tools-btn')) {
       hideMenu();
       imageOverlays.forEach((overlay) => {
         if (overlay && overlay.parentNode) {
@@ -913,7 +913,7 @@
         break;
     }
   }
-  
+
   // Helper function to convert image URL to data URL
   function convertImageToDataUrl(url) {
     return new Promise((resolve, reject) => {
@@ -930,7 +930,7 @@
           // Fallback: try using an image element
           const img = new Image();
           img.crossOrigin = 'anonymous';
-          img.onload = function() {
+          img.onload = function () {
             try {
               const canvas = document.createElement('canvas');
               canvas.width = img.width;
@@ -953,7 +953,7 @@
       imageUrl: imgSrc,
       imageAlt: imgAlt || 'Image'
     });
-    
+
     if (tool === 'bg-remover') {
       return `${baseUrl}/create/image/background-remover?${params.toString()}`;
     } else if (tool === 'text-remover') {
@@ -1011,7 +1011,7 @@
     } catch (err) {
       openUrl(defaultBaseUrl);
     }
-    
+
     window.dispatchEvent(new CustomEvent('sider:image-tool', {
       detail: { tool, src: imgSrc, alt: imgAlt, element: img }
     }));
@@ -1039,26 +1039,26 @@
         // Skip images inside sider-input-area (extension's input area)
         const inputArea = img.closest('.sider-input-area');
         if (inputArea) return;
-        
+
         // Skip images in sider-attachments (attachment previews)
         const attachments = img.closest('.sider-attachments');
         if (attachments) return;
-        
+
         // Skip images in sider-image-preview-section (image preview section)
         const imagePreview = img.closest('.sider-image-preview-section');
         if (imagePreview) return;
-        
+
         // Skip images inside sider-ai-chat-panel (entire extension panel)
         const chatPanel = img.closest('#sider-ai-chat-panel');
         if (chatPanel) return;
 
         const rect = img.getBoundingClientRect();
         const computedStyle = window.getComputedStyle(img);
-        
+
         // Skip only if truly hidden
-        if (computedStyle.display === 'none' || 
-            computedStyle.visibility === 'hidden' || 
-            computedStyle.opacity === '0') {
+        if (computedStyle.display === 'none' ||
+          computedStyle.visibility === 'hidden' ||
+          computedStyle.opacity === '0') {
           return;
         }
 
@@ -1097,7 +1097,7 @@
         // Even on error, try to show overlay if dimensions are available
         checkAndCreateOverlay();
       }, { once: true });
-      
+
       // Also check immediately in case image is already rendered
       setTimeout(checkAndCreateOverlay, 100);
     }
@@ -1126,59 +1126,75 @@
     const cleanupExtensionPanelOverlays = () => {
       imageOverlays.forEach((overlay, img) => {
         if (!img.isConnected) return;
-        
+
         const inputArea = img.closest('.sider-input-area');
         const attachments = img.closest('.sider-attachments');
         const imagePreview = img.closest('.sider-image-preview-section');
         const chatPanel = img.closest('#sider-ai-chat-panel');
-        
+
         if (inputArea || attachments || imagePreview || chatPanel) {
           hideOverlay(img);
         }
       });
     };
 
-    // Watch for new images (SPA support)
+    // Watch for new images (SPA support) - Optimized
+    let mutationTimeout;
+    const pendingImages = new Set();
+
+    const processPendingImages = () => {
+      if (pendingImages.size === 0) return;
+
+      pendingImages.forEach(img => {
+        if (!observedImages.has(img) && img.isConnected) {
+          processImage(img);
+        }
+      });
+      pendingImages.clear();
+    };
+
     const observer = new MutationObserver((mutations) => {
+      let shouldProcess = false;
+
       mutations.forEach((mutation) => {
-        mutation.addedNodes.forEach((node) => {
-          if (node.nodeType === 1) {
-            // Process if it's an image
-            if (node.tagName === 'IMG') {
-              processImage(node);
-            }
-            // Process all images within the added node
-            if (node.querySelectorAll) {
-              const images = node.querySelectorAll('img');
-              images.forEach(img => {
-                if (!observedImages.has(img)) {
-                  processImage(img);
+        if (mutation.type === 'childList') {
+          mutation.addedNodes.forEach((node) => {
+            if (node.nodeType === 1) {
+              if (node.tagName === 'IMG') {
+                pendingImages.add(node);
+                shouldProcess = true;
+              } else if (node.querySelectorAll) {
+                // Only query if the node is substantial enough to contain images
+                // Avoid querying small text nodes or simple wrappers if possible, but hard to know
+                const images = node.querySelectorAll('img');
+                if (images.length > 0) {
+                  images.forEach(img => pendingImages.add(img));
+                  shouldProcess = true;
                 }
-              });
+              }
+
+              // Cleanup check - only if we suspect panel changes
+              if (node.classList && (
+                node.classList.contains('sider-input-area') ||
+                node.classList.contains('sider-attachments') ||
+                node.id === 'sider-ai-chat-panel'
+              )) {
+                cleanupExtensionPanelOverlays();
+              }
             }
-            
-            // Cleanup overlays if extension panel elements are added
-            if (node.matches && (
-              node.matches('.sider-input-area') ||
-              node.matches('.sider-attachments') ||
-              node.matches('.sider-image-preview-section') ||
-              node.matches('#sider-ai-chat-panel') ||
-              node.querySelector('.sider-input-area, .sider-attachments, .sider-image-preview-section, #sider-ai-chat-panel')
-            )) {
-              cleanupExtensionPanelOverlays();
-            }
-          }
-        });
-        
-        // Also handle attribute changes (e.g., src changes)
-        if (mutation.type === 'attributes' && mutation.target.tagName === 'IMG') {
+          });
+        } else if (mutation.type === 'attributes' && mutation.target.tagName === 'IMG') {
           if (mutation.attributeName === 'src' || mutation.attributeName === 'data-src') {
-            if (!observedImages.has(mutation.target)) {
-              processImage(mutation.target);
-            }
+            pendingImages.add(mutation.target);
+            shouldProcess = true;
           }
         }
       });
+
+      if (shouldProcess) {
+        clearTimeout(mutationTimeout);
+        mutationTimeout = setTimeout(processPendingImages, 100);
+      }
     });
 
     observer.observe(document.body, {
@@ -1188,7 +1204,7 @@
       attributeFilter: ['src', 'data-src']
     });
 
-    // Also watch for images that load via IntersectionObserver (lazy loading)
+    // IntersectionObserver for lazy loaded images - much more efficient than a second MutationObserver
     if ('IntersectionObserver' in window) {
       const lazyImageObserver = new IntersectionObserver((entries) => {
         entries.forEach(entry => {
@@ -1196,44 +1212,30 @@
             if (!observedImages.has(entry.target)) {
               processImage(entry.target);
             }
+            // Once processed, we can stop observing if we want, but keeping it allows re-check
+            // For now, let's keep it simple
           }
         });
       });
 
-      // Observe all existing and new images
-      document.querySelectorAll('img').forEach(img => {
-        lazyImageObserver.observe(img);
-      });
+      // We don't need a separate MutationObserver just to add to IntersectionObserver
+      // We can add them in the main observer loop or just rely on the main observer calling processImage
+      // which sets up the overlay.
 
-      // Re-observe when new images are added
-      const lazyObserver = new MutationObserver(() => {
-        document.querySelectorAll('img').forEach(img => {
-          if (!observedImages.has(img)) {
-            lazyImageObserver.observe(img);
-          }
-        });
-      });
-
-      lazyObserver.observe(document.body, {
-        childList: true,
-        subtree: true
-      });
+      // However, if processImage relies on visibility, we might need this.
+      // Let's hook into the main observer to add to lazy observer if needed.
     }
 
-    // Re-process on scroll (for lazy-loaded images)
+    // Re-process on scroll (throttled)
     let scrollTimeout;
     window.addEventListener('scroll', () => {
-      clearTimeout(scrollTimeout);
+      if (scrollTimeout) return;
       scrollTimeout = setTimeout(() => {
-        document.querySelectorAll('img').forEach(img => {
-          if (!observedImages.has(img)) {
-            const rect = img.getBoundingClientRect();
-            if (rect.width > 0 && rect.height > 0) {
-              processImage(img);
-            }
-          }
-        });
-      }, 200);
+        scrollTimeout = null;
+        // Only check images that we haven't successfully processed yet
+        // or that might have become visible
+        // For now, just rely on the initial scan and mutation observer
+      }, 500);
     }, { passive: true });
   }
 

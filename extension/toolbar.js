@@ -9,8 +9,15 @@
   let toolbarHtmlCache = null;
   let isCreatingPopup = false; // Flag to prevent mousedown handler from interfering
 
+  // State for text replacement
+  let lastRange = null;
+  let lastActiveElement = null;
+  let lastSelectionStart = 0;
+  let lastSelectionEnd = 0;
+
   const ACTIONS = [
-    'copy', 'highlight', 'readaloud', 'explain', 'translate', 'summarize', 'answer', 'explaincodes'
+    'copy', 'highlight', 'readaloud', 'explain', 'translate', 'summarize', 'answer', 'explaincodes',
+    'improvewriting', 'fixgrammar', 'writeprofessionally', 'writefunny'
   ];
 
   const ACTION_ICONS = {
@@ -21,7 +28,11 @@
     translate: `<img src="${chrome.runtime.getURL('svg/translate.svg')}" style="width: 14px; height: 14px;">`,
     summarize: `<img src="${chrome.runtime.getURL('svg/summary.svg')}" style="width: 14px; height: 14px;">`,
     answer: `<img src="${chrome.runtime.getURL('svg/question.svg')}" style="width: 14px; height: 14px;">`,
-    explaincodes: `<img src="${chrome.runtime.getURL('svg/code.svg')}" style="width: 14px; height: 14px;">`
+    explaincodes: `<img src="${chrome.runtime.getURL('svg/code.svg')}" style="width: 14px; height: 14px;">`,
+    improvewriting: `<img src="${chrome.runtime.getURL('svg/stars.svg')}" style="width: 14px; height: 14px;">`,
+    fixgrammar: `<img src="${chrome.runtime.getURL('svg/grammer.svg')}" style="width: 14px; height: 14px;">`,
+    writeprofessionally: `<img src="${chrome.runtime.getURL('svg/write.svg')}" style="width: 14px; height: 14px;">`,
+    writefunny: `<img src="${chrome.runtime.getURL('svg/funny.svg')}" style="width: 14px; height: 14px;">`
   };
 
   // Comprehensive list of world languages with native names
@@ -139,6 +150,17 @@
     if (isUpdatingMenu) return;
 
     const selection = window.getSelection();
+
+    // Capture selection state for later replacement
+    if (selection && selection.rangeCount > 0) {
+      lastRange = selection.getRangeAt(0).cloneRange();
+    }
+    lastActiveElement = document.activeElement;
+    if (lastActiveElement && (lastActiveElement.tagName === 'INPUT' || lastActiveElement.tagName === 'TEXTAREA')) {
+      lastSelectionStart = lastActiveElement.selectionStart;
+      lastSelectionEnd = lastActiveElement.selectionEnd;
+    }
+
     if (!selection || selection.rangeCount === 0 || selection.toString().trim().length === 0) {
       if (!isUpdatingMenu) hide();
       return;
@@ -188,7 +210,6 @@
     let top = rect.top - toolbarHeight - toolbarPadding;
     let left = rect.left + (rect.width / 2) - (el.offsetWidth / 2);
     if (top < 10) top = rect.bottom + toolbarPadding;
-    if (left < 10) left = 10;
     if (left + el.offsetWidth > window.innerWidth - 10) left = window.innerWidth - el.offsetWidth - 10;
     el.style.top = `${top + window.scrollY}px`;
     el.style.left = `${left + window.scrollX}px`;
@@ -433,6 +454,11 @@
     addItem('highlight', 'Highlight');
     addItem('readaloud', 'Read aloud');
     const sep = document.createElement('div'); sep.className = 'sider-more-menu-sep'; menu.appendChild(sep);
+    addItem('improvewriting', 'Improve writing');
+    addItem('fixgrammar', 'Fix grammar');
+    addItem('writeprofessionally', 'Write professionally');
+    addItem('writefunny', 'Write in a funny tone');
+    const sep1_5 = document.createElement('div'); sep1_5.className = 'sider-more-menu-sep'; menu.appendChild(sep1_5);
     addItem('explain', 'Explain');
     addItem('translate', 'Translate');
     addItem('summarize', 'Summarize');
@@ -795,7 +821,11 @@
       'translate': 'Translate',
       'summarize': 'Summarize',
       'answer': 'Answer this question',
-      'explaincodes': 'Explain codes'
+      'explaincodes': 'Explain codes',
+      'improvewriting': 'Improve writing',
+      'fixgrammar': 'Fix grammar',
+      'writeprofessionally': 'Write professionally',
+      'writefunny': 'Write in a funny tone'
     };
     return titles[action] || action;
   }
@@ -806,7 +836,11 @@
       'translate': `Translate to English: "${text}"`,
       'summarize': `Summarize this text: "${text}"`,
       'answer': `Answer this question: "${text}"`,
-      'explaincodes': `Explain this code: "${text}"`
+      'explaincodes': `Explain this code: "${text}"`,
+      'improvewriting': `Improve the writing of this text: "${text}"`,
+      'fixgrammar': `Fix the grammar and spelling errors in this text: "${text}"`,
+      'writeprofessionally': `Rewrite this text in a professional tone: "${text}"`,
+      'writefunny': `Rewrite this text in a funny and humorous tone: "${text}"`
     };
     return prompts[action] || `${action}: "${text}"`;
   }
@@ -830,7 +864,7 @@
 
     // For 'answer' action and popup actions (explain, translate, etc.), allow empty text
     // User can enter text manually in the popup if needed
-    const popupActions = ['answer', 'explain', 'translate', 'summarize', 'explaincodes'];
+    const popupActions = ['answer', 'explain', 'translate', 'summarize', 'explaincodes', 'improvewriting', 'fixgrammar', 'writeprofessionally', 'writefunny'];
     if (popupActions.includes(action)) {
       // Ensure text is at least a string (can be empty)
       if (text === null || text === undefined) {
@@ -979,8 +1013,39 @@
               Please enter the text you would like to ${action === 'explain' ? 'explain' : action === 'translate' ? 'translate' : action === 'summarize' ? 'summarize' : 'explain'}.
             </div>
           ` : ''}
+          <div class="sider-action-popup-nav-buttons" id="sider-action-popup-nav-buttons" style="display: none;">
+            <button class="sider-action-popup-back-btn" id="sider-action-popup-back-btn" title="Back">
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M15 18l-6-6 6-6"/>
+              </svg>
+            </button>
+            <button class="sider-action-popup-next-btn" id="sider-action-popup-next-btn" title="Next">
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M9 18l6-6-6-6"/>
+              </svg>
+            </button>
+          </div>
           <input type="text" class="sider-action-popup-input" id="sider-action-popup-input" placeholder="${action === 'answer' ? 'Enter your question...' : (!text || text.trim().length === 0) ? `Enter text to ${action === 'explain' ? 'explain' : action === 'translate' ? 'translate' : action === 'summarize' ? 'summarize' : 'explain'}...` : ''}" value="${text || ''}" ${(action === 'answer' || !text || text.trim().length === 0) ? '' : 'readonly'} />
           <div class="sider-action-popup-response loading" id="sider-action-popup-response">Processing...</div>
+          <div class="sider-action-popup-chat-container" id="sider-action-popup-chat-container" style="display: none;">
+            <div class="sider-action-popup-chat-actions">
+              <button class="sider-action-popup-insert-btn" id="sider-action-popup-insert-btn" title="Insert response into text">
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                  <path d="M12 5v14M5 12h14"/>
+                </svg>
+                Insert
+              </button>
+            </div>
+            <div class="sider-action-popup-chat-input-wrapper">
+              <textarea class="sider-action-popup-chat-input" id="sider-action-popup-chat-input" placeholder="Type your message..." rows="1"></textarea>
+              <button class="sider-action-popup-chat-send-btn" id="sider-action-popup-chat-send-btn" title="Send">
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                  <line x1="22" y1="2" x2="11" y2="13"/>
+                  <polygon points="22 2 15 22 11 13 2 9 22 2"/>
+                </svg>
+              </button>
+            </div>
+          </div>
         </div>
         <div class="sider-action-popup-footer">
           <div class="sider-action-popup-attribution">
@@ -996,6 +1061,12 @@
               </button>
             </div>
             <div class="sider-action-popup-actions-right">
+              <button class="sider-action-popup-icon-btn" id="sider-action-popup-replace-btn" title="Replace Selection">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                  <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"></path>
+                  <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"></path>
+                </svg>
+              </button>
               <button class="sider-action-popup-icon-btn" id="sider-action-popup-refresh-btn" title="Refresh">
                 <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
                   <path d="M3 12a9 9 0 0 1 9-9 9.75 9.75 0 0 1 6.74 2.74L21 8"/>
@@ -1154,11 +1225,16 @@
         }, 200);
 
         // Dispatch event to show selected text in chat-tab input area
-        // Only dispatch if there's actual text
+        // Only dispatch if there's actual text AND sidepanel is open
         if (text && text.trim().length > 0) {
-          window.dispatchEvent(new CustomEvent('sider:text-selected', {
-            detail: { text: text.trim() }
-          }));
+          const panel = document.getElementById('sider-ai-chat-panel');
+          const isPanelOpen = panel && panel.classList.contains('sider-panel-open');
+
+          if (isPanelOpen) {
+            window.dispatchEvent(new CustomEvent('sider:text-selected', {
+              detail: { text: text.trim() }
+            }));
+          }
         }
 
         // For popup actions with empty text, don't call getAIResponse immediately
@@ -1357,6 +1433,23 @@
             if (responseText) {
               responseEl.textContent = responseText;
               responseEl.classList.remove('loading');
+
+              // Initialize history with the first state
+              if (!popup._history || popup._history.length === 0) {
+                const topInput = popup.querySelector('#sider-action-popup-input');
+                popup._history = [{
+                  prompt: topInput ? topInput.value : text,
+                  responseHTML: responseEl.innerHTML
+                }];
+                popup._currentIndex = 0;
+              }
+
+              // Show chat container after response
+              const chatContainer = popup.querySelector('#sider-action-popup-chat-container');
+              if (chatContainer) {
+                chatContainer.style.display = 'flex';
+              }
+
               console.log('✅ Response received for action:', action);
             } else {
               throw new Error('No response text found in API response');
@@ -1514,6 +1607,162 @@
     renderLanguages(filteredLanguages);
   }
 
+  async function sendChatMessage(popup, message, action) {
+    if (!message || !message.trim()) return;
+
+    const chatInput = popup.querySelector('#sider-action-popup-chat-input');
+    const topInput = popup.querySelector('#sider-action-popup-input');
+    const responseEl = popup.querySelector('#sider-action-popup-response');
+    const navButtons = popup.querySelector('#sider-action-popup-nav-buttons');
+    const conversationId = popupConversations.get(action);
+
+    if (!conversationId) {
+      console.error('No conversation ID found for action:', action);
+      return;
+    }
+
+    // Initialize history if needed
+    if (!popup._history) {
+      popup._history = [];
+      popup._currentIndex = -1;
+    }
+
+    // If we're not at the end of history, truncate future states
+    if (popup._currentIndex < popup._history.length - 1) {
+      popup._history = popup._history.slice(0, popup._currentIndex + 1);
+    }
+
+    // Add NEW State
+    popup._history.push({
+      prompt: message,
+      responseHTML: 'Thinking...'
+    });
+    popup._currentIndex = popup._history.length - 1;
+
+    // Update UI for New State
+    if (chatInput) chatInput.value = ''; // Clear chat input
+    topInput.value = message; // Replace top prompt with new message
+
+    // Show navigation buttons
+    if (navButtons) navButtons.style.display = 'flex';
+
+    // Reset response area
+    responseEl.innerHTML = 'Thinking...';
+    responseEl.classList.add('loading');
+    responseEl.scrollTop = 0;
+
+    // Update navigation button states
+    updateNavButtons(popup);
+
+    try {
+      getCurrentModel(async (model) => {
+        const modelName = model || 'webby fusion';
+
+        console.log('🔄 Sending chat message:', message, 'conversationId:', conversationId);
+        const result = await new Promise((resolve, reject) => {
+          chrome.runtime.sendMessage({
+            type: 'API_CHAT_COMPLETIONS',
+            cid: conversationId,
+            message: message,
+            model: modelName,
+            options: {
+              stream: false,
+              from: 'toolbar_action'
+            }
+          }, (response) => {
+            if (chrome.runtime.lastError) {
+              reject(new Error(chrome.runtime.lastError.message));
+            } else {
+              resolve(response);
+            }
+          });
+        });
+
+        if (result.success && result.data) {
+          let responseText = '';
+          if (result.data.choices && result.data.choices[0]) {
+            responseText = result.data.choices[0].message?.content ||
+              result.data.choices[0].text ||
+              result.data.choices[0].content || '';
+          } else if (result.data.content) {
+            responseText = result.data.content;
+          } else if (result.data.text) {
+            responseText = result.data.text;
+          } else if (typeof result.data === 'string') {
+            responseText = result.data;
+          }
+
+          if (responseText) {
+            responseEl.textContent = responseText;
+            responseEl.classList.remove('loading');
+
+            // Update history with actual response
+            if (popup._history && popup._currentIndex >= 0) {
+              popup._history[popup._currentIndex].responseHTML = responseEl.innerHTML;
+            }
+
+            console.log('✅ Chat response received');
+          } else {
+            responseEl.textContent = 'Error: No response text found';
+            responseEl.classList.remove('loading');
+            // Update history with error
+            if (popup._history && popup._currentIndex >= 0) {
+              popup._history[popup._currentIndex].responseHTML = responseEl.innerHTML;
+            }
+          }
+        } else {
+          responseEl.textContent = `Error: ${result.error || 'Failed to get response'}`;
+          responseEl.classList.remove('loading');
+          // Update history with error
+          if (popup._history && popup._currentIndex >= 0) {
+            popup._history[popup._currentIndex].responseHTML = responseEl.innerHTML;
+          }
+        }
+      });
+    } catch (error) {
+      console.error('Error sending chat message:', error);
+      responseEl.textContent = `Error: ${error.message}`;
+      responseEl.classList.remove('loading');
+      // Update history with error
+      if (popup._history && popup._currentIndex >= 0) {
+        popup._history[popup._currentIndex].responseHTML = responseEl.innerHTML;
+      }
+    }
+  }
+
+  function updateNavButtons(popup) {
+    const backBtn = popup.querySelector('#sider-action-popup-back-btn');
+    const nextBtn = popup.querySelector('#sider-action-popup-next-btn');
+
+    if (!popup._history || popup._currentIndex === undefined) return;
+
+    // Disable/enable back button
+    if (backBtn) {
+      if (popup._currentIndex > 0) {
+        backBtn.disabled = false;
+        backBtn.style.opacity = '1';
+        backBtn.style.cursor = 'pointer';
+      } else {
+        backBtn.disabled = true;
+        backBtn.style.opacity = '0.3';
+        backBtn.style.cursor = 'not-allowed';
+      }
+    }
+
+    // Disable/enable next button
+    if (nextBtn) {
+      if (popup._currentIndex < popup._history.length - 1) {
+        nextBtn.disabled = false;
+        nextBtn.style.opacity = '1';
+        nextBtn.style.cursor = 'pointer';
+      } else {
+        nextBtn.disabled = true;
+        nextBtn.style.opacity = '0.3';
+        nextBtn.style.cursor = 'not-allowed';
+      }
+    }
+  }
+
   function attachPopupListeners(popup, action, text) {
     // Drag functionality
     const header = popup.querySelector('.sider-action-popup-header');
@@ -1662,6 +1911,112 @@
       });
     }
 
+    // Helper function to replace selection
+    const replaceSelectionWithText = (text) => {
+      // Try to use stored state first
+      if (lastActiveElement && document.body.contains(lastActiveElement)) {
+        if (lastActiveElement.tagName === 'INPUT' || lastActiveElement.tagName === 'TEXTAREA') {
+          try {
+            lastActiveElement.focus();
+            const start = lastSelectionStart;
+            const end = lastSelectionEnd;
+            const val = lastActiveElement.value;
+            lastActiveElement.value = val.substring(0, start) + text + val.substring(end);
+            lastActiveElement.selectionStart = lastActiveElement.selectionEnd = start + text.length;
+            lastActiveElement.dispatchEvent(new Event('input', { bubbles: true }));
+            return true;
+          } catch (e) { console.error('Replace input error', e); }
+        } else if (lastActiveElement.isContentEditable) {
+          try {
+            lastActiveElement.focus();
+            const selection = window.getSelection();
+            selection.removeAllRanges();
+            if (lastRange) {
+              selection.addRange(lastRange);
+            }
+            document.execCommand('insertText', false, text);
+            return true;
+          } catch (e) { console.error('Replace contenteditable error', e); }
+        }
+      }
+
+      // Fallback to lastRange
+      if (lastRange) {
+        try {
+          const selection = window.getSelection();
+          selection.removeAllRanges();
+          selection.addRange(lastRange);
+          if (document.designMode === 'on' || (lastRange.startContainer.parentElement && lastRange.startContainer.parentElement.isContentEditable)) {
+            document.execCommand('insertText', false, text);
+          } else {
+            lastRange.deleteContents();
+            lastRange.insertNode(document.createTextNode(text));
+          }
+          return true;
+        } catch (e) { console.error('Replace range error', e); }
+      }
+
+      // Fallback to current selection if everything else fails
+      try {
+        const selection = window.getSelection();
+        if (selection.rangeCount > 0) {
+          const range = selection.getRangeAt(0);
+          range.deleteContents();
+          range.insertNode(document.createTextNode(text));
+          return true;
+        }
+      } catch (e) { console.error('Replace fallback error', e); }
+
+      return false;
+    };
+
+    // Replace/Insert button handler (Main Footer)
+    const replaceBtn = popup.querySelector('#sider-action-popup-replace-btn');
+    if (replaceBtn) {
+      replaceBtn.addEventListener('click', () => {
+        const responseEl = popup.querySelector('#sider-action-popup-response');
+        if (responseEl && !responseEl.classList.contains('loading')) {
+          const text = responseEl.textContent;
+          if (replaceSelectionWithText(text)) {
+            // Show success feedback
+            const originalHTML = replaceBtn.innerHTML;
+            replaceBtn.innerHTML = `
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <polyline points="20 6 9 17 4 12"/>
+              </svg>
+            `;
+            setTimeout(() => {
+              replaceBtn.innerHTML = originalHTML;
+            }, 2000);
+          }
+        }
+      });
+    }
+
+    // Insert button - Replace selected text with AI response (Chat Container)
+    const insertBtn = popup.querySelector('#sider-action-popup-insert-btn');
+    if (insertBtn) {
+      insertBtn.addEventListener('click', () => {
+        const responseEl = popup.querySelector('#sider-action-popup-response');
+        if (responseEl && !responseEl.classList.contains('loading')) {
+          const responseText = responseEl.textContent;
+
+          if (replaceSelectionWithText(responseText)) {
+            // Show success feedback
+            const originalHTML = insertBtn.innerHTML;
+            insertBtn.innerHTML = `
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                  <polyline points="20 6 9 17 4 12"/>
+                </svg>
+              `;
+            setTimeout(() => {
+              insertBtn.innerHTML = originalHTML;
+            }, 2000);
+          }
+        }
+      });
+    }
+
     // Continue in Chat button
     const chatBtn = popup.querySelector('#sider-action-popup-chat-btn');
     if (chatBtn) {
@@ -1711,6 +2066,69 @@
           getAIResponse(action, text, popup);
         });
       }
+    }
+
+    // Back button listener
+    const backBtn = popup.querySelector('#sider-action-popup-back-btn');
+    if (backBtn) {
+      backBtn.addEventListener('click', () => {
+        if (popup._history && popup._currentIndex > 0) {
+          popup._currentIndex--;
+          const prevState = popup._history[popup._currentIndex];
+
+          const topInput = popup.querySelector('#sider-action-popup-input');
+          const responseEl = popup.querySelector('#sider-action-popup-response');
+
+          if (topInput && responseEl) {
+            topInput.value = prevState.prompt;
+            responseEl.innerHTML = prevState.responseHTML;
+            responseEl.classList.remove('loading');
+
+            updateNavButtons(popup);
+          }
+        }
+      });
+    }
+
+    // Next button listener
+    const nextBtn = popup.querySelector('#sider-action-popup-next-btn');
+    if (nextBtn) {
+      nextBtn.addEventListener('click', () => {
+        if (popup._history && popup._currentIndex < popup._history.length - 1) {
+          popup._currentIndex++;
+          const nextState = popup._history[popup._currentIndex];
+
+          const topInput = popup.querySelector('#sider-action-popup-input');
+          const responseEl = popup.querySelector('#sider-action-popup-response');
+
+          if (topInput && responseEl) {
+            topInput.value = nextState.prompt;
+            responseEl.innerHTML = nextState.responseHTML;
+            responseEl.classList.remove('loading');
+
+            updateNavButtons(popup);
+          }
+        }
+      });
+    }
+
+    // Chat input listeners
+    const chatInput = popup.querySelector('#sider-action-popup-chat-input');
+    const chatSendBtn = popup.querySelector('#sider-action-popup-chat-send-btn');
+
+    if (chatInput && chatSendBtn) {
+      // Send on button click
+      chatSendBtn.addEventListener('click', () => {
+        sendChatMessage(popup, chatInput.value, action);
+      });
+
+      // Send on Enter (Shift+Enter for new line)
+      chatInput.addEventListener('keydown', (e) => {
+        if (e.key === 'Enter' && !e.shiftKey) {
+          e.preventDefault();
+          sendChatMessage(popup, chatInput.value, action);
+        }
+      });
     }
 
     // For popup actions with editable input, trigger on input change
@@ -1899,6 +2317,10 @@
       case 'translate':
       case 'summarize':
       case 'explaincodes':
+      case 'improvewriting':
+      case 'fixgrammar':
+      case 'writeprofessionally':
+      case 'writefunny':
         // Use stored selectedText if available, otherwise try to get current selection, or use empty string
         const textForAction = getCurrentSelection() || (selectedText && selectedText.trim().length > 0 ? selectedText.trim() : '');
         // Always open popup - user can enter text manually if needed
@@ -1926,14 +2348,26 @@
     if (!pinned || pinned.size === 0) {
       return;
     }
+    const showText = pinned.size < 3;
+
     Array.from(pinned).forEach(action => {
       if (!ACTIONS.includes(action)) {
         return;
       }
       const b = document.createElement('button');
       b.className = 'sider-pin-btn';
-      b.title = action.charAt(0).toUpperCase() + action.slice(1);
-      b.innerHTML = ACTION_ICONS[action] || '★';
+      const name = action.charAt(0).toUpperCase() + action.slice(1);
+      b.title = name;
+
+      if (showText) {
+        b.innerHTML = `${ACTION_ICONS[action] || '★'} <span style="margin-left: 6px; font-size: 13px; font-weight: 500;">${name}</span>`;
+        b.style.width = 'auto';
+        b.style.padding = '0 10px';
+        b.style.height = '32px'; // Match toolbar height better
+      } else {
+        b.innerHTML = ACTION_ICONS[action] || '★';
+      }
+
       b.setAttribute('data-action', action);
 
       // Store action in closure to prevent issues if button is recreated

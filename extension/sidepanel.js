@@ -1,13 +1,13 @@
-(function() {
+(function () {
   'use strict';
-  
+
   let currentModel = null;
   let currentTab = null;
   let lastActiveGroup1Tab = 'rec-note'; // Track last active tab from Group 1
   let activeSidebarTab = 'chat'; // Track currently active sidebar tab
   let lastTabUrl = null; // Track last URL to detect page reloads
   let lastTabId = null; // Track last tab ID
-  
+
   // Get current tab info
   async function getCurrentTab() {
     try {
@@ -17,37 +17,37 @@
       return null;
     }
   }
-  
+
   // Update page title in summarize card (only in chat tab)
   async function updatePageTitle(showCard = false) {
     // Only update if chat tab is active (card only exists in chat-tab.html)
     if (activeSidebarTab !== 'chat') return;
-    
+
     currentTab = await getCurrentTab();
     if (!currentTab) return;
-    
+
     // Wait for the summarize card element to be available in DOM
     // Retry a few times if element is not found (in case HTML is still loading)
     let summarizeCard = document.getElementById('sider-summarize-card');
     let siteNameSpan = document.getElementById('sider-summarize-site-name');
-    
+
     // If elements not found and we want to show the card, wait a bit and retry
     if (showCard && (!summarizeCard || !siteNameSpan)) {
       await new Promise(resolve => setTimeout(resolve, 200));
       summarizeCard = document.getElementById('sider-summarize-card');
       siteNameSpan = document.getElementById('sider-summarize-site-name');
     }
-    
+
     if (summarizeCard && siteNameSpan) {
       let siteName = currentTab.title || 'Page';
       let siteDomain = '';
       let faviconUrl = '';
-      
+
       try {
         const url = new URL(currentTab.url);
         siteDomain = url.hostname.replace('www.', '');
         siteName = siteDomain;
-        
+
         // Get favicon URL
         if (currentTab.favIconUrl) {
           faviconUrl = currentTab.favIconUrl;
@@ -61,30 +61,30 @@
           siteName += '...';
         }
       }
-      
+
       // Update site name - always show the domain name
       const displayName = siteDomain || siteName;
       siteNameSpan.textContent = displayName;
-      
+
       // Ensure site name is visible
       siteNameSpan.style.display = 'block';
       siteNameSpan.style.visibility = 'visible';
       siteNameSpan.style.opacity = '1';
-      
+
       // Update favicon/logo
       const faviconImg = document.getElementById('sider-summarize-favicon');
       const iconSvg = document.getElementById('sider-summarize-icon-svg');
       if (faviconImg && faviconUrl) {
         faviconImg.src = faviconUrl;
         faviconImg.alt = siteDomain || siteName;
-        faviconImg.onerror = function() {
+        faviconImg.onerror = function () {
           // If favicon fails to load, show fallback icon
           this.style.display = 'none';
           if (iconSvg) {
             iconSvg.style.display = 'block';
           }
         };
-        faviconImg.onload = function() {
+        faviconImg.onload = function () {
           // When favicon loads successfully, hide fallback
           this.style.display = 'block';
           if (iconSvg) {
@@ -103,7 +103,7 @@
           faviconImg.style.display = 'none';
         }
       }
-      
+
       // Only show card if explicitly requested (on page reload)
       if (showCard) {
         summarizeCard.style.display = 'flex';
@@ -112,14 +112,14 @@
       console.warn('Summarize card element not found when trying to show it. Chat tab HTML may not be loaded yet.');
     }
   }
-  
+
   // Auto-resize is now handled by ChatTab component
-  
+
   function toggleNavbar() {
     const sidebar = document.querySelector('.sider-panel-sidebar');
     const hamburger = document.getElementById('sider-sidebar-hamburger');
     const popup = document.getElementById('sider-sidebar-popup');
-    
+
     if (sidebar) {
       const isCollapsed = sidebar.classList.contains('sider-sidebar-collapsed');
       if (isCollapsed) {
@@ -138,7 +138,7 @@
       }
     }
   }
-  
+
   function showSidebarPopup() {
     const popup = document.getElementById('sider-sidebar-popup');
     const collapseBtn = document.getElementById('sider-collapse-navbar-btn');
@@ -151,14 +151,14 @@
       popup.style.display = 'block';
     }
   }
-  
+
   function hideSidebarPopup() {
     const popup = document.getElementById('sider-sidebar-popup');
     if (popup) {
       popup.style.display = 'none';
     }
   }
-  
+
   // Tab configuration for Group 1 tabs
   const group1Tabs = {
     'chat': {
@@ -203,16 +203,16 @@
       icon: `<path d="M14.7 6.3a1 1 0 0 0 0 1.4l1.6 1.6a1 1 0 0 0 1.4 0l3.77-3.77a6 6 0 0 1-7.94 7.94l-6.91 6.91a2.12 2.12 0 0 1-3-3l6.91-6.91a6 6 0 0 1 7.94-7.94l-3.76 3.76z"/>`
     }
   };
-  
+
   // Update the 3rd tab icon based on last active tab
   function updateThirdTabIcon(tabId) {
     const thirdTabIcon = document.getElementById('sider-third-tab-icon');
     const thirdTabBadge = document.getElementById('sider-third-tab-badge');
     if (!thirdTabIcon) return;
-    
+
     const tabConfig = group1Tabs[tabId];
     if (!tabConfig) return;
-    
+
     // Update icon
     const svg = thirdTabIcon.querySelector('svg');
     if (svg) {
@@ -235,11 +235,11 @@
         svg.setAttribute('stroke-linejoin', 'round');
       }
     }
-    
+
     // Update title
     thirdTabIcon.setAttribute('title', tabConfig.title);
     thirdTabIcon.setAttribute('data-tab', tabId);
-    
+
     // Update badge
     if (thirdTabBadge) {
       if (tabConfig.hasBadge) {
@@ -248,18 +248,18 @@
         thirdTabBadge.style.display = 'none';
       }
     }
-    
+
     // Update purple class
     if (tabConfig.isPurple) {
       thirdTabIcon.classList.add('sider-sidebar-icon-purple');
     } else {
       thirdTabIcon.classList.remove('sider-sidebar-icon-purple');
     }
-    
+
     // Remove active class when updating third tab icon (it will be added by updateActiveSidebarTab if needed)
     thirdTabIcon.classList.remove('sider-sidebar-icon-active');
   }
-  
+
   // Update active state for sidebar icons
   function updateActiveSidebarTab(tabId) {
     // Remove active state from ALL sidebar icons (including those without data-tab)
@@ -267,11 +267,11 @@
     sidebarIcons.forEach(icon => {
       icon.classList.remove('sider-sidebar-icon-active');
     });
-    
+
     // Add active state to clicked tab
     // First try to find by data-tab attribute
     let activeIcon = document.querySelector(`.sider-panel-sidebar .sider-sidebar-icon[data-tab="${tabId}"]`);
-    
+
     // If not found, check if it's the third tab icon (which might have been just updated)
     if (!activeIcon) {
       const thirdTabIcon = document.getElementById('sider-third-tab-icon');
@@ -279,11 +279,11 @@
         activeIcon = thirdTabIcon;
       }
     }
-    
+
     if (activeIcon) {
       activeIcon.classList.add('sider-sidebar-icon-active');
     }
-    
+
     // Update active state in popup
     const popupItems = document.querySelectorAll('#sider-group1-tabs-popup .sider-sidebar-popup-item[data-tab]');
     popupItems.forEach(item => {
@@ -292,10 +292,10 @@
         item.classList.add('sider-sidebar-popup-item-active');
       }
     });
-    
+
     activeSidebarTab = tabId;
   }
-  
+
   // Load tab component dynamically
   async function loadTabComponent(tabName, containerId) {
     const container = document.getElementById(containerId);
@@ -303,16 +303,16 @@
       console.error(`Container ${containerId} not found`);
       return;
     }
-    
+
     // Hide all other tab containers
     hideAllTabContainers();
-    
+
     // Hide input footer for non-chat tabs
     toggleInputFooter(false);
-    
+
     // Hide summarize card for non-chat tabs
     toggleSummarizeCard(false);
-    
+
     // Check if HTML is already loaded
     if (container.innerHTML.trim() === '') {
       try {
@@ -347,17 +347,17 @@
         `;
       }
     }
-    
+
     // Show container
     container.style.display = 'block';
-    
+
     // Initialize tab component if available
     const componentName = `Sider${capitalizeFirst(tabName)}Tab`;
     if (window[componentName] && window[componentName].init) {
       await window[componentName].init();
     }
   }
-  
+
   // Hide all tab containers
   function hideAllTabContainers() {
     const containers = [
@@ -372,7 +372,7 @@
       'sider-search-tab-container',
       'sider-tools-tab-container'
     ];
-    
+
     containers.forEach(id => {
       const container = document.getElementById(id);
       if (container) {
@@ -380,7 +380,7 @@
       }
     });
   }
-  
+
   // Show/hide input footer based on active tab
   function toggleInputFooter(show) {
     const footerContainer = document.getElementById('sider-chat-footer-container');
@@ -389,7 +389,7 @@
     }
     // Persistent footer is always visible, no need to toggle
   }
-  
+
   // Show/hide summarize card based on active tab (only show in chat)
   function toggleSummarizeCard(show) {
     // Only show summarize card if chat tab is active (card only exists in chat-tab.html)
@@ -399,12 +399,12 @@
       summarizeCard.style.display = show ? 'flex' : 'none';
     }
   }
-  
+
   // Capitalize first letter and handle hyphens
   function capitalizeFirst(str) {
     return str.charAt(0).toUpperCase() + str.slice(1).replace(/-([a-z])/g, (g) => g[1].toUpperCase());
   }
-  
+
   // Handle tab switching
   async function switchToTab(tabId) {
     // Check if it's a Group 1 tab
@@ -414,18 +414,18 @@
         lastActiveGroup1Tab = tabId;
         updateThirdTabIcon(tabId);
       }
-      
+
       // Update active state
       updateActiveSidebarTab(tabId);
-      
+
       // Hide welcome message
       const welcome = document.querySelector('.sider-welcome');
       if (welcome) {
         welcome.style.display = 'none';
       }
-      
+
       // Handle specific tab actions
-      switch(tabId) {
+      switch (tabId) {
         case 'chat':
           // Switch to chat view
           toggleInputFooter(true); // Show input footer for chat
@@ -473,10 +473,10 @@
       }
     }
   }
-  
+
   // Expose switchToTab globally so chat-tab.js can call it
   window.switchToTab = switchToTab;
-  
+
   function openFullPageChat() {
     // Get base URL from storage or use default
     chrome.storage.sync.get(['sider_app_base_url'], (result) => {
@@ -484,9 +484,9 @@
       window.open(baseUrl, '_blank');
     });
   }
-  
+
   function handleSidebarAction(action) {
-    switch(action) {
+    switch (action) {
       case 'chat':
         // Handle chat action
         break;
@@ -525,7 +525,7 @@
         break;
     }
   }
-  
+
   async function handleAction(action) {
     // Check authentication for actions that require it
     if (action === 'fullscreen' || action === 'research' || action === 'highlights' || action === 'slides') {
@@ -534,13 +534,13 @@
         return;
       }
     }
-    
+
     // Handle fullscreen action through ChatTab
     if (action === 'fullscreen' && window.SiderChatTab) {
       window.SiderChatTab.handleAction(action);
     }
   }
-  
+
   function updateAISelectorIcon(model) {
     const iconMap = {
       'webby fusion': chrome.runtime.getURL('icons/fusion.png'),
@@ -566,7 +566,7 @@
       'claude': chrome.runtime.getURL('icons/claude.png'),
       'groq': chrome.runtime.getURL('icons/grok.png')
     };
-    
+
     const aiIconImg = document.getElementById('sider-ai-icon-img');
     if (aiIconImg) {
       const imageUrl = iconMap[model] || chrome.runtime.getURL('icons/fusion.png');
@@ -574,30 +574,30 @@
       aiIconImg.alt = model;
     }
   }
-  
+
   // Make updateAISelectorIcon globally accessible
   window.updateAISelectorIcon = updateAISelectorIcon;
-  
+
   async function startScreenshotMode() {
     // Refresh current tab to ensure we have the latest tab info
     currentTab = await getCurrentTab();
-    
+
     if (!currentTab || !currentTab.id) {
       console.error('No active tab found');
       alert('No active tab found. Please open a webpage and try again.');
       return;
     }
-    
+
     // Check if the tab URL is injectable (not chrome://, extension://, etc.)
     const url = currentTab.url || '';
-    if (url.startsWith('chrome://') || url.startsWith('chrome-extension://') || 
-        url.startsWith('moz-extension://') || url.startsWith('edge://') ||
-        url.startsWith('about:')) {
+    if (url.startsWith('chrome://') || url.startsWith('chrome-extension://') ||
+      url.startsWith('moz-extension://') || url.startsWith('edge://') ||
+      url.startsWith('about:')) {
       console.error('Screenshot mode is not available on this page');
       alert('Screenshot mode is not available on Chrome internal pages or extension pages.');
       return;
     }
-    
+
     try {
       // Send message to content script to start screenshot mode
       chrome.tabs.sendMessage(currentTab.id, {
@@ -606,10 +606,10 @@
         if (chrome.runtime.lastError) {
           const errorMsg = chrome.runtime.lastError.message;
           console.error('Error starting screenshot mode:', errorMsg);
-          
+
           // If content script is not loaded, try to inject it
-          if (errorMsg.includes('Receiving end does not exist') || 
-              errorMsg.includes('Could not establish connection')) {
+          if (errorMsg.includes('Receiving end does not exist') ||
+            errorMsg.includes('Could not establish connection')) {
             // Try to inject all content scripts
             chrome.scripting.executeScript({
               target: { tabId: currentTab.id },
@@ -640,24 +640,24 @@
       alert('Failed to start screenshot mode. Please try again.');
     }
   }
-  
+
   // Make startScreenshotMode globally accessible
   window.startScreenshotMode = startScreenshotMode;
-  
+
   // Chat-related functions moved to chat-tab.js component
-  
+
   // OCR Functions
   let ocrImageScale = 1;
   let ocrExtractedText = '';
   let isProcessingOCR = false; // Guard to prevent multiple simultaneous OCR calls
-  
+
   function openOCR() {
     const ocrContainer = document.getElementById('sider-ocr-container');
     const welcome = document.querySelector('.sider-welcome');
     const chatContainer = document.getElementById('sider-chat-container');
     const panelFooter = document.querySelector('.sider-panel-footer');
     const panelBody = document.getElementById('sider-panel-body');
-    
+
     // Hide summarize card when switching to OCR (only exists in chat tab)
     if (activeSidebarTab === 'chat') {
       const summarizeCard = document.getElementById('sider-summarize-card');
@@ -665,7 +665,7 @@
         summarizeCard.style.display = 'none';
       }
     }
-    
+
     if (ocrContainer) {
       ocrContainer.style.display = 'flex';
     }
@@ -677,18 +677,18 @@
     }
     // Hide summarize card for OCR
     toggleSummarizeCard(false);
-    
+
     if (panelFooter) {
       panelFooter.style.display = 'none';
     }
     if (panelBody) {
       panelBody.classList.add('sider-ocr-active');
     }
-    
+
     // Reset OCR state
     resetOCR();
   }
-  
+
   function resetOCR() {
     const uploadArea = document.getElementById('sider-ocr-upload-area');
     const imageWrapper = document.getElementById('sider-ocr-image-wrapper');
@@ -699,7 +699,7 @@
     const ocrFileInput = document.getElementById('sider-ocr-file-input');
     const screenshotBtn = document.getElementById('sider-ocr-screenshot');
     const resultContent = document.getElementById('sider-ocr-result-content');
-    
+
     if (uploadArea) uploadArea.style.display = 'block';
     if (imageWrapper) imageWrapper.style.display = 'none';
     if (result) result.style.display = 'none';
@@ -712,29 +712,29 @@
     if (ocrFileInput) ocrFileInput.value = '';
     if (screenshotBtn) screenshotBtn.style.display = 'block';
     if (resultContent) resultContent.textContent = '';
-    
+
     ocrImageScale = 1;
     ocrExtractedText = '';
   }
-  
+
   function handleOCRFileUpload(file) {
     if (!file) return;
-    
+
     // Check file size (5MB limit)
     if (file.size > 5 * 1024 * 1024) {
       alert('File size exceeds 5MB limit. Please choose a smaller file.');
       return;
     }
-    
+
     const reader = new FileReader();
     reader.onload = (e) => {
       const dataUrl = e.target.result;
       displayOCRImage(dataUrl);
-      
+
       // Process OCR
       processOCR(dataUrl);
     };
-    
+
     if (file.type.startsWith('image/')) {
       reader.readAsDataURL(file);
     } else if (file.type === 'application/pdf') {
@@ -744,7 +744,7 @@
       alert('Unsupported file type. Please upload an image or PDF.');
     }
   }
-  
+
   function displayOCRImage(dataUrl) {
     const uploadArea = document.getElementById('sider-ocr-upload-area');
     const imageWrapper = document.getElementById('sider-ocr-image-wrapper');
@@ -753,20 +753,20 @@
     const divider2 = document.getElementById('sider-ocr-divider-2');
     const screenshotBtn = document.getElementById('sider-ocr-screenshot');
     const result = document.getElementById('sider-ocr-result');
-    
+
     if (ocrImage) {
       ocrImage.src = dataUrl;
       ocrImageScale = 1;
       ocrImage.style.transform = `scale(${ocrImageScale})`;
       ocrImage.style.transformOrigin = 'center center';
     }
-    
+
     if (uploadArea) uploadArea.style.display = 'none';
     if (imageWrapper) imageWrapper.style.display = 'block';
     if (divider) divider.style.display = 'none';
     if (divider2) divider2.style.display = 'none';
     if (screenshotBtn) screenshotBtn.style.display = 'none';
-    
+
     // Result section will be shown by processOCR when text is extracted
     // Only show result if image is available
     if (result && imageWrapper && imageWrapper.style.display !== 'none') {
@@ -775,39 +775,39 @@
       result.style.display = 'none';
     }
   }
-  
+
   async function processOCR(imageDataUrl) {
     // Prevent multiple simultaneous OCR calls
     if (isProcessingOCR) {
       return;
     }
-    
+
     const result = document.getElementById('sider-ocr-result');
     const resultContent = document.getElementById('sider-ocr-result-content');
     const imageWrapper = document.getElementById('sider-ocr-image-wrapper');
-    
+
     if (!result || !resultContent) return;
-    
+
     // Only show result if image is available
     if (!imageWrapper || imageWrapper.style.display === 'none') {
       result.style.display = 'none';
       return;
     }
-    
+
     // Set processing flag
     isProcessingOCR = true;
-    
+
     // Show loading state
     resultContent.textContent = 'Processing OCR...';
     result.style.display = 'block';
-    
+
     try {
       // Call OCR API or service
       const extractedText = await performOCR(imageDataUrl);
-      
+
       ocrExtractedText = extractedText;
       resultContent.textContent = extractedText || 'No text detected in the image.';
-      
+
     } catch (error) {
       console.error('OCR processing error:', error);
       resultContent.textContent = 'Error processing image. Please try again.';
@@ -816,7 +816,7 @@
       isProcessingOCR = false;
     }
   }
-  
+
   // Helper function to convert data URL to Blob
   function dataURLtoBlob(dataUrl) {
     const arr = dataUrl.split(',');
@@ -840,7 +840,7 @@
     try {
       // Convert data URL to Blob
       const blob = dataURLtoBlob(imageDataUrl);
-      
+
       // Create a File object from the Blob (for better compatibility)
       const file = new File([blob], 'ocr-image.png', { type: blob.type || 'image/png' });
 
@@ -848,7 +848,7 @@
         ? window.SiderChatTab.getActiveModel()
         : (window.SiderChatTab && window.SiderChatTab.currentModel);
       const ocrModel = currentModel || chatTabModel;
-      
+
       // Use ImageService to upload and extract text
       const result = await window.SiderImageService.extractTextFromImage(file, {
         mime: blob.type || 'image/png',
@@ -866,7 +866,7 @@
       return `Error: ${error.message || 'Failed to process image'}`;
     }
   }
-  
+
   function setupOCREventListeners() {
     const ocrFileInput = document.getElementById('sider-ocr-file-input');
     const ocrUploadZone = document.getElementById('sider-ocr-upload-zone');
@@ -883,7 +883,7 @@
     const ocrSpeakerBtn = document.getElementById('sider-ocr-speaker');
     const ocrChatBtn = document.getElementById('sider-ocr-chat');
     const ocrScreenshotBtn = document.getElementById('sider-ocr-screenshot');
-    
+
     // File input
     if (ocrFileInput) {
       ocrFileInput.addEventListener('change', (e) => {
@@ -893,7 +893,7 @@
         }
       });
     }
-    
+
     // Upload zone click
     if (ocrUploadZone) {
       ocrUploadZone.addEventListener('click', () => {
@@ -901,17 +901,17 @@
           ocrFileInput.click();
         }
       });
-      
+
       // Drag and drop
       ocrUploadZone.addEventListener('dragover', (e) => {
         e.preventDefault();
         ocrUploadZone.classList.add('dragover');
       });
-      
+
       ocrUploadZone.addEventListener('dragleave', () => {
         ocrUploadZone.classList.remove('dragover');
       });
-      
+
       ocrUploadZone.addEventListener('drop', (e) => {
         e.preventDefault();
         ocrUploadZone.classList.remove('dragover');
@@ -921,14 +921,14 @@
         }
       });
     }
-    
+
     // Delete button
     if (ocrDeleteBtn) {
       ocrDeleteBtn.addEventListener('click', () => {
         resetOCR();
       });
     }
-    
+
     // Upload new button
     if (ocrUploadNewBtn) {
       ocrUploadNewBtn.addEventListener('click', () => {
@@ -937,14 +937,14 @@
         }
       });
     }
-    
+
     // Screenshot button
     if (ocrScreenshotActionBtn) {
       ocrScreenshotActionBtn.addEventListener('click', () => {
         startScreenshotMode();
       });
     }
-    
+
     // Zoom controls
     if (ocrZoomInBtn) {
       ocrZoomInBtn.addEventListener('click', () => {
@@ -956,7 +956,7 @@
         }
       });
     }
-    
+
     if (ocrZoomOutBtn) {
       ocrZoomOutBtn.addEventListener('click', () => {
         ocrImageScale = Math.max(ocrImageScale - 0.1, 0.5);
@@ -967,7 +967,7 @@
         }
       });
     }
-    
+
     if (ocrZoomTargetBtn) {
       ocrZoomTargetBtn.addEventListener('click', () => {
         ocrImageScale = 1;
@@ -978,7 +978,7 @@
         }
       });
     }
-    
+
     // Copy button
     if (ocrCopyBtn) {
       ocrCopyBtn.addEventListener('click', async () => {
@@ -997,7 +997,7 @@
         }
       });
     }
-    
+
     // Paste button
     if (ocrPasteBtn) {
       ocrPasteBtn.addEventListener('click', async () => {
@@ -1014,7 +1014,7 @@
         }
       });
     }
-    
+
     // Refresh button
     if (ocrRefreshBtn) {
       ocrRefreshBtn.addEventListener('click', () => {
@@ -1024,7 +1024,7 @@
         }
       });
     }
-    
+
     // Edit button
     if (ocrEditBtn) {
       ocrEditBtn.addEventListener('click', () => {
@@ -1043,7 +1043,7 @@
         }
       });
     }
-    
+
     // Speaker button (read aloud)
     if (ocrSpeakerBtn) {
       ocrSpeakerBtn.addEventListener('click', () => {
@@ -1055,20 +1055,20 @@
         }
       });
     }
-    
+
     // Chat button
     if (ocrChatBtn) {
       ocrChatBtn.addEventListener('click', () => {
         if (ocrExtractedText) {
           // Switch to chat tab first
           switchToTab('chat');
-          
+
           // Wait for tab switch to complete, then set input value
           setTimeout(() => {
-          const input = document.getElementById('sider-chat-input');
-          if (input) {
-            input.value = `Extract and analyze this text from the image:\n\n${ocrExtractedText}`;
-              
+            const input = document.getElementById('sider-chat-input');
+            if (input) {
+              input.value = `Extract and analyze this text from the image:\n\n${ocrExtractedText}`;
+
               // Auto-resize and update UI
               if (window.SiderChatTab) {
                 window.SiderChatTab.autoResize(input);
@@ -1076,11 +1076,11 @@
               if (window.toggleMicSendButton) {
                 window.toggleMicSendButton();
               }
-              
+
               // Focus the input and scroll into view
               input.focus();
               input.scrollIntoView({ behavior: 'smooth', block: 'end' });
-              
+
               // Ensure input is visible by scrolling to bottom
               const inputArea = input.closest('.sider-input-area');
               if (inputArea) {
@@ -1088,13 +1088,13 @@
               }
             }
           }, 100);
-            
-            // Optionally auto-send
-            // sendMessage();
+
+          // Optionally auto-send
+          // sendMessage();
         }
       });
     }
-    
+
     // Screenshot button
     if (ocrScreenshotBtn) {
       ocrScreenshotBtn.addEventListener('click', () => {
@@ -1102,17 +1102,17 @@
       });
     }
   }
-  
+
   // Chat message functions moved to chat-tab.js component
-  
+
   function toggleProfileDropdown() {
     const profileDropdown = document.getElementById('sider-profile-dropdown');
     const profileIcon = document.getElementById('sider-profile-icon');
-    
+
     if (!profileDropdown || !profileIcon) return;
-    
+
     const isVisible = profileDropdown.style.display !== 'none';
-    
+
     if (isVisible) {
       profileDropdown.style.display = 'none';
     } else {
@@ -1122,7 +1122,7 @@
         const dropdownHeight = 200;
         profileDropdown.style.bottom = `${window.innerHeight - iconRect.top + 8}px`;
         profileDropdown.style.right = `${window.innerWidth - iconRect.right - 48}px`;
-        
+
         const dropdownRect = profileDropdown.getBoundingClientRect();
         if (dropdownRect.right > window.innerWidth) {
           profileDropdown.style.right = '20px';
@@ -1135,7 +1135,7 @@
       }
     }
   }
-  
+
   function handleProfileLogin() {
     // Wait for login modal to be available
     if (window.SiderLoginModal) {
@@ -1150,7 +1150,7 @@
       }, 100);
     }
   }
-  
+
   function handleProfileMenuAction(action) {
     switch (action) {
       case 'whats-new':
@@ -1175,9 +1175,9 @@
       default:
     }
   }
-  
+
   // Chat image and text selection functions moved to chat-tab.js component
-  
+
   // Listen for messages to switch to chat tab
   chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
     if (request.type === 'SWITCH_TO_CHAT_TAB') {
@@ -1202,13 +1202,13 @@
     }
     return false;
   });
-  
+
   // Listen for extract text from image-preview.js
   chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
     if (request.type === 'EXTRACT_TEXT') {
       // Switch to OCR tab first
       switchToTab('ocr');
-      
+
       // Convert image to data URL if needed
       const processImage = (dataUrl) => {
         // Small delay to ensure OCR tab is fully opened
@@ -1217,7 +1217,7 @@
           processOCR(dataUrl);
         }, 100);
       };
-      
+
       if (request.dataUrl) {
         // Already a data URL
         processImage(request.dataUrl);
@@ -1234,7 +1234,7 @@
     }
     return false;
   });
-  
+
   // Helper function to convert image URL to data URL
   function convertImageUrlToDataUrl(url) {
     return new Promise((resolve, reject) => {
@@ -1251,7 +1251,7 @@
           // Fallback: try using an image element
           const img = new Image();
           img.crossOrigin = 'anonymous';
-          img.onload = function() {
+          img.onload = function () {
             try {
               const canvas = document.createElement('canvas');
               canvas.width = img.width;
@@ -1268,7 +1268,7 @@
         });
     });
   }
-  
+
   function initializePanel() {
     // Cleanup: Remove google_client_id from storage if it exists
     try {
@@ -1280,7 +1280,7 @@
     } catch (error) {
       console.warn('⚠️ Failed to cleanup google_client_id:', error);
     }
-    
+
     // Get current tab (don't set lastTabUrl yet - wait for first 'complete' status)
     getCurrentTab().then(tab => {
       currentTab = tab;
@@ -1290,17 +1290,17 @@
       updatePageTitle(false); // Don't show card on initial load
       // Note: lastTabUrl and lastTabId will be set after first page completes
       // This prevents the first load from being detected as a reload
-      
+
       // Set initial tracking if tab is already loaded
       if (tab && tab.url && tab.status === 'complete') {
         lastTabUrl = tab.url;
         lastTabId = tab.id;
       }
     });
-    
+
     // Show input footer by default since chat is the default tab
     toggleInputFooter(true);
-    
+
     // Icon sources are now set up in chat-tab.js after HTML is loaded
     const ocrScreenshotActionIcon = document.getElementById('sider-ocr-screenshot-action-icon');
     if (ocrScreenshotActionIcon) {
@@ -1310,7 +1310,7 @@
     if (ocrScreenshotIcon) {
       ocrScreenshotIcon.src = chrome.runtime.getURL('icons/cut.png');
     }
-    
+
     // Initialize ChatTab component
     if (window.SiderChatTab) {
       window.SiderChatTab.init({
@@ -1321,13 +1321,13 @@
         updatePageTitle: updatePageTitle
       });
     }
-    
+
     // Screenshot button is now handled by ChatTab component
     // The event listeners are set up in chat-tab.js after HTML is loaded
-    
+
     // AI Model Selector is now handled by ChatTab component
     // The event listeners are set up in chat-tab.js after HTML is loaded
-    
+
     // Initialize AI Modules if available
     if (window.SiderAIModules) {
       window.SiderAIModules.init(
@@ -1345,7 +1345,7 @@
         }
       );
     }
-    
+
     // Load previously selected model
     chrome.storage.sync.get(['sider_selected_model'], (result) => {
       if (result.sider_selected_model) {
@@ -1356,18 +1356,18 @@
         }
       }
     });
-    
+
     // Profile icon dropdown
     const profileIcon = document.getElementById('sider-profile-icon');
     const profileDropdown = document.getElementById('sider-profile-dropdown');
     const profileLoginBtn = document.getElementById('sider-profile-login-btn');
-    
+
     if (profileIcon && profileDropdown) {
       profileIcon.addEventListener('click', (e) => {
         e.stopPropagation();
         toggleProfileDropdown();
       });
-      
+
       document.addEventListener('click', (e) => {
         if (profileDropdown && profileDropdown.style.display !== 'none') {
           if (!profileDropdown.contains(e.target) && !profileIcon.contains(e.target)) {
@@ -1375,7 +1375,7 @@
           }
         }
       });
-      
+
       const menuItems = profileDropdown.querySelectorAll('.sider-profile-menu-item');
       menuItems.forEach(item => {
         item.addEventListener('click', (e) => {
@@ -1385,7 +1385,7 @@
           profileDropdown.style.display = 'none';
         });
       });
-      
+
       if (profileLoginBtn) {
         profileLoginBtn.addEventListener('click', (e) => {
           e.stopPropagation();
@@ -1394,32 +1394,32 @@
         });
       }
     }
-    
+
     // File attachment and read page are now handled by ChatTab component
     // Screenshot button is now handled by ChatTab component
-    
+
     // Chat control button is now handled in chat-tab.js after HTML is loaded
-    
+
     // Generation Model Selection Modal
     const imageModelBtn = document.getElementById('sider-image-model-btn');
     const generationModelModal = document.getElementById('sider-generation-model-modal');
     const generationModelOptions = generationModelModal?.querySelectorAll('.sider-generation-model-option');
     const modelTextSpan = imageModelBtn?.querySelector('.sider-chat-controls-model-text');
     let selectedModel = 'nano-banana';
-    
+
     imageModelBtn?.addEventListener('click', (e) => {
       e.stopPropagation();
       if (generationModelModal) {
         generationModelModal.style.display = 'block';
       }
     });
-    
+
     generationModelOptions?.forEach(option => {
       option.addEventListener('click', (e) => {
         e.stopPropagation();
         const model = option.getAttribute('data-model');
         selectedModel = model;
-        
+
         const modelNames = {
           'nano-banana': 'Nano Banana',
           'low': 'Low',
@@ -1429,16 +1429,16 @@
         if (modelTextSpan) {
           modelTextSpan.textContent = modelNames[model] || 'Nano Banana';
         }
-        
+
         generationModelOptions.forEach(opt => opt.classList.remove('sider-generation-model-option-selected'));
         option.classList.add('sider-generation-model-option-selected');
-        
+
         if (generationModelModal) {
           generationModelModal.style.display = 'none';
         }
       });
     });
-    
+
     document.addEventListener('click', (e) => {
       if (generationModelModal && generationModelModal.style.display !== 'none') {
         if (!generationModelModal.contains(e.target) && !imageModelBtn?.contains(e.target)) {
@@ -1446,7 +1446,7 @@
         }
       }
     });
-    
+
     // Custom Instructions Modal
     const customInstructionsEditIcon = document.querySelector('.sider-chat-controls-edit-icon');
     const customInstructionsModal = document.getElementById('sider-custom-instructions-modal');
@@ -1454,14 +1454,14 @@
     const customInstructionsClose = document.getElementById('sider-custom-instructions-close');
     const customInstructionsCancel = document.getElementById('sider-custom-instructions-cancel');
     const customInstructionsSave = document.getElementById('sider-custom-instructions-save');
-    
+
     // Load saved custom instructions
     chrome.storage.sync.get(['sider_custom_instructions'], (result) => {
       if (customInstructionsTextarea && result.sider_custom_instructions) {
         customInstructionsTextarea.value = result.sider_custom_instructions;
       }
     });
-    
+
     // Open modal when edit icon is clicked
     customInstructionsEditIcon?.addEventListener('click', (e) => {
       e.stopPropagation();
@@ -1475,17 +1475,17 @@
         }, 100);
       }
     });
-    
+
     // Close modal functions
     const closeCustomInstructionsModal = () => {
       if (customInstructionsModal) {
         customInstructionsModal.style.display = 'none';
       }
     };
-    
+
     customInstructionsClose?.addEventListener('click', closeCustomInstructionsModal);
     customInstructionsCancel?.addEventListener('click', closeCustomInstructionsModal);
-    
+
     // Save custom instructions
     customInstructionsSave?.addEventListener('click', () => {
       if (customInstructionsTextarea) {
@@ -1495,7 +1495,7 @@
         });
       }
     });
-    
+
     // Close modal when clicking outside
     document.addEventListener('click', (e) => {
       if (customInstructionsModal && customInstructionsModal.style.display !== 'none') {
@@ -1504,18 +1504,18 @@
         }
       }
     });
-    
+
     // Close modal on Escape key
     document.addEventListener('keydown', (e) => {
       if (e.key === 'Escape' && customInstructionsModal && customInstructionsModal.style.display !== 'none') {
         closeCustomInstructionsModal();
       }
     });
-    
+
     if (generationModelOptions && generationModelOptions.length > 0) {
       generationModelOptions[0].classList.add('sider-generation-model-option-selected');
     }
-    
+
     // Collapse Nav Bar button - show popup with all Group 1 tabs
     const collapseNavbarBtn = document.getElementById('sider-collapse-navbar-btn');
     collapseNavbarBtn?.addEventListener('click', (e) => {
@@ -1530,7 +1530,7 @@
         }
       }
     });
-    
+
     // Sidebar icon click handlers
     const sidebarIcons = document.querySelectorAll('.sider-panel-sidebar .sider-sidebar-icon[data-tab]');
     sidebarIcons.forEach(icon => {
@@ -1542,23 +1542,23 @@
         }
       });
     });
-    
+
     // Full page chat button
     const fullpageChatBtn = document.getElementById('sider-fullpage-chat-btn');
     fullpageChatBtn?.addEventListener('click', (e) => {
       e.stopPropagation();
       openFullPageChat();
     });
-    
+
     // Hamburger menu (when collapsed)
     const hamburger = document.getElementById('sider-sidebar-hamburger');
     const sidebarPopup = document.getElementById('sider-sidebar-popup');
-    
+
     if (hamburger) {
       hamburger.addEventListener('mouseenter', () => {
         showSidebarPopup();
       });
-      
+
       hamburger.addEventListener('mouseleave', (e) => {
         if (!sidebarPopup?.contains(e.relatedTarget)) {
           setTimeout(() => {
@@ -1569,16 +1569,16 @@
         }
       });
     }
-    
+
     if (sidebarPopup) {
       sidebarPopup.addEventListener('mouseenter', () => {
         sidebarPopup.style.display = 'block';
       });
-      
+
       sidebarPopup.addEventListener('mouseleave', () => {
         hideSidebarPopup();
       });
-      
+
       // Expand Nav Bar button in popup
       const expandNavbarPopupBtn = document.getElementById('sider-expand-navbar-popup-btn');
       expandNavbarPopupBtn?.addEventListener('click', (e) => {
@@ -1586,7 +1586,7 @@
         toggleNavbar();
         hideSidebarPopup();
       });
-      
+
       // Full page chat button in popup
       const fullpageChatPopupBtn = document.getElementById('sider-fullpage-chat-popup-btn');
       fullpageChatPopupBtn?.addEventListener('click', (e) => {
@@ -1594,7 +1594,7 @@
         openFullPageChat();
         hideSidebarPopup();
       });
-      
+
       // Popup items click handlers - Group 1 tabs
       const popupItems = sidebarPopup.querySelectorAll('#sider-group1-tabs-popup .sider-sidebar-popup-item[data-tab]');
       popupItems.forEach(item => {
@@ -1603,12 +1603,12 @@
           const tabId = item.getAttribute('data-tab');
           if (tabId) {
             switchToTab(tabId);
-          hideSidebarPopup();
+            hideSidebarPopup();
           }
         });
       });
     }
-    
+
     // Check initial state
     const sidebar = document.querySelector('.sider-panel-sidebar');
     if (sidebar && sidebar.classList.contains('sider-sidebar-collapsed')) {
@@ -1616,15 +1616,15 @@
     }
     const moreOptionsIcon = document.getElementById('sider-more-options-icon');
     const moreOptionsPopup = document.getElementById('sider-more-options-popup');
-    
+
     if (moreOptionsIcon && moreOptionsPopup) {
       let moreOptionsTimeout;
-      
+
       // Function to filter out tabs already visible in sidebar
       const filterMoreOptionsPopup = () => {
         const allItems = moreOptionsPopup.querySelectorAll('.sider-more-options-item');
         const visibleTabs = ['chat', 'agent', lastActiveGroup1Tab]; // Tabs always visible in sidebar
-        
+
         allItems.forEach(item => {
           const action = item.getAttribute('data-action');
           if (visibleTabs.includes(action)) {
@@ -1634,13 +1634,13 @@
           }
         });
       };
-      
+
       const showMoreOptionsPopup = () => {
         clearTimeout(moreOptionsTimeout);
         if (moreOptionsIcon && moreOptionsPopup) {
           // Filter out tabs already visible in sidebar
           filterMoreOptionsPopup();
-          
+
           const iconRect = moreOptionsIcon.getBoundingClientRect();
           if (iconRect) {
             moreOptionsPopup.style.display = 'block';
@@ -1651,7 +1651,7 @@
           }
         }
       };
-      
+
       const hideMoreOptionsPopup = () => {
         clearTimeout(moreOptionsTimeout);
         moreOptionsTimeout = setTimeout(() => {
@@ -1660,7 +1660,7 @@
           }
         }, 200);
       };
-      
+
       // Click handler to toggle popup
       moreOptionsIcon.addEventListener('click', (e) => {
         e.stopPropagation();
@@ -1671,29 +1671,29 @@
           showMoreOptionsPopup();
         }
       });
-      
+
       moreOptionsIcon.addEventListener('mouseenter', () => {
         showMoreOptionsPopup();
       });
-      
+
       moreOptionsIcon.addEventListener('mouseleave', (e) => {
         if (!moreOptionsPopup.contains(e.relatedTarget)) {
           hideMoreOptionsPopup();
         }
       });
-      
+
       moreOptionsPopup.addEventListener('mouseenter', () => {
         clearTimeout(moreOptionsTimeout);
         moreOptionsPopup.style.display = 'block';
       });
-      
+
       moreOptionsPopup.addEventListener('mouseleave', () => {
         hideMoreOptionsPopup();
       });
-      
+
       const moreOptionsItems = moreOptionsPopup.querySelectorAll('.sider-more-options-item');
       const selectedOptionIcon = document.getElementById('sider-selected-option-icon');
-      
+
       // Map actions to their SVG icons
       const actionIconMap = {
         'chat': `<path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/>`,
@@ -1707,7 +1707,7 @@
         'search': `<circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/>`,
         'tools': `<path d="M14.7 6.3a1 1 0 0 0 0 1.4l1.6 1.6a1 1 0 0 0 1.4 0l3.77-3.77a6 6 0 0 1-7.94 7.94l-6.91 6.91a2.12 2.12 0 0 1-3-3l6.91-6.91a6 6 0 0 1 7.94-7.94l-3.76 3.76z"/>`
       };
-      
+
       // Map actions to their labels
       const actionLabelMap = {
         'chat': 'Chat',
@@ -1721,37 +1721,37 @@
         'search': 'Search',
         'tools': 'Tools'
       };
-      
+
       moreOptionsItems.forEach(item => {
         item.addEventListener('click', (e) => {
           e.stopPropagation();
           const action = item.getAttribute('data-action');
           const iconSvg = item.querySelector('.sider-more-options-icon svg');
-          
+
           if (selectedOptionIcon && iconSvg && actionIconMap[action]) {
             // Update the selected option icon
             const selectedIconSvg = selectedOptionIcon.querySelector('svg');
             if (selectedIconSvg) {
               selectedIconSvg.innerHTML = actionIconMap[action];
             }
-            
+
             // Update title
             selectedOptionIcon.setAttribute('title', actionLabelMap[action] || action);
-            
+
             // Show the selected option icon
             selectedOptionIcon.style.display = 'flex';
           }
-          
+
           // Handle Group 1 tabs
           if (group1Tabs[action]) {
             switchToTab(action);
           }
-          
+
           moreOptionsPopup.style.display = 'none';
         });
       });
     }
-    
+
     // Action buttons
     document.querySelectorAll('.sider-action-btn').forEach(btn => {
       btn.addEventListener('click', (e) => {
@@ -1759,52 +1759,52 @@
         handleAction(action);
       });
     });
-    
+
     // Persistent Footer Event Listeners
     const footerUpgrade = document.querySelector('.sider-footer-upgrade');
     const footerGiftBtn = document.getElementById('sider-footer-gift-btn');
     const footerHeartBtn = document.getElementById('sider-footer-heart-btn');
     const footerHelpBtn = document.getElementById('sider-footer-help-btn');
     const footerMessageBtn = document.getElementById('sider-footer-message-btn');
-    
+
     if (footerUpgrade) {
       footerUpgrade.addEventListener('click', () => {
       });
     }
-    
+
     // Sparkle icon click handler (if needed)
     const footerSparkle = document.querySelector('.sider-footer-sparkle-wrapper');
     if (footerSparkle) {
       footerSparkle.addEventListener('click', () => {
       });
     }
-    
+
     if (footerGiftBtn) {
       footerGiftBtn.addEventListener('click', () => {
         // Handle rewards action
         handleProfileMenuAction('rewards');
       });
     }
-    
+
     if (footerHeartBtn) {
       footerHeartBtn.addEventListener('click', () => {
       });
     }
-    
+
     if (footerHelpBtn) {
       footerHelpBtn.addEventListener('click', () => {
         // Handle help action
         handleProfileMenuAction('help');
       });
     }
-    
+
     if (footerMessageBtn) {
       footerMessageBtn.addEventListener('click', () => {
         // Handle messages action
         handleProfileMenuAction('feedback');
       });
     }
-    
+
     // Load credits from storage
     chrome.storage.local.get(['sider_credits'], (result) => {
       const creditsElement = document.getElementById('sider-footer-credits');
@@ -1812,7 +1812,7 @@
         creditsElement.textContent = result.sider_credits || '0';
       }
     });
-    
+
     // Listen for credits updates
     chrome.storage.onChanged.addListener((changes, namespace) => {
       if (namespace === 'local' && changes.sider_credits) {
@@ -1821,7 +1821,7 @@
           creditsElement.textContent = changes.sider_credits.newValue || '0';
         }
       }
-      
+
       if (changes.authToken) {
         if (changes.authToken.newValue === undefined || changes.authToken.newValue === null) {
           localStorage.removeItem('authToken');
@@ -1831,12 +1831,12 @@
         }
       }
     });
-    
+
     // Summarize button
     const summarizeBtn = document.getElementById('sider-summarize-btn');
     const summarizeSaveBtn = document.getElementById('sider-summarize-save-btn');
     const summarizeCloseBtn = document.getElementById('sider-summarize-close-btn');
-    
+
     if (summarizeBtn) {
       summarizeBtn.addEventListener('click', (e) => {
         e.stopPropagation();
@@ -1845,7 +1845,7 @@
         }
       });
     }
-    
+
     if (summarizeSaveBtn) {
       summarizeSaveBtn.addEventListener('click', (e) => {
         e.stopPropagation();
@@ -1858,7 +1858,7 @@
         }, 2000);
       });
     }
-    
+
     if (summarizeCloseBtn) {
       summarizeCloseBtn.addEventListener('click', (e) => {
         e.stopPropagation();
@@ -1871,7 +1871,7 @@
         }
       });
     }
-    
+
     // Close AI dropdown when clicking outside
     document.addEventListener('click', (e) => {
       const aiDropdown = document.getElementById('sider-ai-dropdown');
@@ -1881,7 +1881,7 @@
           aiDropdown.style.display = 'none';
         }
       }
-      
+
       // Close sidebar popup when clicking outside
       const sidebarPopup = document.getElementById('sider-sidebar-popup');
       const collapseNavbarBtn = document.getElementById('sider-collapse-navbar-btn');
@@ -1890,7 +1890,7 @@
           hideSidebarPopup();
         }
       }
-      
+
       // Close more options popup when clicking outside
       const moreOptionsPopup = document.getElementById('sider-more-options-popup');
       const moreOptionsIcon = document.getElementById('sider-more-options-icon');
@@ -1900,7 +1900,7 @@
         }
       }
     });
-    
+
     chrome.tabs.onActivated.addListener(async (activeInfo) => {
       try {
         const [tab] = await chrome.tabs.query({ active: true, currentWindow: true });
@@ -1915,7 +1915,7 @@
         console.error('Error updating tab on activation:', e);
       }
     });
-    
+
     chrome.tabs.onUpdated.addListener(async (tabId, changeInfo, tab) => {
       try {
         const [activeTab] = await chrome.tabs.query({ active: true, currentWindow: true });
@@ -1924,17 +1924,17 @@
           if (changeInfo.status === 'complete' || changeInfo.title) {
             // Detect page reload: status is 'complete', URL exists, and URL/tabId match previous values
             // This means the same page was reloaded (not navigation to a new page)
-            const isPageReload = changeInfo.status === 'complete' && 
-                                 tab.url && 
-                                 lastTabUrl !== null && // Must have a previous URL
-                                 lastTabUrl === tab.url && 
-                                 lastTabId === tabId;
-            
+            const isPageReload = changeInfo.status === 'complete' &&
+              tab.url &&
+              lastTabUrl !== null && // Must have a previous URL
+              lastTabUrl === tab.url &&
+              lastTabId === tabId;
+
             currentTab = tab;
             if (window.SiderChatTab) {
               window.SiderChatTab.updateCurrentTab(tab);
             }
-            
+
             // Show summarize card only on page reload (not on initial load, navigation, or new chats)
             if (isPageReload && activeSidebarTab === 'chat') {
               // Use setTimeout to ensure DOM is ready and card isn't immediately hidden
@@ -1944,7 +1944,7 @@
             } else {
               updatePageTitle(false); // Update title but don't show card
             }
-            
+
             // Update tracking variables after checking for reload
             // This ensures next reload will be detected correctly
             if (tab.url && changeInfo.status === 'complete') {
@@ -1957,14 +1957,14 @@
         console.error('Error updating tab on update:', e);
       }
     });
-    
+
     // Initialize 3rd tab icon with last active tab
     updateThirdTabIcon(lastActiveGroup1Tab);
-    
+
     // Set initial active state
     updateActiveSidebarTab(activeSidebarTab);
   }
-  
+
   // Authentication functions
   async function checkAuthStatus() {
     if (!window.SiderAuthService) {
@@ -1982,36 +1982,36 @@
     if (updateUIForAuthStatusTimeout) {
       clearTimeout(updateUIForAuthStatusTimeout);
     }
-    
+
     // Prevent concurrent calls
     if (isUpdatingUI) {
       return;
     }
-    
+
     updateUIForAuthStatusTimeout = setTimeout(async () => {
       isUpdatingUI = true;
       try {
         // Add a small delay to ensure storage operations are complete
         await new Promise(resolve => setTimeout(resolve, 100));
-        
+
         // Check auth status by reading from storage only (no API calls)
         const isAuthenticated = await checkAuthStatus();
-        
+
         if (isAuthenticated) {
           // Hide login modal if open
           if (window.SiderLoginModal) {
             window.SiderLoginModal.hide();
           }
-          
+
           // Update UI with cached data from storage only (no API calls)
           // All login logic and API calls are handled in login-modal.js
           updateProfileDropdown(true);
           updateProfileIcon(true);
           updateWelcomeMessage(true);
-          
+
           // Enable all features
           enableFeatures(true);
-          
+
           // Fetch current user info on extension open (only if not skipped and not already fetching)
           if (!skipUserInfoFetch && !isFetchingUserInfo) {
             const fetchCurrentUserInfo = () => {
@@ -2019,56 +2019,56 @@
                 isFetchingUserInfo = true;
                 window.SiderAuthService.getCurrentUserInfo().then((userInfoResult) => {
                   isFetchingUserInfo = false;
-                if (userInfoResult.success && userInfoResult.data) {
-                  // Store user info from API response
-                  const userData = {
-                    email: userInfoResult.data.email || '',
-                    username: userInfoResult.data.username || '',
-                    name: userInfoResult.data.username || '',
-                    id: userInfoResult.data.id || '',
-                    is_active: userInfoResult.data.is_active,
-                    created_at: userInfoResult.data.created_at,
-                    last_login: userInfoResult.data.last_login
-                  };
-                  localStorage.setItem('user', JSON.stringify(userData));
-                  // Also save to chrome.storage.local for welcome message
-                  chrome.storage.local.set({
-                    sider_user_name: userInfoResult.data.username || userInfoResult.data.email?.split('@')[0] || '',
-                    sider_user_email: userInfoResult.data.email || '',
-                    sider_user_logged_in: true
-                  }, () => {
-                    updateProfileIcon(true);
-                    updateProfileDropdown(true);
-                    updateWelcomeMessage(true);
-                  });
-                } else {
-                  console.warn('⚠️ User info fetch returned no data:', userInfoResult);
-                }
-              }).catch((error) => {
-                isFetchingUserInfo = false;
-                console.error('⚠️ Failed to fetch user info on extension open:', error);
-              });
-            } else {
-              // Retry after a short delay if auth service not ready yet
-              setTimeout(() => {
-                if (window.SiderAuthService && window.SiderAuthService.getCurrentUserInfo && !isFetchingUserInfo) {
-                  fetchCurrentUserInfo();
-                } else {
-                  console.warn('⚠️ SiderAuthService not available after retry for user info');
-                }
-              }, 500);
-            }
-          };
-          fetchCurrentUserInfo();
+                  if (userInfoResult.success && userInfoResult.data) {
+                    // Store user info from API response
+                    const userData = {
+                      email: userInfoResult.data.email || '',
+                      username: userInfoResult.data.username || '',
+                      name: userInfoResult.data.username || '',
+                      id: userInfoResult.data.id || '',
+                      is_active: userInfoResult.data.is_active,
+                      created_at: userInfoResult.data.created_at,
+                      last_login: userInfoResult.data.last_login
+                    };
+                    localStorage.setItem('user', JSON.stringify(userData));
+                    // Also save to chrome.storage.local for welcome message
+                    chrome.storage.local.set({
+                      sider_user_name: userInfoResult.data.username || userInfoResult.data.email?.split('@')[0] || '',
+                      sider_user_email: userInfoResult.data.email || '',
+                      sider_user_logged_in: true
+                    }, () => {
+                      updateProfileIcon(true);
+                      updateProfileDropdown(true);
+                      updateWelcomeMessage(true);
+                    });
+                  } else {
+                    console.warn('⚠️ User info fetch returned no data:', userInfoResult);
+                  }
+                }).catch((error) => {
+                  isFetchingUserInfo = false;
+                  console.error('⚠️ Failed to fetch user info on extension open:', error);
+                });
+              } else {
+                // Retry after a short delay if auth service not ready yet
+                setTimeout(() => {
+                  if (window.SiderAuthService && window.SiderAuthService.getCurrentUserInfo && !isFetchingUserInfo) {
+                    fetchCurrentUserInfo();
+                  } else {
+                    console.warn('⚠️ SiderAuthService not available after retry for user info');
+                  }
+                }, 500);
+              }
+            };
+            fetchCurrentUserInfo();
           }
         } else {
           // Show login prompt in profile dropdown
           updateProfileDropdown(false);
           updateProfileIcon(false);
-          
+
           // Reset welcome message
           updateWelcomeMessage(false);
-          
+
           // Disable features (but don't block UI)
           enableFeatures(false);
         }
@@ -2080,7 +2080,7 @@
 
   function updateWelcomeMessage(isAuthenticated) {
     const welcomeHeading = document.querySelector('.sider-welcome h3');
-    
+
     if (isAuthenticated) {
       chrome.storage.local.get(['sider_user_name', 'sider_user_email'], (result) => {
         const userName = result.sider_user_name || result.sider_user_email?.split('@')[0] || 'there';
@@ -2094,14 +2094,14 @@
       }
     }
   }
-  
+
   // Make function globally available
   window.updateUIForAuthStatus = updateUIForAuthStatus;
 
   function updateProfileIcon(isAuthenticated) {
     const profileIcon = document.getElementById('sider-profile-icon');
     if (!profileIcon) return;
-    
+
     if (isAuthenticated) {
       chrome.storage.local.get(['sider_user_email', 'sider_user_name', 'sider_user_logged_in'], (result) => {
         if (!result.sider_user_logged_in) {
@@ -2110,15 +2110,15 @@
           if (svg) svg.style.display = 'block';
           return;
         }
-        
+
         // Get first letter of username
         const userName = result.sider_user_name || result.sider_user_email?.split('@')[0] || 'U';
         const firstLetter = userName.charAt(0).toUpperCase();
-        
+
         // Hide SVG and show letter
         const svg = profileIcon.querySelector('svg');
         if (svg) svg.style.display = 'none';
-        
+
         // Create or update letter element
         let letterEl = profileIcon.querySelector('.sider-profile-icon-letter');
         if (!letterEl) {
@@ -2154,12 +2154,12 @@
     const profileMenuAccount = document.getElementById('sider-profile-menu-account');
     const profileMenuWisebase = document.getElementById('sider-profile-menu-wisebase');
     const profileMenuLogout = document.getElementById('sider-profile-menu-logout');
-    
+
     if (!profileDropdown) {
       console.warn('Profile dropdown not found');
       return;
     }
-    
+
     if (isAuthenticated) {
       // Get user info from storage first (for immediate update)
       chrome.storage.local.get(['sider_user_email', 'sider_user_name', 'sider_user_logged_in'], (result) => {
@@ -2199,19 +2199,19 @@
           if (profileIconLetter) profileIconLetter.style.display = 'none';
           return;
         }
-        
+
         // Display user info
         const userName = result.sider_user_name || result.sider_user_email?.split('@')[0] || 'User';
         const userEmail = result.sider_user_email || '';
         const firstLetter = userName.charAt(0).toUpperCase();
-        
+
         // Update dropdown icon
         if (profileIconSvg) profileIconSvg.style.display = 'none';
         if (profileIconLetter) {
           profileIconLetter.textContent = firstLetter;
           profileIconLetter.style.display = 'flex';
         }
-        
+
         // Update user info display
         if (profileLoginText) {
           profileLoginText.style.display = 'none';
@@ -2226,12 +2226,12 @@
           profileUserEmail.textContent = userEmail;
         }
         // Status is already set to "Free" in HTML, can be updated later if needed
-        
+
         // Show rewards banner
         if (profileRewardsBanner) {
           profileRewardsBanner.style.display = 'flex';
         }
-        
+
         // Show logged-in menu items
         if (profileMenuAccount) {
           profileMenuAccount.style.display = 'flex';
@@ -2242,7 +2242,7 @@
         if (profileMenuLogout) {
           profileMenuLogout.style.display = 'flex';
         }
-        
+
         // Hide login button when logged in (logout is in menu)
         if (profileLoginBtn) {
           profileLoginBtn.style.display = 'none';
@@ -2295,7 +2295,7 @@
 
   async function requireAuth(callback) {
     const isAuthenticated = await checkAuthStatus();
-    
+
     if (!isAuthenticated) {
       // Show login modal
       if (window.SiderLoginModal) {
@@ -2303,7 +2303,7 @@
       }
       return false;
     }
-    
+
     if (callback) {
       callback();
     }
@@ -2328,7 +2328,7 @@
       // Update UI immediately with cached data
       updateProfileDropdown(false);
       updateWelcomeMessage(false);
-      
+
       // Wait for auth service to load
       const checkAuthService = setInterval(() => {
         if (window.SiderAuthService) {
@@ -2336,7 +2336,7 @@
           updateUIForAuthStatus();
         }
       }, 100);
-      
+
       setTimeout(() => {
         clearInterval(checkAuthService);
         if (window.SiderAuthService) {
@@ -2358,7 +2358,7 @@
     // Update UI immediately with cached data
     updateProfileDropdown(false);
     updateWelcomeMessage(false);
-    
+
     // Wait for auth service to load
     const checkAuthService = setInterval(() => {
       if (window.SiderAuthService) {
@@ -2366,7 +2366,7 @@
         updateUIForAuthStatus();
       }
     }, 100);
-    
+
     setTimeout(() => {
       clearInterval(checkAuthService);
       if (window.SiderAuthService) {
@@ -2382,11 +2382,11 @@
       }
     }, 2000);
   }
-  
+
   // Initialize custom tooltips (hide native tooltips)
   function initTooltips(container) {
     if (!container) container = document;
-    
+
     // Convert all title attributes to data-tooltip for custom styling
     const elementsWithTitle = container.querySelectorAll('[title]');
     elementsWithTitle.forEach(el => {
@@ -2394,9 +2394,9 @@
         el.dataset.tooltip = el.title;
       }
     });
-    
+
     // Use event delegation to hide native tooltips on hover
-    container.addEventListener('mouseenter', function(e) {
+    container.addEventListener('mouseenter', function (e) {
       if (!e || !e.target) return;
       // Handle text nodes - get the parent element
       let element = e.target;
@@ -2413,8 +2413,8 @@
         target.removeAttribute('title');
       }
     }, true);
-    
-    container.addEventListener('mouseleave', function(e) {
+
+    container.addEventListener('mouseleave', function (e) {
       if (!e || !e.target) return;
       // Handle text nodes - get the parent element
       let element = e.target;
@@ -2428,7 +2428,7 @@
         target.title = target.dataset.originalTitle;
       }
     }, true);
-    
+
     // Watch for dynamically added elements
     const observer = new MutationObserver(mutations => {
       mutations.forEach(mutation => {
@@ -2448,10 +2448,10 @@
         });
       });
     });
-    
+
     observer.observe(container, { childList: true, subtree: true });
   }
-  
+
   // Initialize tooltips when DOM is ready
   if (document.readyState === 'loading') {
     document.addEventListener('DOMContentLoaded', () => {
@@ -2460,4 +2460,15 @@
   } else {
     initTooltips();
   }
-  })();
+  // Listen for auth expired event
+  window.addEventListener('sider-auth-expired', () => {
+    console.log('Auth expired event received in sidepanel');
+    if (typeof updateUIForAuthStatus === 'function') {
+      updateUIForAuthStatus();
+    } else {
+      // Fallback if function not available in scope (though it should be)
+      window.location.reload();
+    }
+  });
+
+})();

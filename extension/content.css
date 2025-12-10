@@ -50,17 +50,16 @@ html.sider-panel-active [style*="position:sticky"] {
 }
 
 /* Ensure no white space when panel is closed */
+/* Ensure no white space when panel is closed */
 html:not(.sider-panel-active),
 body:not(.sider-panel-active) {
   margin-right: 0 !important;
-  width: 100% !important;
-  max-width: 100% !important;
 }
 
-/* Smooth transitions for html and body */
-html, body {
+/* Smooth transitions for html and body - only apply transition, not overflow */
+html,
+body {
   transition: margin-right 0.3s ease-in-out, width 0.3s ease-in-out !important;
-  overflow-x: hidden;
 }
 
 /* Adjust common container patterns - make them responsive to compressed viewport */
@@ -154,14 +153,25 @@ html.sider-panel-active [class*="content"]:not([data-sider-adjusted]) {
 
 /* Responsive widths - only apply when no custom width is set */
 @media (min-width: 1200px) {
-  #sider-ai-chat-panel:not([style*="width"]) { width: 380px; }
+  #sider-ai-chat-panel:not([style*="width"]) {
+    width: 380px;
+  }
 }
+
 @media (max-width: 1199px) and (min-width: 769px) {
-  #sider-ai-chat-panel:not([style*="width"]) { width: 320px; }
+  #sider-ai-chat-panel:not([style*="width"]) {
+    width: 320px;
+  }
 }
+
 @media (max-width: 768px) {
-  #sider-ai-chat-panel { width: 100vw !important; }
-  .sider-resize-handle { display: none; }
+  #sider-ai-chat-panel {
+    width: 100vw !important;
+  }
+
+  .sider-resize-handle {
+    display: none;
+  }
 }
 
 #sider-ai-chat-panel.sider-panel-open {
@@ -564,11 +574,11 @@ html.sider-panel-active [class*="content"]:not([data-sider-adjusted]) {
   box-shadow: 0 1px 3px rgba(0, 0, 0, 0.2);
 }
 
-.sider-chat-controls-toggle input:checked + .sider-chat-controls-toggle-slider {
+.sider-chat-controls-toggle input:checked+.sider-chat-controls-toggle-slider {
   background-color: #3b82f6;
 }
 
-.sider-chat-controls-toggle input:checked + .sider-chat-controls-toggle-slider:before {
+.sider-chat-controls-toggle input:checked+.sider-chat-controls-toggle-slider:before {
   transform: translateX(20px);
 }
 
@@ -776,21 +786,21 @@ html.sider-panel-active [class*="content"]:not([data-sider-adjusted]) {
     grid-template-columns: 1fr;
     gap: 8px;
   }
-  
+
   .sider-action-btn {
     min-height: 80px;
     font-size: 9px;
   }
-  
+
   .sider-action-btn svg {
     width: 20px;
     height: 20px;
   }
-  
+
   .sider-welcome h3 {
     font-size: 18px;
   }
-  
+
   .sider-welcome p {
     font-size: 13px;
   }
@@ -894,6 +904,7 @@ html.sider-panel-active [class*="content"]:not([data-sider-adjusted]) {
     opacity: 0;
     transform: translateY(10px);
   }
+
   to {
     opacity: 1;
     transform: translateY(0);
@@ -1151,7 +1162,7 @@ html.sider-panel-active [class*="content"]:not([data-sider-adjusted]) {
 
 .sider-input-area:focus-within {
   border-color: #3b82f6;
-  box-shadow: 0 0 0 3px rgba(59,130,246,0.1);
+  box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
 }
 
 /* Attachments preview below toolbar, above textarea */
@@ -1176,7 +1187,7 @@ html.sider-panel-active [class*="content"]:not([data-sider-adjusted]) {
   border: 1px solid #e5e7eb;
   border-radius: 12px;
   background: #ffffff;
-  box-shadow: 0 1px 2px rgba(0,0,0,0.04);
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.04);
 }
 
 .sider-attachment-thumb {
@@ -1371,7 +1382,9 @@ html.sider-panel-active [class*="content"]:not([data-sider-adjusted]) {
   overflow-wrap: break-word;
 }
 
-.sider-chat-input:focus { outline: none; }
+.sider-chat-input:focus {
+  outline: none;
+}
 
 .sider-input-buttons {
   position: absolute;
@@ -1446,7 +1459,7 @@ html.sider-panel-active [class*="content"]:not([data-sider-adjusted]) {
 
 }
 
-.sider-input-area .sider-image-preview-section > div {
+.sider-input-area .sider-image-preview-section>div {
   display: flex;
   flex-direction: column;
   align-items: flex-start;
@@ -1682,25 +1695,25 @@ html.sider-panel-active [class*="content"]:not([data-sider-adjusted]) {
   #sider-ai-chat-panel {
     width: 100vw;
   }
-  
+
   body.sider-panel-active {
     width: 100% !important;
   }
-  
+
   html.sider-panel-active {
     margin-right: 0 !important;
   }
-  
+
   .sider-panel-sidebar {
     width: 44px;
     padding: 8px 6px;
   }
-  
+
   .sider-sidebar-icon {
     width: 32px;
     height: 32px;
   }
-  
+
   .sider-sidebar-icon svg {
     width: 18px;
     height: 18px;
@@ -1711,12 +1724,12 @@ html.sider-panel-active [class*="content"]:not([data-sider-adjusted]) {
   #sider-ai-chat-panel {
     width: 320px;
   }
-  
+
   body.sider-panel-active {
     width: calc(100vw - 320px) !important;
     max-width: calc(100vw - 320px) !important;
   }
-  
+
   html.sider-panel-active {
     margin-right: var(--sider-panel-width, 320px) !important;
   }
@@ -1742,6 +1755,7 @@ html.sider-panel-active [class*="content"]:not([data-sider-adjusted]) {
     opacity: 0;
     transform: translateY(-5px);
   }
+
   to {
     opacity: 1;
     transform: translateY(0);
@@ -1853,6 +1867,7 @@ html.sider-panel-active [class*="content"]:not([data-sider-adjusted]) {
     opacity: 0;
     transform: translateX(-50%) translateY(-5px);
   }
+
   to {
     opacity: 1;
     transform: translateX(-50%) translateY(0);
@@ -1862,6 +1877,3 @@ html.sider-panel-active [class*="content"]:not([data-sider-adjusted]) {
 [data-tooltip]:hover::before {
   transform: translateX(-50%) translateY(0);
 }
-
-/* Hide native tooltip - handled by JavaScript */
-

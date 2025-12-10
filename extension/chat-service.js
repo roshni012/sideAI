@@ -1,4 +1,4 @@
-(function() {
+(function () {
   'use strict';
 
   // Use extension API config
@@ -23,7 +23,7 @@
       const token = localStorage.getItem('authToken');
       if (token) return token;
     }
-    
+
     // Try chrome.storage as fallback (works in content scripts)
     // Note: This is synchronous check, actual async retrieval happens in the function
     return null;
@@ -40,7 +40,7 @@
           return;
         }
       }
-      
+
       // Fallback to chrome.storage (content script context)
       if (typeof chrome !== 'undefined' && chrome.storage && chrome.storage.local) {
         chrome.storage.local.get(['authToken'], (result) => {
@@ -52,12 +52,62 @@
     });
   };
 
+  // Helper to handle auth errors globally
+  const handleAuthError = async () => {
+    console.warn('Authentication expired. Logging out...');
+    if (window.SiderAuthService && window.SiderAuthService.clearAuth) {
+      await window.SiderAuthService.clearAuth();
+    } else {
+      // Fallback manual clear
+      if (typeof localStorage !== 'undefined') {
+        localStorage.removeItem('authToken');
+        localStorage.removeItem('refreshToken');
+        localStorage.removeItem('user');
+      }
+      if (typeof chrome !== 'undefined' && chrome.storage) {
+        if (chrome.storage.sync) {
+          chrome.storage.sync.remove(['authToken', 'refreshToken', 'sider_user_email', 'sider_user_name', 'sider_user_profile']);
+        }
+        if (chrome.storage.local) {
+          chrome.storage.local.remove(['authToken', 'refreshToken', 'sider_user_profile', 'sider_user_logged_in']);
+        }
+      }
+    }
+
+    // Notify UI to update
+    if (typeof window !== 'undefined') {
+      window.dispatchEvent(new CustomEvent('sider-auth-expired'));
+    }
+  };
+
+  // Wrapper for fetch to handle 401s
+  const fetchWithAuth = async (url, options = {}) => {
+    try {
+      const response = await fetch(url, options);
+
+      if (response.status === 401) {
+        await handleAuthError();
+        // Return a mocked error response to stop processing
+        return {
+          ok: false,
+          status: 401,
+          json: async () => ({ detail: 'Session expired. Please login again.' }),
+          text: async () => 'Session expired. Please login again.'
+        };
+      }
+
+      return response;
+    } catch (error) {
+      throw error;
+    }
+  };
+
   const ChatService = {
     async createConversation(title, model) {
       try {
         const baseUrl = await getApiBaseUrl();
         const authToken = await getAuthTokenAsync();
-        
+
         if (!authToken) {
           return {
             success: false,
@@ -73,7 +123,7 @@
           'Authorization': `Bearer ${authToken}`
         };
 
-        const response = await fetch(url, {
+        const response = await fetchWithAuth(url, {
           method: 'POST',
           headers,
           body: JSON.stringify({
@@ -116,7 +166,7 @@
       try {
         const baseUrl = await getApiBaseUrl();
         const authToken = await getAuthTokenAsync();
-        
+
         if (!authToken) {
           return {
             success: false,
@@ -131,7 +181,7 @@
           'Authorization': `Bearer ${authToken}`
         };
 
-        const response = await fetch(url, {
+        const response = await fetchWithAuth(url, {
           method: 'GET',
           headers
         });
@@ -169,7 +219,7 @@
       try {
         const baseUrl = await getApiBaseUrl();
         const authToken = await getAuthTokenAsync();
-        
+
         if (!authToken) {
           return {
             success: false,
@@ -185,7 +235,7 @@
           'Authorization': `Bearer ${authToken}`
         };
 
-        const response = await fetch(url, {
+        const response = await fetchWithAuth(url, {
           method: 'PUT',
           headers,
           body: JSON.stringify({
@@ -226,7 +276,7 @@
       try {
         const baseUrl = await getApiBaseUrl();
         const authToken = await getAuthTokenAsync();
-        
+
         if (!authToken) {
           return {
             success: false,
@@ -241,7 +291,7 @@
           'Authorization': `Bearer ${authToken}`
         };
 
-        const response = await fetch(url, {
+        const response = await fetchWithAuth(url, {
           method: 'DELETE',
           headers
         });
@@ -279,7 +329,7 @@
       try {
         const baseUrl = await getApiBaseUrl();
         const authToken = await getAuthTokenAsync();
-        
+
         if (!authToken) {
           return {
             success: false,
@@ -294,7 +344,7 @@
           'Authorization': `Bearer ${authToken}`
         };
 
-        const response = await fetch(url, {
+        const response = await fetchWithAuth(url, {
           method: 'DELETE',
           headers
         });
@@ -332,7 +382,7 @@
       try {
         const baseUrl = await getApiBaseUrl();
         const authToken = await getAuthTokenAsync();
-        
+
         if (!authToken) {
           return {
             success: false,
@@ -348,7 +398,7 @@
           'Authorization': `Bearer ${authToken}`
         };
 
-        const response = await fetch(url, {
+        const response = await fetchWithAuth(url, {
           method: 'POST',
           headers,
           body: JSON.stringify({
@@ -390,7 +440,7 @@
       try {
         const baseUrl = await getApiBaseUrl();
         const authToken = await getAuthTokenAsync();
-        
+
         if (!authToken) {
           return {
             success: false,
@@ -405,7 +455,7 @@
           'Authorization': `Bearer ${authToken}`
         };
 
-        const response = await fetch(url, {
+        const response = await fetchWithAuth(url, {
           method: 'GET',
           headers
         });
@@ -444,7 +494,7 @@
       try {
         const baseUrl = await getApiBaseUrl();
         const authToken = await getAuthTokenAsync();
-        
+
         if (!authToken) {
           return {
             success: false,
@@ -460,7 +510,7 @@
           'Authorization': `Bearer ${authToken}`
         };
 
-        const response = await fetch(url, {
+        const response = await fetchWithAuth(url, {
           method: 'POST',
           headers,
           body: JSON.stringify({})
@@ -472,7 +522,7 @@
             const errorData = await response.json();
             console.error('Export API error response:', errorData);
             errorMessage = errorData.detail || errorData.message || errorData.msg || errorMessage;
-            
+
             // Handle validation errors
             if (errorData.detail && Array.isArray(errorData.detail)) {
               errorMessage = errorData.detail.map(e => e.msg || e.message || JSON.stringify(e)).join(', ');
@@ -482,7 +532,7 @@
             console.error('Export API error text:', errorText);
             errorMessage = errorText || `HTTP ${response.status}: ${response.statusText}`;
           }
-          
+
           return {
             success: false,
             error: errorMessage
@@ -491,11 +541,11 @@
 
         // Check if response is a file download (blob) or JSON
         const contentType = response.headers.get('content-type');
-        
+
         if (contentType && contentType.includes('application/json')) {
           // JSON response
           const data = await response.json();
-          
+
           if (data.code === 0 && data.data) {
             // If data contains a download URL
             if (data.data.download_url || data.data.url) {
@@ -510,7 +560,7 @@
               data: data.data
             };
           }
-          
+
           return {
             success: false,
             error: 'Invalid response format from server'
@@ -519,7 +569,7 @@
           // File download (blob)
           const blob = await response.blob();
           const url = window.URL.createObjectURL(blob);
-          
+
           // Get filename from Content-Disposition header or use default
           const contentDisposition = response.headers.get('content-disposition');
           let filename = `conversation-${conversationId}.txt`;
@@ -529,7 +579,7 @@
               filename = filenameMatch[1].replace(/['"]/g, '');
             }
           }
-          
+
           // Trigger download
           const a = document.createElement('a');
           a.href = url;
@@ -538,7 +588,7 @@
           a.click();
           document.body.removeChild(a);
           window.URL.revokeObjectURL(url);
-          
+
           return {
             success: true,
             data: { filename: filename }
@@ -557,7 +607,7 @@
       try {
         const baseUrl = await getApiBaseUrl();
         const authToken = await getAuthTokenAsync();
-        
+
         if (!authToken) {
           return {
             success: false,
@@ -590,7 +640,7 @@
           'Authorization': `Bearer ${authToken}`
         };
 
-        const response = await fetch(url, {
+        const response = await fetchWithAuth(url, {
           method: 'POST',
           headers,
           body: JSON.stringify(requestBody),
@@ -635,7 +685,7 @@
       try {
         const baseUrl = await getApiBaseUrl();
         const authToken = await getAuthTokenAsync();
-        
+
         if (!authToken) {
           return {
             success: false,
@@ -680,13 +730,13 @@
         // Retry logic for 503 and other server errors
         const maxRetries = 3;
         let lastError = null;
-        
+
         for (let attempt = 0; attempt < maxRetries; attempt++) {
           // Check if aborted before retry
           if (signal && signal.aborted) {
             throw new DOMException('The operation was aborted.', 'AbortError');
           }
-          
+
           try {
             const api = window.SiderExtensionAPI || {};
             const url = api.buildUrl ? await api.buildUrl(api.endpoints?.chat?.completions || '/api/chat/v1/completions') : `${baseUrl}/api/chat/v1/completions`;
@@ -696,7 +746,7 @@
               'Authorization': `Bearer ${authToken}`
             };
 
-            const response = await fetch(url, {
+            const response = await fetchWithAuth(url, {
               method: 'POST',
               headers,
               body: JSON.stringify(requestBody),
@@ -730,7 +780,7 @@
                 lastError = data.detail || data.message || `Server error: ${response.statusText}`;
                 continue;
               }
-              
+
               return {
                 success: false,
                 error: data.detail || data.message || `Server error: ${response.statusText || response.status}`
@@ -777,7 +827,7 @@
             throw fetchError;
           }
         }
-        
+
         // If we get here, all retries failed
         return {
           success: false,

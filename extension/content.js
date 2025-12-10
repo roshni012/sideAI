@@ -1,25 +1,25 @@
-(function() {
+(function () {
   'use strict';
-  
+
   // Content script functionality - no panel creation needed (using Chrome side panel)
-  
+
   let currentModel = 'chatgpt';
   let isScreenshotMode = false;
   let screenshotOverlay = null;
   let screenshotStartX = 0;
   let screenshotStartY = 0;
   let screenshotSelection = null;
-  
+
   // Screenshot functionality
   function startScreenshotMode() {
     if (isScreenshotMode) {
       stopScreenshotMode();
       return;
     }
-    
+
     isScreenshotMode = true;
     document.body.style.cursor = 'crosshair';
-    
+
     // Create overlay - use highest z-index to work regardless of panel state
     screenshotOverlay = document.createElement('div');
     screenshotOverlay.id = 'sider-screenshot-overlay';
@@ -35,7 +35,7 @@
       pointer-events: auto;
     `;
     document.body.appendChild(screenshotOverlay);
-    
+
     // Create selection rectangle with matching blue gradient
     screenshotSelection = document.createElement('div');
     screenshotSelection.style.cssText = `
@@ -51,10 +51,10 @@
       will-change: transform;
     `;
     document.body.appendChild(screenshotSelection);
-    
+
     // Only attach mousedown to overlay, mousemove and mouseup will be on document for better tracking
     screenshotOverlay.addEventListener('mousedown', handleScreenshotMouseDown);
-    
+
     // Add cancel instruction
     const instruction = document.createElement('div');
     instruction.textContent = 'Select area to capture (Press ESC to cancel)';
@@ -73,75 +73,75 @@
       user-select: none;
     `;
     screenshotOverlay.appendChild(instruction);
-    
+
     document.addEventListener('keydown', (e) => {
       if (e.key === 'Escape' && isScreenshotMode) {
         stopScreenshotMode();
       }
     });
   }
-  
+
   function handleScreenshotMouseDown(e) {
     e.preventDefault();
     e.stopPropagation();
-    
+
     screenshotStartX = e.clientX;
     screenshotStartY = e.clientY;
-    
+
     screenshotSelection.style.left = `${screenshotStartX}px`;
     screenshotSelection.style.top = `${screenshotStartY}px`;
     screenshotSelection.style.width = '0px';
     screenshotSelection.style.height = '0px';
     screenshotSelection.style.display = 'block';
-    
+
     // Add mouse move and up listeners to document for better tracking
     document.addEventListener('mousemove', handleScreenshotMouseMove);
     document.addEventListener('mouseup', handleScreenshotMouseUp);
   }
-  
+
   function handleScreenshotMouseMove(e) {
     if (!screenshotSelection || screenshotSelection.style.display === 'none') return;
     if (!isScreenshotMode) return;
-    
+
     e.preventDefault();
-    
+
     const currentX = e.clientX;
     const currentY = e.clientY;
-    
+
     const width = Math.abs(currentX - screenshotStartX);
     const height = Math.abs(currentY - screenshotStartY);
     const left = Math.min(currentX, screenshotStartX);
     const top = Math.min(currentY, screenshotStartY);
-    
+
     // Update selection rectangle smoothly
     screenshotSelection.style.left = `${left}px`;
     screenshotSelection.style.top = `${top}px`;
     screenshotSelection.style.width = `${width}px`;
     screenshotSelection.style.height = `${height}px`;
   }
-  
+
   function handleScreenshotMouseUp(e) {
     if (!screenshotSelection || screenshotSelection.style.display === 'none') return;
     if (!isScreenshotMode) return;
-    
+
     e.preventDefault();
     e.stopPropagation();
-    
+
     // Remove document listeners
     document.removeEventListener('mousemove', handleScreenshotMouseMove);
     document.removeEventListener('mouseup', handleScreenshotMouseUp);
-    
+
     const currentX = e.clientX;
     const currentY = e.clientY;
-    
+
     const width = Math.abs(currentX - screenshotStartX);
     const height = Math.abs(currentY - screenshotStartY);
     const left = Math.min(currentX, screenshotStartX);
     const top = Math.min(currentY, screenshotStartY);
-    
+
     // Hide overlay BEFORE capturing to avoid overlay tint/border in the image
     stopScreenshotMode();
-    
+
     if (width > 10 && height > 10) {
       // Wait a frame so the overlay is removed from the compositor, then capture
       requestAnimationFrame(() => {
@@ -153,15 +153,15 @@
       });
     }
   }
-  
+
   function stopScreenshotMode() {
     isScreenshotMode = false;
     document.body.style.cursor = '';
-    
+
     // Remove document listeners
     document.removeEventListener('mousemove', handleScreenshotMouseMove);
     document.removeEventListener('mouseup', handleScreenshotMouseUp);
-    
+
     if (screenshotOverlay) {
       screenshotOverlay.remove();
       screenshotOverlay = null;
@@ -171,16 +171,16 @@
       screenshotSelection = null;
     }
   }
-  
+
   async function captureScreenshotArea(x, y, width, height) {
     try {
       // Wait a bit to ensure viewport is stable
       await new Promise(resolve => setTimeout(resolve, 100));
-      
+
       // Get viewport dimensions at capture time
       const viewportWidth = window.innerWidth;
       const viewportHeight = window.innerHeight;
-      
+
       // Request screenshot from background script
       chrome.runtime.sendMessage({
         type: 'CAPTURE_SCREENSHOT',
@@ -192,29 +192,29 @@
             // Get actual screenshot dimensions
             const screenshotWidth = image.width;
             const screenshotHeight = image.height;
-            
+
             // Calculate scale factor between viewport and screenshot
             const scaleX = screenshotWidth / viewportWidth;
             const scaleY = screenshotHeight / viewportHeight;
-            
+
             // Calculate crop coordinates in screenshot space
             const cropX = Math.round(x * scaleX);
             const cropY = Math.round(y * scaleY);
             const cropWidth = Math.round(width * scaleX);
             const cropHeight = Math.round(height * scaleY);
-            
+
             // Ensure crop coordinates are within bounds
             const finalX = Math.max(0, Math.min(cropX, screenshotWidth - 1));
             const finalY = Math.max(0, Math.min(cropY, screenshotHeight - 1));
             const finalWidth = Math.max(1, Math.min(cropWidth, screenshotWidth - finalX));
             const finalHeight = Math.max(1, Math.min(cropHeight, screenshotHeight - finalY));
-            
+
             // Create canvas and crop
             const canvas = document.createElement('canvas');
             canvas.width = finalWidth;
             canvas.height = finalHeight;
             const ctx = canvas.getContext('2d');
-            
+
             try {
               // Draw the cropped portion
               ctx.drawImage(
@@ -223,7 +223,7 @@
                 0, 0, finalWidth, finalHeight
               );
               const croppedUrl = canvas.toDataURL('image/png');
-              
+
               // Send screenshot to side panel
               chrome.runtime.sendMessage({
                 type: 'SCREENSHOT_CAPTURED',
@@ -250,7 +250,7 @@
       console.error('Screenshot capture error:', error);
     }
   }
-  
+
   // Message listener for communication with background script and side panel
   chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
     try {
@@ -288,7 +288,7 @@
         const title = document.title;
         const text = document.body.innerText || document.body.textContent || '';
         const summary = `Page: ${title}\n\nContent preview: ${text.substring(0, 500)}...`;
-        
+
         if (sendResponse) {
           sendResponse({ summary });
         }
@@ -307,7 +307,7 @@
     }
     return true;
   });
-  
+
   // Text Selection - send selected text to side panel
   document.addEventListener('mouseup', (e) => {
     const selection = window.getSelection();
@@ -321,7 +321,7 @@
       });
     }
   });
-  
+
   // Listen for toolbar custom events and forward to side panel
   window.addEventListener('sider:analyze-text', (e) => {
     if (e.detail && e.detail.text) {
@@ -332,7 +332,7 @@
       });
     }
   });
-  
+
   window.addEventListener('sider:prompt-text', (e) => {
     if (e.detail) {
       // If conversationId is provided, load the existing conversation instead of creating a new prompt
@@ -352,7 +352,7 @@
       }
     }
   });
-  
+
   window.addEventListener('sider:add-note', (e) => {
     if (e.detail && e.detail.text) {
       chrome.runtime.sendMessage({
@@ -362,82 +362,6 @@
       });
     }
   });
-  
-  // Initialize custom tooltips (hide native tooltips)
-  function initTooltips(container) {
-    if (!container) container = document;
-    
-    // Convert all title attributes to data-tooltip for custom styling
-    const elementsWithTitle = container.querySelectorAll('[title]');
-    elementsWithTitle.forEach(el => {
-      if (el.title && !el.dataset.tooltip) {
-        el.dataset.tooltip = el.title;
-      }
-    });
-    
-    // Use event delegation to hide native tooltips on hover
-    container.addEventListener('mouseenter', function(e) {
-      if (!e || !e.target) return;
-      // Handle text nodes - get the parent element
-      let element = e.target;
-      if (element.nodeType !== 1) {
-        element = element.parentElement;
-      }
-      if (!element || typeof element.closest !== 'function') return;
-      const target = element.closest('[data-tooltip]');
-      if (target && target.title) {
-        // Store original title and remove it to hide native tooltip
-        if (!target.dataset.originalTitle) {
-          target.dataset.originalTitle = target.title;
-        }
-        target.removeAttribute('title');
-      }
-    }, true);
-    
-    container.addEventListener('mouseleave', function(e) {
-      if (!e || !e.target) return;
-      // Handle text nodes - get the parent element
-      let element = e.target;
-      if (element.nodeType !== 1) {
-        element = element.parentElement;
-      }
-      if (!element || typeof element.closest !== 'function') return;
-      const target = element.closest('[data-original-title]');
-      if (target && target.dataset.originalTitle) {
-        // Restore original title
-        target.title = target.dataset.originalTitle;
-      }
-    }, true);
-    
-    // Watch for dynamically added elements
-    const observer = new MutationObserver(mutations => {
-      mutations.forEach(mutation => {
-        mutation.addedNodes.forEach(node => {
-          if (node.nodeType === 1) { // Element node
-            if (node.hasAttribute && node.hasAttribute('title') && !node.dataset.tooltip) {
-              node.dataset.tooltip = node.title;
-            }
-            // Check children
-            const childrenWithTitle = node.querySelectorAll ? node.querySelectorAll('[title]') : [];
-            childrenWithTitle.forEach(el => {
-              if (el.title && !el.dataset.tooltip) {
-                el.dataset.tooltip = el.title;
-              }
-            });
-          }
-        });
-      });
-    });
-    
-    observer.observe(container, { childList: true, subtree: true });
-  }
-  
-  // Initialize tooltips when DOM is ready
-  if (document.readyState === 'loading') {
-    document.addEventListener('DOMContentLoaded', () => {
-      initTooltips();
-    });
-  } else {
-    initTooltips();
-  }
+
+  // Tooltip initialization removed to prevent performance issues on complex web apps
 })();

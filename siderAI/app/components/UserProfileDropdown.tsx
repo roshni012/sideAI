@@ -17,6 +17,8 @@ interface UserData {
   username?: string;
 }
 
+import { getCurrentUser } from '../lib/authService';
+
 export default function UserProfileDropdown({
   isOpen,
   onClose,
@@ -27,15 +29,38 @@ export default function UserProfileDropdown({
   const dropdownRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
-    // Get user data from localStorage
-    const storedUser = localStorage.getItem('user');
-    if (storedUser) {
-      try {
-        setUserData(JSON.parse(storedUser));
-      } catch {
-        // Handle parse error
+    const fetchUser = async () => {
+      const token = localStorage.getItem('authToken');
+      if (token) {
+        try {
+          const response = await getCurrentUser(token);
+          // Handle potential response structures (e.g. { data: { user: ... } } or { user: ... } or { data: ... })
+          const user = response.data?.user || response.user || response.data || response;
+          setUserData(user);
+          // Update localStorage to keep it fresh
+          localStorage.setItem('user', JSON.stringify(user));
+        } catch (error) {
+          console.error('Failed to fetch user info:', error);
+          // Fallback to localStorage if API fails
+          const storedUser = localStorage.getItem('user');
+          if (storedUser) {
+            try {
+              setUserData(JSON.parse(storedUser));
+            } catch { }
+          }
+        }
+      } else {
+        // Fallback to localStorage if no token
+        const storedUser = localStorage.getItem('user');
+        if (storedUser) {
+          try {
+            setUserData(JSON.parse(storedUser));
+          } catch { }
+        }
       }
-    }
+    };
+
+    fetchUser();
   }, []);
 
   useEffect(() => {
