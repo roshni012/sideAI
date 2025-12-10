@@ -11,7 +11,7 @@ chrome.sidePanel.setPanelBehavior({ openPanelOnActionClick: true });
 // Clicking the toolbar icon opens the side panel
 chrome.action.onClicked.addListener(async (tab) => {
   if (!tab || !tab.id) return;
-  
+
   try {
     // Open side panel for the current tab
     await chrome.sidePanel.open({ tabId: tab.id });
@@ -67,7 +67,7 @@ async function handleChatWithImage(request, tabId) {
     if (tabId) {
       await chrome.sidePanel.open({ tabId: tabId });
     }
-    
+
     // Wait a bit for side panel to load, then send message to switch to chat tab
     setTimeout(() => {
       // Send message to sidepanel to switch to chat tab
@@ -81,7 +81,7 @@ async function handleChatWithImage(request, tabId) {
           });
         }, 500);
       });
-      
+
       // Send the image message after switching to chat tab
       setTimeout(() => {
         chrome.runtime.sendMessage({
@@ -106,11 +106,11 @@ async function handleChatWithImage(request, tabId) {
 
 async function handleTextSelection(request, tabId) {
   try {
-    // Ensure side panel is open
-    if (tabId) {
+    // Ensure side panel is open (only for actions, not just selection)
+    if (tabId && request.type !== 'TEXT_SELECTED') {
       await chrome.sidePanel.open({ tabId: tabId });
     }
-    
+
     // Wait a bit for side panel to load, then send message to switch to chat tab
     setTimeout(() => {
       // Send message to sidepanel to switch to chat tab
@@ -124,7 +124,7 @@ async function handleTextSelection(request, tabId) {
           });
         }, 500);
       });
-      
+
       // Send the text selection message after switching to chat tab
       setTimeout(() => {
         chrome.runtime.sendMessage({
@@ -151,7 +151,7 @@ async function handleLoadConversation(request, tabId) {
     if (tabId) {
       await chrome.sidePanel.open({ tabId: tabId });
     }
-    
+
     // Wait a bit for side panel to load, then send message to load conversation
     setTimeout(() => {
       // Send message to sidepanel to switch to chat tab
@@ -165,7 +165,7 @@ async function handleLoadConversation(request, tabId) {
           });
         }, 500);
       });
-      
+
       // Send the load conversation message after switching to chat tab
       setTimeout(() => {
         chrome.runtime.sendMessage({
@@ -205,7 +205,7 @@ async function captureScreenshot(bounds, tabId, sendResponse) {
 
 async function handleChatRequest(request, sendResponse) {
   const { message, model } = request;
-  
+
   try {
     const response = await callAIModel(model, message);
     sendResponse({ text: response });
@@ -216,7 +216,7 @@ async function handleChatRequest(request, sendResponse) {
 
 async function callAIModel(model, message) {
   const apiKeys = await getAPIKeys();
-  
+
   switch (model) {
     case 'chatgpt':
     case 'gpt4':
@@ -246,9 +246,9 @@ async function callChatGPT(message, apiKey, isGPT4 = false) {
   if (!apiKey) {
     return 'Please set your OpenAI API key in the extension settings. You can get one from https://platform.openai.com/api-keys';
   }
-  
+
   const model = isGPT4 ? 'gpt-4' : 'gpt-3.5-turbo';
-  
+
   try {
     const response = await fetch('https://api.openai.com/v1/chat/completions', {
       method: 'POST',
@@ -264,12 +264,12 @@ async function callChatGPT(message, apiKey, isGPT4 = false) {
         max_tokens: 1000
       })
     });
-    
+
     if (!response.ok) {
       const error = await response.json();
       throw new Error(error.error?.message || 'OpenAI API error');
     }
-    
+
     const data = await response.json();
     return data.choices[0]?.message?.content || 'No response';
   } catch (error) {
@@ -281,7 +281,7 @@ async function callGemini(message, apiKey) {
   if (!apiKey) {
     return 'Please set your Gemini API key in the extension settings. You can get one from https://makersuite.google.com/app/apikey';
   }
-  
+
   try {
     const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-pro:generateContent?key=${apiKey}`, {
       method: 'POST',
@@ -296,12 +296,12 @@ async function callGemini(message, apiKey) {
         }]
       })
     });
-    
+
     if (!response.ok) {
       const error = await response.json();
       throw new Error(error.error?.message || 'Gemini API error');
     }
-    
+
     const data = await response.json();
     return data.candidates[0]?.content?.parts[0]?.text || 'No response';
   } catch (error) {
@@ -313,7 +313,7 @@ async function callClaude(message, apiKey) {
   if (!apiKey) {
     return 'Please set your Claude API key in the extension settings. You can get one from https://console.anthropic.com/';
   }
-  
+
   try {
     const response = await fetch('https://api.anthropic.com/v1/messages', {
       method: 'POST',
@@ -331,12 +331,12 @@ async function callClaude(message, apiKey) {
         }]
       })
     });
-    
+
     if (!response.ok) {
       const error = await response.json();
       throw new Error(error.error?.message || 'Claude API error');
     }
-    
+
     const data = await response.json();
     return data.content[0]?.text || 'No response';
   } catch (error) {
@@ -435,7 +435,7 @@ async function handleCreateConversation(request, sendResponse) {
     const { title, model } = request;
     const baseUrl = await getApiBaseUrl();
     const authToken = await getAuthToken();
-    
+
     if (!authToken) {
       sendResponse({
         success: false,
@@ -495,7 +495,7 @@ async function handleChatCompletions(request, sendResponse) {
     const { cid, message, model, options = {} } = request;
     const baseUrl = await getApiBaseUrl();
     const authToken = await getAuthToken();
-    
+
     if (!authToken) {
       sendResponse({
         success: false,

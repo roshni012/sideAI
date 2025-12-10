@@ -265,7 +265,7 @@
 /* Action Popup Styles - Updated to match sider.ai design */
 .sider-action-popup {
   position: fixed;
-  width: 420px;
+  width: 500px;
   max-width: calc(100vw - 40px);
   background: #ffffff;
   border-radius: 12px;
@@ -275,7 +275,7 @@
   flex-direction: column;
   border: 1px solid #e5e7eb;
   overflow: hidden;
-  max-height: 90vh;
+  max-height: 100vh;
 }
 
 .sider-action-popup.dragging {
@@ -424,7 +424,7 @@
   padding: 16px;
   background: #f9fafb;
   border-radius: 8px;
-  font-size: 14px;
+  font-size: 12px;
   color: #111827;
   line-height: 1.6;
   white-space: pre-wrap;
@@ -529,12 +529,12 @@
 }
 
 .sider-action-popup-btn-primary {
-  background: #7c3aed;
-  color: #ffffff;
+  background: #e3e1e6;
+  color: #6d28d9;
 }
 
 .sider-action-popup-btn-primary:hover {
-  background: #6d28d9;
+  background: #e3e1e6;
   transform: translateY(-1px);
   box-shadow: 0 4px 12px rgba(124, 58, 237, 0.3);
 }
@@ -769,3 +769,318 @@
 .sider-action-popup-response::-webkit-scrollbar-thumb:hover {
   background: #9ca3af;
 }
+
+/* Chat Input Area Redesign */
+.sider-action-popup-chat-container {
+  margin-top: 12px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.sider-action-popup-chat-actions {
+  display: flex;
+  align-items: center;
+}
+
+.sider-action-popup-insert-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 6px 12px;
+  background: #5c89c8;
+  color: white;
+  border: none;
+  border-radius: 6px;
+  font-size: 13px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.sider-action-popup-insert-btn:hover {
+  background: #5c89c8;
+  transform: translateY(-1px);
+}
+
+.sider-action-popup-insert-btn svg {
+  width: 14px;
+  height: 14px;
+}
+
+.sider-action-popup-chat-input-wrapper {
+  position: relative;
+  width: 100%;
+}
+
+.sider-action-popup-chat-input {
+  width: 100%;
+  padding: 12px 48px 12px 16px;
+  /* Right padding for send button */
+  border: 1px solid #e5e7eb;
+  border-radius: 24px;
+  /* Pill shape */
+  font-size: 14px;
+  color: #111827;
+  background: #ffffff;
+  outline: none;
+  transition: all 0.2s;
+  box-sizing: border-box;
+  resize: none;
+  min-height: 46px;
+  /* Ensure enough height */
+  line-height: 1.5;
+  font-family: inherit;
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.05);
+}
+
+.sider-action-popup-chat-input:focus {
+  border-color: #7c3aed;
+  box-shadow: 0 0 0 3px rgba(124, 58, 237, 0.1);
+}
+
+.sider-action-popup-chat-input::placeholder {
+  color: #9ca3af;
+}
+
+.sider-action-popup-chat-send-btn {
+  position: absolute;
+  right: 6px;
+  top: 50%;
+  transform: translateY(-50%);
+  width: 34px;
+  height: 34px;
+  border-radius: 50%;
+  background: #5c89c8;
+  color: white;
+  border: none;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.2s;
+  padding: 0;
+}
+
+.sider-action-popup-chat-send-btn:hover {
+  background: #5c89c8;
+  transform: translateY(-50%) scale(1.05);
+}
+
+.sider-action-popup-chat-send-btn svg {
+  width: 16px;
+  height: 16px;
+  margin-left: -2px;
+  /* Visual correction for send icon */
+}
+
+/* Chat Messages */
+.sider-popup-chat-message {
+  animation: fadeIn 0.3s ease-out;
+}
+
+.sider-popup-chat-message.user {
+  background: #f3f4f6;
+  border-radius: 12px 12px 0 12px;
+}
+
+.sider-popup-chat-message.ai {
+  background: transparent;
+  padding-left: 0 !important;
+}
+
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+    transform: translateY(5px);
+  }
+
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+
+/* Fix: Align Insert button and Input in one line */
+.sider-action-popup-chat-container {
+  flex-direction: row !important;
+  align-items: center !important;
+  gap: 8px !important;
+}
+
+.sider-action-popup-chat-actions {
+  flex-shrink: 0;
+  margin: 0 !important;
+}
+
+.sider-action-popup-chat-input-wrapper {
+  flex: 1;
+  width: auto !important;
+  position: relative;
+  /* Ensure absolute positioning of send button works */
+}
+
+.sider-action-popup-chat-input {
+  margin: 0 !important;
+  min-height: 40px !important;
+  height: 40px !important;
+  padding-top: 8px !important;
+  padding-bottom: 8px !important;
+  display: flex;
+  align-items: center;
+}
+
+/* Adjust send button position */
+.sider-action-popup-chat-send-btn {
+  width: 28px !important;
+  height: 28px !important;
+  right: 6px !important;
+}
+
+.sider-action-popup-chat-send-btn svg {
+  width: 14px !important;
+  height: 14px !important;
+}
+
+
+/* Final Layout Fixes */
+.sider-action-popup-chat-container {
+  display: flex !important;
+  /* Force flex */
+  flex-direction: row !important;
+  align-items: center !important;
+  gap: 8px !important;
+  width: 100% !important;
+  box-sizing: border-box !important;
+}
+
+.sider-action-popup-chat-input-wrapper {
+  position: relative !important;
+  flex: 1 !important;
+  display: flex !important;
+  align-items: center !important;
+}
+
+.sider-action-popup-chat-input {
+  width: 100% !important;
+  padding-right: 40px !important;
+  /* Space for button */
+  margin: 0 !important;
+  min-height: 40px !important;
+  height: 40px !important;
+  border-radius: 20px !important;
+}
+
+.sider-action-popup-chat-send-btn {
+  position: absolute !important;
+  right: 4px !important;
+  top: 50% !important;
+  transform: translateY(-50%) !important;
+  width: 32px !important;
+  height: 32px !important;
+  margin: 0 !important;
+  z-index: 10 !important;
+}
+
+/* Back Button for Conversation History */
+.sider-action-popup-back-btn {
+  width: 28px;
+  height: 28px;
+  border-radius: 50%;
+  background: #f3f4f6;
+  border: none;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  margin-bottom: 8px;
+  color: #6b7280;
+  transition: all 0.2s;
+  align-self: flex-start;
+}
+
+.sider-action-popup-back-btn:hover {
+  background: #e5e7eb;
+  color: #111827;
+}
+
+.sider-action-popup-back-btn svg {
+  width: 16px;
+  height: 16px;
+}
+
+
+/* Navigation Buttons */
+.sider-action-popup-nav {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 8px;
+}
+
+.sider-action-popup-nav-btn {
+  width: 28px;
+  height: 28px;
+  border-radius: 50%;
+  background: #f3f4f6;
+  border: none;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  color: #6b7280;
+  transition: all 0.2s;
+}
+
+.sider-action-popup-nav-btn:hover {
+  background: #e5e7eb;
+  color: #111827;
+}
+
+.sider-action-popup-nav-btn:disabled {
+  opacity: 0.3;
+  cursor: not-allowed;
+  background: #f9fafb;
+}
+
+.sider-action-popup-nav-btn svg {
+  width: 16px;
+  height: 16px;
+}
+/* Next Button for Conversation History */
+.sider-action-popup-next-btn {
+  width: 28px;
+  height: 28px;
+  border-radius: 50%;
+  background: #f3f4f6;
+  border: none;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  margin-bottom: 8px;
+  color: #6b7280;
+  transition: all 0.2s;
+  align-self: flex-start;
+  margin-left: 8px;
+}
+
+.sider-action-popup-next-btn:hover {
+  background: #e5e7eb;
+  color: #111827;
+}
+
+.sider-action-popup-next-btn svg {
+  width: 16px;
+  height: 16px;
+}
+
+/* Navigation buttons container */
+.sider-action-popup-nav-buttons {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  margin-bottom: 8px;
+}
+
