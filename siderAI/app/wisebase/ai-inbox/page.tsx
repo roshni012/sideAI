@@ -24,14 +24,25 @@ import {
     GraduationCap,
     Book,
     Check,
-    File
+    File,
+    MessageCircle,
+    List,
+    MoreHorizontal,
+    Trash2,
+    ArrowRightLeft,
+    Loader2,
+    ChevronUp
 } from 'lucide-react';
 import RichTextEditor from './components/RichTextEditor';
 import HoverSidebar from '../../components/HoverSidebar';
+import MarkdownRenderer from '../../components/MarkdownRenderer';
+import { fetchNotes as fetchNotesService, deleteNote as deleteNoteService, type Note } from '../../services/notesService';
+import AIWriteDialog from './components/AIWriteDialog';
 
 const AIInbox = () => {
     const [isInstructionModalOpen, setIsInstructionModalOpen] = React.useState(false);
     const [isInstructionEnabled, setIsInstructionEnabled] = React.useState(false);
+    const [isAIWriteDialogOpen, setIsAIWriteDialogOpen] = React.useState(false);
     const [isLinkInputOpen, setIsLinkInputOpen] = React.useState(false);
     const [linkUrl, setLinkUrl] = React.useState('');
     const [linkError, setLinkError] = React.useState('');
@@ -42,6 +53,15 @@ const AIInbox = () => {
     const [selectedModel, setSelectedModel] = React.useState('Sider Fusion');
     const [isFilePanelOpen, setIsFilePanelOpen] = React.useState(true);
     const [showFileContent, setShowFileContent] = React.useState(true);
+    const [notes, setNotes] = React.useState<Note[]>([]);
+    const [expandedNoteIds, setExpandedNoteIds] = React.useState<Set<string>>(new Set());
+    const [hoveredNoteId, setHoveredNoteId] = React.useState<string | null>(null);
+    const [activeMenuNoteId, setActiveMenuNoteId] = React.useState<string | null>(null);
+    const [deleteConfirmationNoteId, setDeleteConfirmationNoteId] = React.useState<string | null>(null);
+    const [isDeleting, setIsDeleting] = React.useState(false);
+    const [showDeleteSuccess, setShowDeleteSuccess] = React.useState(false);
+    const [searchQuery, setSearchQuery] = React.useState('');
+    const [isSearchActive, setIsSearchActive] = React.useState(false);
 
     // Chat Source State
     const [isChatSourceOpen, setIsChatSourceOpen] = React.useState(false);
@@ -159,8 +179,61 @@ const AIInbox = () => {
         };
     }, [isChatSourceOpen]);
 
+    // Close note action menu on outside click
+    React.useEffect(() => {
+        const handleClickOutside = (event: MouseEvent) => {
+            const target = event.target as HTMLElement;
+            // Check if click is outside the menu
+            if (activeMenuNoteId && !target.closest('.note-action-menu')) {
+                setActiveMenuNoteId(null);
+            }
+        };
+
+        if (activeMenuNoteId) {
+            document.addEventListener('mousedown', handleClickOutside);
+        }
+
+        return () => {
+            document.removeEventListener('mousedown', handleClickOutside);
+        };
+    }, [activeMenuNoteId]);
+
+    const fetchNotes = async () => {
+        const notes = await fetchNotesService();
+        setNotes(notes);
+    };
+
+    const handleDeleteNote = async () => {
+        if (!deleteConfirmationNoteId) return;
+
+        setIsDeleting(true);
+        try {
+            const result = await deleteNoteService(deleteConfirmationNoteId);
+            if (result.code === 0) {
+                setDeleteConfirmationNoteId(null);
+                setShowDeleteSuccess(true);
+                setTimeout(() => setShowDeleteSuccess(false), 3000);
+                fetchNotes();
+            }
+        } catch (error) {
+            console.error('Delete failed', error);
+        } finally {
+            setIsDeleting(false);
+        }
+    };
+
+    React.useEffect(() => {
+        fetchNotes();
+    }, []);
+
+    React.useEffect(() => {
+        if (isNotesPanelOpen) {
+            fetchNotes();
+        }
+    }, [isNotesPanelOpen]);
+
     return (
-        <div className="min-h-screen flex flex-col bg-white text-gray-900 font-sans relative">
+        <div className="h-screen flex flex-col bg-white text-gray-900 font-sans relative overflow-hidden">
             {/* Header */}
             <header className="h-14 border-b border-gray-200 flex items-center justify-between px-4 bg-white shrink-0">
                 <div className="flex items-center gap-3">
@@ -618,16 +691,22 @@ const AIInbox = () => {
                             animate={{ x: 0 }}
                             exit={{ x: '100%' }}
                             transition={{ type: 'spring', stiffness: 300, damping: 30 }}
-                            className="w-80 border-l border-gray-200 bg-white flex flex-col shrink-0"
+                            className="w-80 border-l border-gray-200 bg-white flex flex-col shrink-0 h-full"
                         >
                             {isEditingNote ? (
-                                <RichTextEditor onClose={() => setIsEditingNote(false)} />
+                                <RichTextEditor
+                                    onClose={() => setIsEditingNote(false)}
+                                    onNoteSaved={() => {
+                                        fetchNotes();
+                                        setIsEditingNote(false);
+                                    }}
+                                />
                             ) : (
                                 <>
                                     {/* Panel Header */}
                                     <div className="h-14 border-b border-gray-200 flex items-center justify-between px-4 shrink-0">
                                         <div className="flex items-center gap-2">
-                                            <h2 className="font-semibold text-sm">Note (0)</h2>
+                                            <h2 className="font-semibold text-sm">Note ({notes.length})</h2>
                                             <button className="p-1 hover:bg-gray-100 rounded-md">
                                                 <HelpCircle className="w-3.5 h-3.5 text-gray-400" />
                                             </button>
@@ -640,28 +719,166 @@ const AIInbox = () => {
                                         </button>
                                     </div>
 
-                                    {/* Empty State */}
-                                    <div className="flex-1 flex flex-col items-center justify-center p-8 text-center">
-                                        <div className="w-20 h-20 mb-4 flex items-center justify-center">
-                                            <svg width="80" height="80" viewBox="0 0 80 80" fill="none" xmlns="http://www.w3.org/2000/svg">
-                                                <rect x="20" y="15" width="40" height="50" rx="2" stroke="#D1D5DB" strokeWidth="2" fill="white" />
-                                                <path d="M28 25 L52 25" stroke="#9CA3AF" strokeWidth="1.5" strokeLinecap="round" />
-                                                <path d="M28 32 L48 32" stroke="#9CA3AF" strokeWidth="1.5" strokeLinecap="round" />
-                                                <path d="M28 39 L45 39" stroke="#9CA3AF" strokeWidth="1.5" strokeLinecap="round" />
-                                                <circle cx="40" cy="40" r="15" fill="#F3F4F6" opacity="0.5" />
-                                                <path d="M35 40 L38 43 L45 36" stroke="#6B7280" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
-                                            </svg>
-                                        </div>
-                                        <h3 className="font-semibold text-base mb-2">Start taking notes</h3>
-                                        <p className="text-xs text-gray-500 mb-6 max-w-[200px] leading-relaxed">
-                                            Highlight, save the conversation as notes, or click Add note.
-                                        </p>
+                                    {/* Sub-header (Search & Add) */}
+                                    {/* Sub-header (Search & Add) */}
+                                    <div className="px-4 py-3 shrink-0">
+                                        {isSearchActive ? (
+                                            <div className="flex items-center gap-2 bg-gray-100 rounded-lg px-3 py-2">
+                                                <Search className="w-4 h-4 text-gray-500" />
+                                                <input
+                                                    type="text"
+                                                    value={searchQuery}
+                                                    onChange={(e) => setSearchQuery(e.target.value)}
+                                                    placeholder="Search notes..."
+                                                    className="flex-1 bg-transparent border-none outline-none text-sm text-gray-900 placeholder:text-gray-500"
+                                                    autoFocus
+                                                />
+                                                <button
+                                                    onClick={() => {
+                                                        setIsSearchActive(false);
+                                                        setSearchQuery('');
+                                                    }}
+                                                    className="p-1 hover:bg-gray-200 rounded-md"
+                                                >
+                                                    <X className="w-3.5 h-3.5 text-gray-500" />
+                                                </button>
+                                            </div>
+                                        ) : (
+                                            <div className="flex items-center gap-2">
+                                                <button
+                                                    onClick={() => setIsSearchActive(true)}
+                                                    className="p-2 hover:bg-gray-100 rounded-lg text-gray-500"
+                                                >
+                                                    <Search className="w-4 h-4" />
+                                                </button>
+                                                <button className="p-2 hover:bg-gray-100 rounded-lg text-gray-500">
+                                                    <List className="w-4 h-4" />
+                                                </button>
+                                                <button
+                                                    onClick={() => setIsEditingNote(true)}
+                                                    className="flex-1 flex items-center justify-center gap-2 py-2 border border-gray-200 rounded-full text-sm font-medium text-gray-700 hover:bg-gray-50 transition-colors"
+                                                >
+                                                    <Plus className="w-4 h-4" />
+                                                    Add Note
+                                                </button>
+                                            </div>
+                                        )}
+                                    </div>
+
+                                    {/* Notes List */}
+                                    <div className="flex-1 overflow-y-auto px-4 pb-4 space-y-3 min-h-0">
+                                        {notes.length === 0 ? (
+                                            <div className="flex flex-col items-center justify-center h-full text-center text-gray-500">
+                                                <div className="w-20 h-20 mb-4 flex items-center justify-center">
+                                                    <svg width="80" height="80" viewBox="0 0 80 80" fill="none" xmlns="http://www.w3.org/2000/svg">
+                                                        <rect x="20" y="15" width="40" height="50" rx="2" stroke="#D1D5DB" strokeWidth="2" fill="white" />
+                                                        <path d="M28 25 L52 25" stroke="#9CA3AF" strokeWidth="1.5" strokeLinecap="round" />
+                                                        <path d="M28 32 L48 32" stroke="#9CA3AF" strokeWidth="1.5" strokeLinecap="round" />
+                                                        <path d="M28 39 L45 39" stroke="#9CA3AF" strokeWidth="1.5" strokeLinecap="round" />
+                                                        <circle cx="40" cy="40" r="15" fill="#F3F4F6" opacity="0.5" />
+                                                        <path d="M35 40 L38 43 L45 36" stroke="#6B7280" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+                                                    </svg>
+                                                </div>
+                                                <h3 className="font-semibold text-base mb-2">Start taking notes</h3>
+                                                <p className="text-xs text-gray-500 mb-6 max-w-[200px] leading-relaxed">
+                                                    Highlight, save the conversation as notes, or click Add note.
+                                                </p>
+                                            </div>
+                                        ) : (
+                                            notes
+                                                .filter(note => note.title.toLowerCase().includes(searchQuery.toLowerCase()))
+                                                .map((note) => (
+                                                    <div
+                                                        key={note.id}
+                                                        className={`border border-gray-200 rounded-xl p-4 hover:shadow-md transition-all cursor-pointer bg-white relative group ${expandedNoteIds.has(note.id) ? 'pb-8' : ''}`}
+                                                        onMouseEnter={() => setHoveredNoteId(note.id)}
+                                                        onMouseLeave={() => setHoveredNoteId(null)}
+                                                    >
+                                                        <h3 className="font-semibold text-sm mb-2 pr-6">{note.title}</h3>
+                                                        <div className={`text-xs text-gray-500 mb-3 [&_*]:m-0 ${expandedNoteIds.has(note.id) ? '' : 'line-clamp-2'}`}>
+                                                            <MarkdownRenderer content={note.content.replace(/\n/g, '  \n')} />
+                                                        </div>
+                                                        <div className="text-[10px] text-gray-400">
+                                                            {new Date(note.updated_at).toLocaleString()}
+                                                        </div>
+
+                                                        {/* Expand/Collapse Button */}
+                                                        {(hoveredNoteId === note.id || expandedNoteIds.has(note.id)) && (
+                                                            <div className="absolute bottom-0 left-1/2 -translate-x-1/2 translate-y-1/2 z-20">
+                                                                <button
+                                                                    onClick={(e) => {
+                                                                        e.stopPropagation();
+                                                                        const newSet = new Set(expandedNoteIds);
+                                                                        if (newSet.has(note.id)) {
+                                                                            newSet.delete(note.id);
+                                                                        } else {
+                                                                            newSet.add(note.id);
+                                                                        }
+                                                                        setExpandedNoteIds(newSet);
+                                                                    }}
+                                                                    className="w-8 h-5 flex items-center justify-center bg-gray-100 hover:bg-gray-200 rounded-full border border-gray-200 shadow-sm transition-colors cursor-pointer"
+                                                                >
+                                                                    {expandedNoteIds.has(note.id) ? (
+                                                                        <ChevronUp className="w-3 h-3 text-gray-600" />
+                                                                    ) : (
+                                                                        <ChevronDown className="w-3 h-3 text-gray-600" />
+                                                                    )}
+                                                                </button>
+                                                            </div>
+                                                        )}
+
+                                                        {/* Hover Menu */}
+                                                        {(hoveredNoteId === note.id || activeMenuNoteId === note.id) && (
+                                                            <div className="absolute top-2 right-2 note-action-menu">
+                                                                <button
+                                                                    onClick={(e) => {
+                                                                        e.stopPropagation();
+                                                                        setActiveMenuNoteId(activeMenuNoteId === note.id ? null : note.id);
+                                                                    }}
+                                                                    className="p-1 hover:bg-gray-100 rounded-md bg-white shadow-sm border border-gray-100 transition-colors cursor-pointer"
+                                                                >
+                                                                    <MoreHorizontal className="w-4 h-4 text-gray-500" />
+                                                                </button>
+
+                                                                {/* Dropdown */}
+                                                                {activeMenuNoteId === note.id && (
+                                                                    <div className="absolute top-full right-0 mt-1 w-32 bg-white rounded-lg shadow-xl border border-gray-100 z-10 overflow-hidden py-1">
+                                                                        <button className="w-full flex items-center gap-2 px-3 py-2 text-xs font-medium text-gray-700 hover:bg-gray-50 text-left transition-colors">
+                                                                            <ArrowRightLeft className="w-3.5 h-3.5" />
+                                                                            Move
+                                                                        </button>
+                                                                        <button
+                                                                            onClick={(e) => {
+                                                                                e.stopPropagation();
+                                                                                setActiveMenuNoteId(null);
+                                                                                setDeleteConfirmationNoteId(note.id);
+                                                                            }}
+                                                                            className="w-full flex items-center gap-2 px-3 py-2 text-xs font-medium text-red-600 hover:bg-red-50 text-left transition-colors"
+                                                                        >
+                                                                            <Trash2 className="w-3.5 h-3.5" />
+                                                                            Delete
+                                                                        </button>
+                                                                    </div>
+                                                                )}
+                                                            </div>
+                                                        )}
+                                                    </div>
+                                                ))
+                                        )}
+                                    </div>
+
+                                    {/* Footer Actions */}
+                                    <div className="p-4 border-t border-gray-200 flex gap-3 shrink-0 bg-white">
+                                        <button className="flex-1 flex items-center justify-center gap-2 p-2 rounded-full border text-purple-600 text-xs font-medium transition-colors cursor-pointer">
+                                            <MessageCircle className="w-4 h-4" />
+                                            Chat with Notes
+                                        </button>
                                         <button
-                                            onClick={() => setIsEditingNote(true)}
-                                            className="flex items-center gap-1.5 px-4 py-2 text-sm font-medium text-gray-700 border border-gray-200 rounded-lg hover:bg-gray-50 transition-colors"
+                                            onClick={() => setIsAIWriteDialogOpen(true)}
+                                            className="flex-1 flex items-center justify-center gap-2 p-2 rounded-full border text-purple-600 text-xs font-medium transition-colors cursor-pointer"
                                         >
-                                            <Plus className="w-4 h-4" />
-                                            Add note
+                                            <Sparkles className="w-4 h-4" />
+                                            AI Write
                                         </button>
                                     </div>
                                 </>
@@ -811,6 +1028,62 @@ const AIInbox = () => {
                     </div>
                 )
             }
+
+            {/* AI Write Dialog */}
+            <AnimatePresence>
+                {isAIWriteDialogOpen && (
+                    <AIWriteDialog
+                        isOpen={isAIWriteDialogOpen}
+                        onClose={() => setIsAIWriteDialogOpen(false)}
+                        notes={notes}
+                    />
+                )}
+            </AnimatePresence>
+
+            {/* Delete Confirmation Modal */}
+            {deleteConfirmationNoteId && (
+                <div className="fixed inset-0 bg-black/50 z-[60] flex items-center justify-center">
+                    <div className="bg-white rounded-xl shadow-xl w-[400px] p-6">
+                        <div className="flex justify-between items-start mb-4">
+                            <h3 className="font-semibold text-base">Are you sure you want to delete this note?</h3>
+                            <button onClick={() => setDeleteConfirmationNoteId(null)} className="p-1 hover:bg-gray-100 rounded-md">
+                                <X className="w-4 h-4 text-gray-400" />
+                            </button>
+                        </div>
+                        <div className="flex justify-end gap-3 mt-8">
+                            <button
+                                onClick={() => setDeleteConfirmationNoteId(null)}
+                                className="px-4 py-2 text-sm font-medium text-gray-700 hover:bg-gray-50 rounded-lg border border-gray-200 transition-colors"
+                            >
+                                Cancel
+                            </button>
+                            <button
+                                onClick={handleDeleteNote}
+                                disabled={isDeleting}
+                                className="px-4 py-2 text-sm font-medium text-white bg-red-500 hover:bg-red-600 rounded-lg flex items-center gap-2 transition-colors disabled:opacity-70 disabled:cursor-not-allowed"
+                            >
+                                {isDeleting && <Loader2 className="w-3.5 h-3.5 animate-spin" />}
+                                Confirm
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            )}
+
+            {/* Success Toast */}
+            <AnimatePresence>
+                {showDeleteSuccess && (
+                    <motion.div
+                        initial={{ opacity: 0, y: -20 }}
+                        animate={{ opacity: 1, y: 0 }}
+                        exit={{ opacity: 0, y: -20 }}
+                        className="fixed top-20 left-1/2 -translate-x-1/2 bg-black text-white px-4 py-2 rounded-lg shadow-lg z-[70] text-sm font-medium flex items-center gap-2"
+                    >
+                        <Check className="w-4 h-4 text-green-400" />
+                        Deleted successfully
+                    </motion.div>
+                )}
+            </AnimatePresence>
         </div >
     );
 };

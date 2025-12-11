@@ -13,12 +13,14 @@ import {
     Italic
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
+import { createNote } from '../../../services/notesService';
 
 interface RichTextEditorProps {
     onClose: () => void;
+    onNoteSaved?: () => void;
 }
 
-const RichTextEditor: React.FC<RichTextEditorProps> = ({ onClose }) => {
+const RichTextEditor: React.FC<RichTextEditorProps> = ({ onClose, onNoteSaved }) => {
     const [title, setTitle] = useState('Untitled');
     const [isMoreMenuOpen, setIsMoreMenuOpen] = useState(false);
     const editorRef = useRef<HTMLDivElement>(null);
@@ -43,6 +45,60 @@ const RichTextEditor: React.FC<RichTextEditorProps> = ({ onClose }) => {
         document.addEventListener('mousedown', handleClickOutside);
         return () => document.removeEventListener('mousedown', handleClickOutside);
     }, []);
+
+    const htmlToMarkdown = (html: string) => {
+        const tempDiv = document.createElement('div');
+        tempDiv.innerHTML = html;
+
+        const processNode = (node: Node): string => {
+            if (node.nodeType === Node.TEXT_NODE) {
+                return node.textContent || '';
+            }
+            if (node.nodeType !== Node.ELEMENT_NODE) return '';
+
+            const el = node as HTMLElement;
+            let content = '';
+            el.childNodes.forEach(child => {
+                content += processNode(child);
+            });
+
+            const tagName = el.tagName.toLowerCase();
+            switch (tagName) {
+                case 'b':
+                case 'strong':
+                    return `**${content}**`;
+                case 'i':
+                case 'em':
+                    return `*${content}*`;
+                case 'ul':
+                    return '\n' + content;
+                case 'ol':
+                    return '\n' + content;
+                case 'li':
+                    const parent = el.parentElement;
+                    if (parent?.tagName.toLowerCase() === 'ol') {
+                        const index = Array.from(parent.children).indexOf(el) + 1;
+                        return `${index}. ${content}\n`;
+                    }
+                    return `- ${content}\n`;
+                case 'br':
+                    return '\n';
+                case 'div':
+                    if (!content.trim() || content === '\n') {
+                        return '\n';
+                    }
+                    return content + '\n';
+                case 'p':
+                    return content + '\n';
+                default:
+                    return content;
+            }
+        };
+
+        let result = processNode(tempDiv);
+        result = result.replace(/\n{3,}/g, '\n\n');
+        return result.trim();
+    };
 
     return (
         <div className="flex flex-col h-full bg-white">
@@ -120,7 +176,26 @@ const RichTextEditor: React.FC<RichTextEditorProps> = ({ onClose }) => {
                         <Cloud className="w-4 h-4" />
                     </button>
                     <button
-                        onClick={onClose}
+                        onClick={async () => {
+                            try {
+                                const htmlContent = editorRef.current?.innerHTML || '';
+                                const content = htmlToMarkdown(htmlContent);
+                                const result = await createNote({
+                                    title: title,
+                                    content: content,
+                                    wisebase_id: "inbox",
+                                    metadata: {
+                                        source: 'rich-text-editor',
+                                    }
+                                });
+
+                                if (onNoteSaved) onNoteSaved();
+                            } catch (error) {
+                                console.error('Error saving note:', error);
+                            } finally {
+                                onClose();
+                            }
+                        }}
                         className="p-1.5 text-gray-500 hover:bg-gray-100 rounded-md transition-colors"
                         title="Close"
                     >
