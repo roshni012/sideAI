@@ -39,6 +39,12 @@ export const API_ENDPOINTS = {
   FEATURES: {
     TRANSLATE_TEXT: '/api/features/translate/text',
   },
+  // Notes endpoints
+  NOTES: {
+    LIST: '/api/notes',
+    CREATE: '/api/notes',
+    DELETE: '/api/notes',
+  },
 } as const;
 
 export const getApiUrl = (endpoint: string): string => {
